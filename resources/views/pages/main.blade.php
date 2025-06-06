@@ -6,6 +6,7 @@
 @section('content')
     <div class="container mx-auto px-4 py-6 space-y-8">
         @include('pages.other')
+
         {{-- ◆========== Первый блок: «История заявок» (Applications) ==========◆ --}}
         <div class="bg-white rounded-xl shadow-md overflow-x-auto">
             <div class="px-6 py-4">
@@ -177,49 +178,26 @@
                 <thead class="bg-gray-100">
                 <tr class="sticky top-0">
                     @if(auth()->user()->role === 'admin')
-                        <th class="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">
-                            Действие
-                        </th>
-                        <th class="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">
-                            Кто изменил
-                        </th>
+                        <th class="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Действие</th>
+                        <th class="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Кто изменил</th>
                     @endif
-                    <th class="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">
-                        Номер заявки
-                    </th>
-                    <th class="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Дата
-                        создания
-                    </th>
-                    <th class="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">
-                        Обменник
-                    </th>
-                    <th class="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">
-                        Статус
-                    </th>
-                    <th class="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">
-                        Приход+
-                    </th>
-                    <th class="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">
-                        Продажа-
-                    </th>
-                    <th class="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">
-                        Купля+
-                    </th>
-                    <th class="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">
-                        Расход-
-                    </th>
-                    <th class="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">
-                        Мерчант
-                    </th>
-                    <th class="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">ID
-                        ордера
-                    </th>
+                    <th class="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Номер заявки</th>
+                    <th class="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Дата создания</th>
+                    <th class="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Обменник</th>
+                    <th class="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Статус</th>
+                    <th class="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Приход+</th>
+                    <th class="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Продажа−</th>
+                    <th class="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Купля+</th>
+                    <th class="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Расход−</th>
+                    <th class="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Мерчант</th>
+                    <th class="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">ID ордера</th>
                 </tr>
                 </thead>
                 <tbody id="appsTbody" class="bg-white divide-y divide-gray-200">
                 @foreach($apps as $d)
-                    <tr class="hover:bg-gray-50" data-id="{{ $d->id }}">
+                    <tr class="hover:bg-gray-50" data-app-row-id="{{ $d->id }}">
                         @if(auth()->user()->role === 'admin')
+                            {{-- Кнопка «Редактировать» --}}
                             <td class="px-5 py-4 whitespace-nowrap text-sm text-gray-900">
                                 <button
                                     class="editBtn px-3 py-1 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition text-xs"
@@ -232,78 +210,85 @@
                                     data-expense_currency="{{ optional($d->expenseCurrency)->code }}"
                                     data-merchant="{{ $d->merchant }}"
                                     data-order_id="{{ $d->order_id }}"
-                                >
-                                    Редактировать
-                                </button>
+                                >Редактировать</button>
                             </td>
+                            {{-- Кто изменил --}}
                             <td class="px-5 py-4 whitespace-nowrap text-sm text-gray-900 text-center">
-                                @if(!empty($d->user))
+                                @if($d->user)
                                     {{ $d->user->login }}
                                 @else
                                     -
                                 @endif
                             </td>
                         @endif
+
+                        {{-- Номер заявки --}}
                         <td class="px-5 py-4 whitespace-nowrap text-sm text-gray-900">{{ $d->app_id }}</td>
+
+                        {{-- Дата создания --}}
                         <td class="px-5 py-4 whitespace-nowrap text-sm text-gray-900">
                             {{ \Carbon\Carbon::parse($d->app_created_at)->format('d.m.Y H:i:s') }}
                         </td>
+
+                        {{-- Обменник --}}
                         <td class="px-5 py-4 whitespace-nowrap text-sm text-gray-900">{{ $d->exchanger }}</td>
+
+                        {{-- Статус --}}
                         <td class="px-5 py-4 whitespace-nowrap text-sm text-gray-900">{{ $d->status }}</td>
+
+                        {{-- Приход+ (из sale_text) --}}
                         <td class="px-5 py-4 whitespace-nowrap text-sm text-gray-900">
                             @if($d->sale_text)
                                 @php
-                                    $parts = explode(' ', $d->sale_text, 2);
-                                    $amount = $parts[0] ?? '';
-                                    $currency = $parts[1] ?? '';
+                                    $parts   = explode(' ', $d->sale_text, 2);
+                                    $amount  = $parts[0] ?? '';
+                                    $curCode = $parts[1] ?? '';
                                 @endphp
                                 <span class="text-green-600">+{{ $amount }}</span>
-                                @if($currency)
-                                    &nbsp;{{ $currency }}
-                                @endif
+                                @if($curCode) &nbsp;{{ $curCode }} @endif
                             @else
                                 —
                             @endif
                         </td>
 
-                        {{-- Продажа --}}
+                        {{-- Продажа− --}}
                         <td class="px-5 py-4 whitespace-nowrap text-sm">
                             @if($d->sell_amount !== null && $d->sellCurrency)
                                 @php $sell = rtrim(rtrim((string)$d->sell_amount, '0'), '.'); @endphp
-                                <span class="{{'text-red-600' }}">
-                                    -{{ ltrim($sell, '-') }}
-                                </span>
+                                <span class="text-red-600">-{{ ltrim($sell, '-') }}</span>
                                 {{ $d->sellCurrency->code }}
                             @else
                                 —
                             @endif
                         </td>
-                        {{-- Купля --}}
+
+                        {{-- Купля+ --}}
                         <td class="px-5 py-4 whitespace-nowrap text-sm">
                             @if($d->buy_amount !== null && $d->buyCurrency)
                                 @php $buy = rtrim(rtrim((string)$d->buy_amount, '0'), '.'); @endphp
                                 <span class="{{ $d->buy_amount > 0 ? 'text-green-600' : 'text-red-600' }}">
-                                    {{ $d->buy_amount > 0 ? '+' : '-' }}{{ ltrim($buy, '-') }}
-                                </span>
+                                        {{ $d->buy_amount > 0 ? '+' : '-' }}{{ ltrim($buy, '-') }}
+                                    </span>
                                 {{ $d->buyCurrency->code }}
                             @else
                                 —
                             @endif
                         </td>
-                        {{-- Расход --}}
+
+                        {{-- Расход− --}}
                         <td class="px-5 py-4 whitespace-nowrap text-sm">
                             @if($d->expense_amount !== null && $d->expenseCurrency)
                                 @php $exp = rtrim(rtrim((string)$d->expense_amount, '0'), '.'); @endphp
-                                <span class="text-red-600">
-                                    -{{ ltrim($exp, '-') }}
-                                </span>
+                                <span class="text-red-600">-{{ ltrim($exp, '-') }}</span>
                                 {{ $d->expenseCurrency->code }}
                             @else
                                 —
                             @endif
                         </td>
+
                         {{-- Мерчант --}}
                         <td class="px-5 py-4 whitespace-nowrap text-sm text-gray-900">{{ $d->merchant ?? '—' }}</td>
+
                         {{-- ID ордера --}}
                         <td class="px-5 py-4 whitespace-nowrap text-sm text-gray-900">{{ $d->order_id ?? '—' }}</td>
                     </tr>
@@ -312,6 +297,7 @@
             </table>
         </div>
 
+        {{-- «Загрузить ещё» --}}
         <div id="loader" class="hidden mt-4 text-center">
             <svg class="animate-spin h-8 w-8 text-gray-600 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none"
                  viewBox="0 0 24 24">
@@ -321,7 +307,6 @@
             </svg>
         </div>
 
-        {{-- Кнопка «Загрузить ещё» --}}
         <div class="text-center">
             <button
                 id="loadMoreBtn"
@@ -333,9 +318,13 @@
             </button>
         </div>
 
-        {{-- Скрипты для модалки и «Загрузить ещё» (оставляем ваш JS без изменений) --}}
+        {{-- Скрипты для модалки и «Загрузить ещё» --}}
         <script>
             document.addEventListener('DOMContentLoaded', () => {
+                // Установим флаг isAdmin, чтобы JS понимал, нужно ли отрисовывать колонки «Редактировать» и «Кто изменил»
+                window.isAdmin = @json(auth()->user()->role === 'admin');
+
+                // ========== USDT Total ==========
                 function fetchAndRenderUsdtTotal() {
                     fetch("{{ route('usdt.total') }}", {
                         headers: {
@@ -351,49 +340,34 @@
                             const cell = document.getElementById('usdt-total-cell');
                             if (!cell) return;
 
-                            // Очищаем предыдущие классы
                             cell.classList.remove('positive', 'negative');
-
-                            // Получаем значение и определяем знак
                             let val = json.usdt_total;
                             let sign = '';
                             if (val > 0) sign = '+';
                             else if (val < 0) sign = '-';
-
-                            // Форматируем с 8 знаками, убираем лишние нули
                             val = Math.abs(val).toFixed(8).replace(/\.?0+$/, '');
                             cell.textContent = sign + val;
-
-                            // Добавляем класс по знаку
                             if (val !== '0') {
-                                if (sign === '+') {
-                                    cell.classList.add('positive');
-                                } else if (sign === '-') {
-                                    cell.classList.add('negative');
-                                }
+                                if (sign === '+') cell.classList.add('positive');
+                                else if (sign === '-') cell.classList.add('negative');
                             }
                         })
-                        .catch(err => {
-                            console.error("Ошибка при получении usdt_total:", err);
-                        });
+                        .catch(err => console.error("Ошибка при получении usdt_total:", err));
                 }
 
-                // Сразу при загрузке страницы
                 fetchAndRenderUsdtTotal();
-
-                // И каждые 5 секунд обновляем
                 setInterval(fetchAndRenderUsdtTotal, 5000);
 
                 window.onerror = function (message, source, lineno, colno, error) {
                     console.error(`JS Error: ${message} at ${source}:${lineno}:${colno}`, error);
                 };
 
-                // --- Модальное окно редактирования ---
-                const editModal = document.getElementById('editModalBackdrop');
-                const closeEditModalBtn = document.getElementById('closeEditModalBtn');
+                // ========== Модальное окно редактирования ==========
+                const editModal              = document.getElementById('editModalBackdrop');
+                const closeEditModalBtn      = document.getElementById('closeEditModalBtn');
                 const editModalBackdropClose = document.getElementById('editModalBackdropClose');
-                const modalAppIdLabel = document.getElementById('modalAppId');
-                const editForm = document.getElementById('editForm');
+                const modalAppIdLabel        = document.getElementById('modalAppId');
+                const editForm               = document.getElementById('editForm');
 
                 function showEditModal() {
                     editModal.classList.remove('hidden');
@@ -403,7 +377,7 @@
                 function hideEditModal() {
                     editModal.classList.add('hidden');
                     document.body.style.overflow = '';
-                    ['sell_amount', 'sell_currency', 'buy_amount', 'buy_currency', 'expense_amount', 'expense_currency', 'merchant', 'order_id']
+                    ['sell_amount','sell_currency','buy_amount','buy_currency','expense_amount','expense_currency','merchant','order_id']
                         .forEach(f => {
                             const errEl = document.getElementById('err_' + f);
                             if (errEl) errEl.textContent = '';
@@ -418,46 +392,45 @@
                     }
                 });
 
+                // Навешиваем «Редактировать» на все кнопки (в том числе динамически добавленные)
                 function attachEditHandlers(root = document) {
                     root.querySelectorAll('.editBtn').forEach(button => {
-                        if (!button.dataset.listenerAdded) {
-                            button.dataset.listenerAdded = 'true';
-                            button.addEventListener('click', () => {
-                                const id = button.dataset.id;
-                                const sellAmount = button.dataset.sell_amount;
-                                const sellCurrency = button.dataset.sell_currency;
-                                const buyAmount = button.dataset.buy_amount;
-                                const buyCurrency = button.dataset.buy_currency;
-                                const expenseAmount = button.dataset.expense_amount;
-                                const expenseCurrency = button.dataset.expense_currency;
-                                const merchant = button.dataset.merchant;
-                                const orderId = button.dataset.order_id;
+                        if (button.dataset.listenerAdded) return;
+                        button.dataset.listenerAdded = 'true';
 
-                                document.getElementById('edit_app_id').value = id;
-                                modalAppIdLabel.textContent = `#${button.closest('tr').querySelectorAll('td')[1].innerText}`;
+                        button.addEventListener('click', () => {
+                            const id              = button.dataset.id;
+                            const sellAmount      = button.dataset.sell_amount;
+                            const sellCurrency    = button.dataset.sell_currency;
+                            const buyAmount       = button.dataset.buy_amount;
+                            const buyCurrency     = button.dataset.buy_currency;
+                            const expenseAmount   = button.dataset.expense_amount;
+                            const expenseCurrency = button.dataset.expense_currency;
+                            const merchant        = button.dataset.merchant;
+                            const orderId         = button.dataset.order_id;
 
-                                document.getElementById('edit_sell_amount').value = sellAmount || '';
-                                document.getElementById('edit_buy_amount').value = buyAmount || '';
-                                document.getElementById('edit_expense_amount').value = expenseAmount || '';
-                                document.getElementById('edit_merchant').value = merchant || '';
-                                document.getElementById('edit_order_id').value = orderId || '';
+                            document.getElementById('edit_app_id').value = id;
+                            modalAppIdLabel.textContent                  = `#${id}`;
+                            document.getElementById('edit_sell_amount').value   = sellAmount   || '';
+                            document.getElementById('edit_buy_amount').value    = buyAmount    || '';
+                            document.getElementById('edit_expense_amount').value= expenseAmount|| '';
+                            document.getElementById('edit_merchant').value      = merchant     || '';
+                            document.getElementById('edit_order_id').value      = orderId      || '';
+                            document.getElementById('edit_sell_currency').value   = sellCurrency   || '';
+                            document.getElementById('edit_buy_currency').value    = buyCurrency    || '';
+                            document.getElementById('edit_expense_currency').value= expenseCurrency|| '';
 
-                                document.getElementById('edit_sell_currency').value = sellCurrency || '';
-                                document.getElementById('edit_buy_currency').value = buyCurrency || '';
-                                document.getElementById('edit_expense_currency').value = expenseCurrency || '';
-
-                                showEditModal();
-                            });
-                        }
+                            showEditModal();
+                        });
                     });
                 }
 
                 attachEditHandlers();
 
-                // --- Отправка формы редактирования ---
+                // Отправка формы редактирования
                 editForm.addEventListener('submit', function (e) {
                     e.preventDefault();
-                    ['sell_amount', 'sell_currency', 'buy_amount', 'buy_currency', 'expense_amount', 'expense_currency', 'merchant', 'order_id']
+                    ['sell_amount','sell_currency','buy_amount','buy_currency','expense_amount','expense_currency','merchant','order_id']
                         .forEach(f => {
                             const errEl = document.getElementById('err_' + f);
                             if (errEl) errEl.textContent = '';
@@ -465,14 +438,14 @@
 
                     const id = document.getElementById('edit_app_id').value;
                     const data = {
-                        sell_amount: document.getElementById('edit_sell_amount').value.trim(),
-                        sell_currency: document.getElementById('edit_sell_currency').value.trim(),
-                        buy_amount: document.getElementById('edit_buy_amount').value.trim(),
-                        buy_currency: document.getElementById('edit_buy_currency').value.trim(),
+                        sell_amount:    document.getElementById('edit_sell_amount').value.trim(),
+                        sell_currency:  document.getElementById('edit_sell_currency').value.trim(),
+                        buy_amount:     document.getElementById('edit_buy_amount').value.trim(),
+                        buy_currency:   document.getElementById('edit_buy_currency').value.trim(),
                         expense_amount: document.getElementById('edit_expense_amount').value.trim(),
                         expense_currency: document.getElementById('edit_expense_currency').value.trim(),
-                        merchant: document.getElementById('edit_merchant').value.trim(),
-                        order_id: document.getElementById('edit_order_id').value.trim(),
+                        merchant:       document.getElementById('edit_merchant').value.trim(),
+                        order_id:       document.getElementById('edit_order_id').value.trim(),
                     };
 
                     fetch(`/applications/${id}`, {
@@ -505,135 +478,157 @@
                         });
                 });
 
-                // --- Пагинация: «Загрузить ещё» ---
-                const loadMoreBtn = document.getElementById('loadMoreBtn');
-                const appsTbody = document.getElementById('appsTbody');
-                const loader = document.getElementById('loader');
-                let isLoading = false;
+                // ========== Динамическая подгрузка «Загрузить ещё» ==========
+                function loadMoreApplications() {
+                    const btn = document.getElementById('loadMoreBtn');
+                    if (!btn || btn.dataset.hasMore !== 'true') return;
 
-                loadMoreBtn.addEventListener('click', () => {
-                    if (isLoading) return;
-                    const hasMore = loadMoreBtn.getAttribute('data-has-more') === 'true';
-                    if (!hasMore) return;
-
-                    isLoading = true;
-                    loader.classList.remove('hidden');
-                    loadMoreBtn.disabled = true;
-
-                    let nextPage = parseInt(loadMoreBtn.getAttribute('data-next-page'), 10);
-                    if (isNaN(nextPage) || nextPage < 1) {
-                        console.error('JS: Некорректный номер страницы:', nextPage);
-                        loader.classList.add('hidden');
-                        loadMoreBtn.disabled = false;
-                        isLoading = false;
-                        return;
-                    }
+                    const nextPage = btn.dataset.nextPage;
+                    btn.disabled = true;
+                    btn.textContent = 'Загрузка...';
 
                     fetch(`{{ route('api.applications') }}?page=${nextPage}`, {
-                        headers: {'X-Requested-With': 'XMLHttpRequest'}
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
                     })
-                        .then(res => {
-                            if (!res.ok) throw new Error(`Статус ${res.status}`);
-                            return res.json();
+                        .then(response => {
+                            if (!response.ok) throw new Error("HTTP status " + response.status);
+                            return response.json();
                         })
                         .then(json => {
+                            const tbody = document.getElementById('appsTbody');
+
                             json.data.forEach(d => {
-                                const row = document.createElement('tr');
-                                row.classList.add('hover:bg-gray-50');
-                                row.setAttribute('data-id', d.id);
+                                let rowHtml = '';
 
-                                const createdDate = new Date(d.app_created_at);
-                                const formattedDate = createdDate.toLocaleString('ru-RU', {
-                                    year: 'numeric',
-                                    month: '2-digit',
-                                    day: '2-digit',
-                                    hour: '2-digit',
-                                    minute: '2-digit',
-                                    second: '2-digit'
-                                });
+                                if (window.isAdmin) {
+                                    // 1) Кнопка «Редактировать»
+                                    rowHtml += `
+                                    <td class="px-5 py-4 whitespace-nowrap text-sm text-gray-900">
+                                        <button
+                                            class="editBtn px-3 py-1 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition text-xs"
+                                            data-id="${d.id}"
+                                            data-sell_amount="${d.sell_amount ?? ''}"
+                                            data-sell_currency="${d.sell_currency?.code ?? ''}"
+                                            data-buy_amount="${d.buy_amount ?? ''}"
+                                            data-buy_currency="${d.buy_currency?.code ?? ''}"
+                                            data-expense_amount="${d.expense_amount ?? ''}"
+                                            data-expense_currency="${d.expense_currency?.code ?? ''}"
+                                            data-merchant="${d.merchant ?? ''}"
+                                            data-order_id="${d.order_id ?? ''}"
+                                        >Редактировать</button>
+                                    </td>`;
 
-                                // «Приход»
-                                let arrivalCell = d.sale_text ?? '—';
-
-                                // «Продажа»
-                                let sellCell = '—';
-                                if (d.sell_amount !== null && d.sellCurrency) {
-                                    let sla = String(d.sell_amount).replace(/\.?0+$/, '');
-                                    let prefix = d.sell_amount > 0 ? '+' : '-';
-                                    sellCell = `<span class="${d.sell_amount > 0 ? 'text-green-600' : 'text-red-600'}">${prefix}${sla.replace('-', '')}</span> ${d.sellCurrency.code}`;
+                                    // 2) «Кто изменил»
+                                    const whoEdited = (d.user && d.user.login) ? d.user.login : '-';
+                                    rowHtml += `<td class="px-5 py-4 whitespace-nowrap text-sm text-gray-900 text-center">
+                                                ${whoEdited}
+                                            </td>`;
                                 }
 
-                                // «Купля»
-                                let buyCell = '—';
-                                if (d.buy_amount !== null && d.buyCurrency) {
-                                    let ba = String(d.buy_amount).replace(/\.?0+$/, '');
-                                    let prefix = d.buy_amount > 0 ? '+' : '-';
-                                    buyCell = `<span class="${d.buy_amount > 0 ? 'text-green-600' : 'text-red-600'}">${prefix}${ba.replace('-', '')}</span> ${d.buyCurrency.code}`;
+                                // 3) Номер заявки
+                                rowHtml += `<td class="px-5 py-4 whitespace-nowrap text-sm text-gray-900">${d.app_id}</td>`;
+
+                                // 4) Дата создания (формат «dd.mm.YYYY hh:mm:ss»)
+                                const created = new Date(d.app_created_at);
+                                const dd = String(created.getDate()).padStart(2, '0');
+                                const mm = String(created.getMonth() + 1).padStart(2, '0');
+                                const yyyy = created.getFullYear();
+                                const hh = String(created.getHours()).padStart(2, '0');
+                                const min = String(created.getMinutes()).padStart(2, '0');
+                                const ss = String(created.getSeconds()).padStart(2, '0');
+                                rowHtml += `<td class="px-5 py-4 whitespace-nowrap text-sm text-gray-900">
+                                            ${dd}.${mm}.${yyyy} ${hh}:${min}:${ss}
+                                        </td>`;
+
+                                // 5) Обменник
+                                rowHtml += `<td class="px-5 py-4 whitespace-nowrap text-sm text-gray-900">${d.exchanger}</td>`;
+
+                                // 6) Статус
+                                rowHtml += `<td class="px-5 py-4 whitespace-nowrap text-sm text-gray-900">${d.status}</td>`;
+
+                                // 7) Приход+ (sale_text)
+                                if (d.sale_text) {
+                                    const parts = d.sale_text.split(' ');
+                                    const amount = parts[0] || '';
+                                    const cur    = parts[1] || '';
+                                    rowHtml += `<td class="px-5 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                <span class="text-green-600">+${amount}</span>${cur ? '&nbsp;' + cur : ''}
+                                            </td>`;
+                                } else {
+                                    rowHtml += `<td class="px-5 py-4 whitespace-nowrap text-sm text-gray-900">—</td>`;
                                 }
 
-                                // «Расход»
-                                let expCell = '—';
-                                if (d.expense_amount !== null && d.expenseCurrency) {
-                                    let ea = String(d.expense_amount).replace(/\.?0+$/, '');
-                                    let prefix = d.expense_amount > 0 ? '+' : '-';
-                                    expCell = `<span class="${d.expense_amount > 0 ? 'text-green-600' : 'text-red-600'}">${prefix}${ea.replace('-', '')}</span> ${d.expenseCurrency.code}`;
+                                // 8) Продажа− (d.sell_currency вместо d.sellCurrency)
+                                if (d.sell_amount !== null && d.sell_currency) {
+                                    let sell = String(d.sell_amount).replace(/\.?0+$/, '');
+                                    sell = sell.replace(/^-/, '');
+                                    rowHtml += `<td class="px-5 py-4 whitespace-nowrap text-sm">
+                                                <span class="text-red-600">-${sell}</span>&nbsp;${d.sell_currency.code}
+                                            </td>`;
+                                } else {
+                                    rowHtml += `<td class="px-5 py-4 whitespace-nowrap text-sm">—</td>`;
                                 }
 
-                                const merchCell = d.merchant ?? '—';
-                                const orderCell = d.order_id ?? '—';
+                                // 9) Купля+ (d.buy_currency вместо d.buyCurrency)
+                                if (d.buy_amount !== null && d.buy_currency) {
+                                    let buy = String(d.buy_amount).replace(/\.?0+$/, '');
+                                    const sign = d.buy_amount > 0 ? '+' : '-';
+                                    const cls  = d.buy_amount > 0 ? 'text-green-600' : 'text-red-600';
+                                    buy = buy.replace(/^-/, '');
+                                    rowHtml += `<td class="px-5 py-4 whitespace-nowrap text-sm">
+                                                <span class="${cls}">${sign}${buy}</span>&nbsp;${d.buy_currency.code}
+                                            </td>`;
+                                } else {
+                                    rowHtml += `<td class="px-5 py-4 whitespace-nowrap text-sm">—</td>`;
+                                }
 
-                                row.innerHTML = `
-                        <td class="px-5 py-4 whitespace-nowrap text-sm text-gray-900">
-                            <button
-                                class="editBtn px-3 py-1 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition text-xs"
-                                data-id="${d.id}"
-                                data-sell_amount="${d.sell_amount}"
-                                data-sell_currency="${d.sellCurrency ? d.sellCurrency.code : ''}"
-                                data-buy_amount="${d.buy_amount}"
-                                data-buy_currency="${d.buyCurrency ? d.buyCurrency.code : ''}"
-                                data-expense_amount="${d.expense_amount}"
-                                data-expense_currency="${d.expenseCurrency ? d.expenseCurrency.code : ''}"
-                                data-merchant="${d.merchant}"
-                                data-order_id="${d.order_id}"
-                            >
-                                Редактировать
-                            </button>
-                        </td>
-                        <td class="px-5 py-4 whitespace-nowrap text-sm text-gray-900">${d.app_id}</td>
-                        <td class="px-5 py-4 whitespace-nowrap text-sm text-gray-900">${formattedDate}</td>
-                        <td class="px-5 py-4 whitespace-nowrap text-sm text-gray-900">${d.exchanger}</td>
-                        <td class="px-5 py-4 whitespace-nowrap text-sm text-gray-900">${d.status}</td>
-                        <td class="px-5 py-4 whitespace-nowrap text-sm text-gray-900">${arrivalCell}</td>
-                        <td class="px-5 py-4 whitespace-nowrap text-sm">${sellCell}</td>
-                        <td class="px-5 py-4 whitespace-nowrap text-sm">${buyCell}</td>
-                        <td class="px-5 py-4 whitespace-nowrap text-sm">${expCell}</td>
-                        <td class="px-5 py-4 whitespace-nowrap text-sm text-gray-900">${merchCell}</td>
-                        <td class="px-5 py-4 whitespace-nowrap text-sm text-gray-900">${orderCell}</td>
-                    `;
-                                appsTbody.appendChild(row);
+                                // 10) Расход− (d.expense_currency вместо d.expenseCurrency)
+                                if (d.expense_amount !== null && d.expense_currency) {
+                                    let exp = String(d.expense_amount).replace(/\.?0+$/, '');
+                                    exp = exp.replace(/^-/, '');
+                                    rowHtml += `<td class="px-5 py-4 whitespace-nowrap text-sm">
+                                                <span class="text-red-600">-${exp}</span>&nbsp;${d.expense_currency.code}
+                                            </td>`;
+                                } else {
+                                    rowHtml += `<td class="px-5 py-4 whitespace-nowrap text-sm">—</td>`;
+                                }
+
+                                // 11) Мерчант
+                                rowHtml += `<td class="px-5 py-4 whitespace-nowrap text-sm text-gray-900">
+                                            ${d.merchant ?? '—'}
+                                        </td>`;
+
+                                // 12) ID ордера
+                                rowHtml += `<td class="px-5 py-4 whitespace-nowrap text-sm text-gray-900">
+                                            ${d.order_id ?? '—'}
+                                        </td>`;
+
+                                // Вставляем в <tbody>
+                                const tr = document.createElement('tr');
+                                tr.classList.add('hover:bg-gray-50');
+                                tr.setAttribute('data-app-row-id', d.id);
+                                tr.innerHTML = rowHtml;
+                                tbody.appendChild(tr);
                             });
 
-                            attachEditHandlers(appsTbody);
+                            btn.dataset.nextPage = parseInt(nextPage) + 1;
+                            btn.dataset.hasMore  = json.has_more ? 'true' : 'false';
+                            btn.disabled = false;
+                            btn.textContent = json.has_more ? 'Загрузить ещё' : 'Больше заявок нет';
 
-                            if (json.has_more) {
-                                loadMoreBtn.setAttribute('data-next-page', nextPage + 1);
-                                loadMoreBtn.setAttribute('data-has-more', 'true');
-                            } else {
-                                loadMoreBtn.setAttribute('data-has-more', 'false');
-                                loadMoreBtn.textContent = 'Данных больше нет';
-                                loadMoreBtn.disabled = true;
-                            }
+                            attachEditHandlers();
                         })
                         .catch(err => {
-                            console.error('JS: Ошибка подгрузки:', err);
-                            alert('Не удалось загрузить ещё записи');
-                        })
-                        .finally(() => {
-                            loader.classList.add('hidden');
-                            loadMoreBtn.disabled = false;
-                            isLoading = false;
+                            console.error("Ошибка при подгрузке ещё заявок:", err);
+                            btn.disabled = false;
+                            btn.textContent = 'Загрузить ещё';
                         });
-                });
+                }
+
+                document.getElementById('loadMoreBtn').addEventListener('click', loadMoreApplications);
             });
         </script>
 
@@ -667,8 +662,8 @@
                             <td class="px-4 py-2 text-sm whitespace-nowrap">
                                 @if($cell !== '')
                                     <span class="{{ $history->amount > 0 ? 'text-green-600' : 'text-red-600' }}">
-                                        {{ $cell }}
-                                    </span>
+                                            {{ $cell }}
+                                        </span>
                                 @else
                                     —
                                 @endif
@@ -691,36 +686,32 @@
                             }
                         @endphp
                         <td class="px-4 py-2 text-sm whitespace-nowrap">
-                            <span
-                                class="{{ $sum > 0 ? 'text-green-600' : ($sum < 0 ? 'text-red-600' : 'text-gray-900') }}">
-                                {{ $formatted }}
-                            </span>
+                                <span
+                                    class="{{ $sum > 0 ? 'text-green-600' : ($sum < 0 ? 'text-red-600' : 'text-gray-900') }}">
+                                    {{ $formatted }}
+                                </span>
                         </td>
                     @endforeach
                 </tr>
                 </tfoot>
             </table>
+
             <!-- Стилизация контейнера итоговой суммы в USDT -->
             <div
                 id="usdtTotalContainer"
                 class="
-    bg-gray-50
-    border
-    border-gray-200
-    rounded-lg
-    px-4 py-3
-    flex items-center justify-between
-    shadow-sm
-  "
+                    bg-gray-50
+                    border
+                    border-gray-200
+                    rounded-lg
+                    px-4 py-3
+                    flex items-center justify-between
+                    shadow-sm
+                "
             >
                 <div class="text-gray-700 text-sm font-medium">
                     Итог (в USDT):
                 </div>
-                <!--
-                  Добавьте скрипт, который после расчёта итогового значения:
-                    1. Запишет само число в этот элемент.
-                    2. Проставит класс positive или negative в зависимости от знака.
-                -->
                 <div
                     id="usdt-total-cell"
                     class="inline-block px-3 py-1 rounded font-bold text-lg"
@@ -733,7 +724,7 @@
         {{-- ◆========== Третий блок: четыре мелких таблицы в две колонки ==========◆ --}}
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
-            {{-- -- 1) Transfers --}}
+            {{-- 1) Transfers --}}
             <div class="bg-white rounded-xl shadow-md overflow-x-auto">
                 <div class="px-6 py-4">
                     <h2 class="text-xl font-semibold text-gray-800">Обмены</h2>
@@ -768,8 +759,8 @@
                                 @if($t->amount !== null)
                                     @php $amt = rtrim(rtrim((string)$t->amount, '0'), '.'); @endphp
                                     <span class="">
-                                        {{ ltrim($amt, '-') }}
-                                    </span>
+                                            {{ ltrim($amt, '-') }}
+                                        </span>
                                     {{ optional($t->amountCurrency)->code ?? '' }}
                                 @else
                                     —
@@ -779,8 +770,8 @@
                                 @if($t->commission !== null)
                                     @php $comm = rtrim(rtrim((string)$t->commission, '0'), '.'); @endphp
                                     <span class="{{ $t->commission > 0 ? 'text-green-600' : 'text-red-600' }}">
-                                        {{ $t->commission > 0 ? '+' : '-' }}{{ ltrim($comm, '-') }}
-                                    </span>
+                                            {{ $t->commission > 0 ? '+' : '-' }}{{ ltrim($comm, '-') }}
+                                        </span>
                                     {{ optional($t->commissionCurrency)->code ?? '' }}
                                 @else
                                     —
@@ -795,7 +786,7 @@
                 </div>
             </div>
 
-            {{-- -- 4) Payments --}}
+            {{-- 4) Payments --}}
             <div class="bg-white rounded-xl shadow-md overflow-x-auto">
                 <div class="px-6 py-4">
                     <h2 class="text-xl font-semibold text-gray-800">Оплата</h2>
@@ -824,8 +815,8 @@
                                 @if($p->sell_amount !== null)
                                     @php $amount = rtrim(rtrim((string)$p->sell_amount, '0'), '.'); @endphp
                                     <span class="text-red-600">
-                                        -{{ ltrim($amount, '-') }}
-                                    </span>
+                                            -{{ ltrim($amount, '-') }}
+                                        </span>
                                     {{ optional($p->sellCurrency)->code ?? '' }}
                                 @else
                                     —
@@ -843,7 +834,7 @@
                 </div>
             </div>
 
-            {{-- -- 3) Purchases --}}
+            {{-- 3) Purchases --}}
             <div class="bg-white rounded-xl shadow-md overflow-x-auto">
                 <div class="px-6 py-4">
                     <h2 class="text-xl font-semibold text-gray-800">Покупка крипты</h2>
@@ -872,8 +863,8 @@
                                 @if($pc->received_amount !== null)
                                     @php $sa = rtrim(rtrim((string)$pc->received_amount, '0'), '.'); @endphp
                                     <span class="{{ $pc->received_amount > 0 ? 'text-green-600' : 'text-red-600' }}">
-                                        +{{ ltrim($sa, '-') }}
-                                    </span>
+                                            +{{ ltrim($sa, '-') }}
+                                        </span>
                                     {{ optional($pc->saleCurrency)->code ?? '—' }}
                                 @else
                                     —
@@ -883,8 +874,8 @@
                                 @if($pc->sale_amount !== null)
                                     @php $ra = rtrim(rtrim((string)$pc->sale_amount, '0'), '.'); @endphp
                                     <span class="text-red-600">
-                                        -{{ ltrim($ra, '-') }}
-                                    </span>
+                                            -{{ ltrim($ra, '-') }}
+                                        </span>
                                     {{ optional($pc->receivedCurrency)->code ?? '—' }}
                                 @else
                                     —
@@ -899,7 +890,7 @@
                 </div>
             </div>
 
-            {{-- -- 2) SaleCrypts --}}
+            {{-- 2) SaleCrypts --}}
             <div class="bg-white rounded-xl shadow-md overflow-x-auto">
                 <div class="px-6 py-4">
                     <h2 class="text-xl font-semibold text-gray-800">Продажа крипты</h2>
@@ -928,8 +919,8 @@
                                 @if($sc->sale_amount !== null)
                                     @php $sa = rtrim(rtrim((string)$sc->sale_amount, '0'), '.'); @endphp
                                     <span class="text-red-600">
-                                        -{{ ltrim($sa, '-') }}
-                                    </span>
+                                            -{{ ltrim($sa, '-') }}
+                                        </span>
                                     {{ optional($sc->saleCurrency)->code ?? '' }}
                                 @else
                                     —
@@ -939,8 +930,8 @@
                                 @if($sc->fixed_amount !== null)
                                     @php $fa = rtrim(rtrim((string)$sc->fixed_amount, '0'), '.'); @endphp
                                     <span class="{{ $sc->fixed_amount > 0 ? 'text-green-600' : 'text-red-600' }}">
-                                        {{ $sc->fixed_amount > 0 ? '+' : '-' }}{{ ltrim($fa, '-') }}
-                                    </span>
+                                            {{ $sc->fixed_amount > 0 ? '+' : '-' }}{{ ltrim($fa, '-') }}
+                                        </span>
                                     {{ optional($sc->fixedCurrency)->code ?? '' }}
                                 @else
                                     —

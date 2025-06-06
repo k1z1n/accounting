@@ -40,16 +40,15 @@ class MainController extends Controller
      */
     private function fetchAndSyncRemote(int $pageNum): void
     {
-        // Допустимые статусы, которые мы хотим сохранять
         $allowedStatuses = ['выполненная заявка', 'оплаченная заявка'];
 
         $exchangers = [
             'obama' => [
-                'url' => 'https://obama.ru/wp-admin/admin.php?page=pn_bids&page_num=' . $pageNum,
+                'url'     => 'https://obama.ru/wp-admin/admin.php?page=pn_bids&page_num=' . $pageNum,
                 'cookies' => config('exchanger.obama.cookie'),
             ],
             'ural' => [
-                'url' => 'https://ural-obmen.ru/wp-admin/admin.php?page=pn_bids&page_num=' . $pageNum,
+                'url'     => 'https://ural-obmen.ru/wp-admin/admin.php?page=pn_bids&page_num=' . $pageNum,
                 'cookies' => config('exchanger.ural.cookie'),
             ],
         ];
@@ -59,112 +58,104 @@ class MainController extends Controller
         foreach ($exchangers as $exchangerName => $cfg) {
             try {
                 $response = Http::withHeaders([
-                    'Cookie' => $cfg['cookies'],
+                    'Cookie'     => $cfg['cookies'],
                     'User-Agent' => 'Mozilla/5.0',
                 ])->timeout(15)->get($cfg['url']);
 
-                if (!$response->successful()) {
-                    Log::error("fetchAndSyncRemote: неудачный HTTP-запрос к '{$exchangerName}'", [
-                        'status' => $response->status(),
-                        'url' => $cfg['url'],
+                if (! $response->successful()) {
+                    Log::error("fetchAndSyncRemote: HTTP {$response->status()} при запросе к {$exchangerName}", [
+                        'url' => $cfg['url']
                     ]);
                     continue;
                 }
 
                 $html = $response->body();
-                // Если попали на страницу логина — значит нужны новые куки
                 if (empty($html) || stripos($html, 'wp-login') !== false) {
-                    Log::warning("fetchAndSyncRemote: требуются свежие куки для '{$exchangerName}'");
+                    Log::warning("fetchAndSyncRemote: требуются новые куки для {$exchangerName}");
                     continue;
                 }
 
                 $crawler = new Crawler($html);
 
-                // Каждая карточка заявки находится в контейнере .one_bids_wrap
                 $crawler->filter('.one_bids_wrap')->each(function (Crawler $node) use (&$records, $allowedStatuses, $exchangerName) {
                     try {
-                        // 1) Статус
+                        // 1) Статус заявки
                         $status = trim($node->filter('.onebid_item.item_bid_status .stname')->text(''));
-                        if (!in_array($status, $allowedStatuses, true)) {
+                        if (! in_array($status, $allowedStatuses, true)) {
                             return;
                         }
 
-                        // 2) Дата создания
+                        // 2) Дата создания заявки
                         $rawCreated = trim($node->filter('.onebid_item.item_bid_createdate')->text(''));
                         try {
                             $createdAt = Carbon::createFromFormat('d.m.Y H:i:s', $rawCreated)
                                 ->toDateTimeString();
                         } catch (\Exception $e) {
-                            Log::warning("fetchAndSyncRemote: неверный формат даты '{$rawCreated}'", [
-                                'error' => $e->getMessage(),
+                            Log::warning("fetchAndSyncRemote: неверный формат даты «{$rawCreated}»", [
+                                'error' => $e->getMessage()
                             ]);
                             $createdAt = now()->toDateTimeString();
                         }
 
-                        // 3) «Сумма (с доп. ком.)» вместе с валютой как единая строка
-                        //    На странице: <span class="onebid_item item_bid_sum1dc">75000 RUB</span>
+                        // 3) Приход (sale_text), например «75000 RUB»
                         $sum1dcText = trim($node->filter('.onebid_item.item_bid_sum1dc')->text(''));
-                        $saleText = $sum1dcText; // сохраняем «75000 RUB» целиком
+                        $saleText    = $sum1dcText;
 
                         // 4) Номер заявки (ID)
                         $rawId = trim($node->filter('.bids_label_txt[title^="ID"]')->text(''));
-                        $id = (int)preg_replace('/\D/u', '', $rawId);
+                        $id    = (int) preg_replace('/\D/u', '', $rawId);
 
-                        // 5) Сохраняем запись в коллекцию.
-                        //    Поля sell_*, buy_*, expense_* — пока null, их пользователь заполнит вручную.
+                        // 5) Собираем в коллекцию «на upsert»
                         $records->push([
-                            'exchanger' => $exchangerName,
-                            'app_id' => $id,
-                            'app_created_at' => $createdAt,
-                            'status' => $status,
-                            'sale_text' => $saleText,
-                            'sell_amount' => null,
-                            'sell_currency_id' => null,
-                            'buy_amount' => null,
-                            'buy_currency_id' => null,
-                            'expense_amount' => null,
-                            'expense_currency_id' => null,
-                            'merchant' => null,
-                            'order_id' => null,
-                            'user_id' => null,
-                            'created_at' => now()->toDateTimeString(),
-                            'updated_at' => now()->toDateTimeString(),
+                            'exchanger'         => $exchangerName,
+                            'app_id'            => $id,
+                            'app_created_at'    => $createdAt,
+                            'status'            => $status,
+                            'sale_text'         => $saleText,
+                            'sell_amount'       => null,
+                            'sell_currency_id'  => null,
+                            'buy_amount'        => null,
+                            'buy_currency_id'   => null,
+                            'expense_amount'    => null,
+                            'expense_currency_id'=> null,
+                            'merchant'          => null,
+                            'order_id'          => null,
+                            'user_id'           => null,
+                            'created_at'        => now()->toDateTimeString(),
+                            'updated_at'        => now()->toDateTimeString(),
                         ]);
                     } catch (\Exception $e) {
-                        Log::error("fetchAndSyncRemote: ошибка парсинга заявки '{$exchangerName}'", [
-                            'error' => $e->getMessage(),
-                            'snippet' => substr($node->html(), 0, 200),
+                        Log::error("fetchAndSyncRemote: ошибка парсинга карточки у {$exchangerName}", [
+                            'error'  => $e->getMessage(),
+                            'snippet'=> substr($node->html(), 0, 200),
                         ]);
                     }
                 });
             } catch (\Exception $e) {
-                Log::error("fetchAndSyncRemote: исключение при запросе/парсинге '{$exchangerName}'", [
+                Log::error("fetchAndSyncRemote: исключение при запросе/парсинге {$exchangerName}", [
                     'error' => $e->getMessage(),
-                    'url' => $cfg['url'],
+                    'url'   => $cfg['url']
                 ]);
             }
         }
 
         if ($records->isEmpty()) {
-            Log::info('fetchAndSyncRemote: не получено ни одной подходящей записи');
+            Log::info('fetchAndSyncRemote: не найдено ни одной записи');
             return;
         }
 
         // Сортируем по дате создания (DESC)
-        $toUpsert = $records
-            ->sortByDesc('app_created_at')
-            ->values()
-            ->all();
+        $toUpsert = $records->sortByDesc('app_created_at')->values()->all();
 
         try {
             Application::upsert(
                 $toUpsert,
-                ['exchanger', 'app_id'],               // уникальный ключ
+                ['exchanger', 'app_id'],          // уникальный составной ключ
                 ['app_created_at', 'status', 'sale_text', 'updated_at']
             );
         } catch (\Exception $e) {
             Log::critical('fetchAndSyncRemote: ошибка при upsert в БД', [
-                'error' => $e->getMessage(),
+                'error' => $e->getMessage()
             ]);
         }
     }
@@ -174,47 +165,44 @@ class MainController extends Controller
      */
     public function viewMain(Request $request)
     {
-        $pageNum = (int)$request->get('page', 1);
+        $pageNum = (int) $request->get('page', 1);
         $perPage = 20;
 
-        // Синхронизируем удалённые заявки
         try {
             $this->fetchAndSyncRemote($pageNum);
         } catch (\Exception $e) {
-            Log::error("viewMain: ошибка синхронизации данных", ['error' => $e->getMessage()]);
+            Log::error("viewMain: ошибка синхронизации", [
+                'error' => $e->getMessage()
+            ]);
         }
 
-        // Берем «выполненные» и «оплаченные» заявки
+        // Берём «выполненные» и «оплаченные» заявки, вместе с отношениями sellCurrency, buyCurrency, expenseCurrency, user
         $apps = $this->baseQuery()
-            ->whereIn('status', ['выполненная заявка', 'оплаченная заявка'])
+            ->whereIn('status', ['выполненная заявка','оплаченная заявка'])
             ->orderByDesc('app_created_at')
             ->paginate($perPage, ['*'], 'page', $pageNum);
 
-        // Получим все валюты для селектов
+        // Все валюты (для селектов модалки)
         $currencies = Currency::orderBy('code')->get();
 
+        // Остальные блоки (Transfers, Payments, Purchase, SaleCrypt, History)
         $exchangers = Exchanger::orderBy('title')->get();
-        $saleCrypts = SaleCrypt::orderBy('created_at', 'desc')->get();
-        $transfers = Transfer::orderBy('created_at', 'desc')->get();
-        $payments = Payment::orderBy('created_at', 'desc')->get();
-        $purchases = Purchase::orderBy('created_at', 'desc')->get();
-        // 4) Берём последние 100 записей истории (с полем currency), постранично
+        $saleCrypts = SaleCrypt::orderBy('created_at','desc')->get();
+        $transfers  = Transfer::orderBy('created_at','desc')->get();
+        $payments   = Payment::orderBy('created_at','desc')->get();
+        $purchases  = Purchase::orderBy('created_at','desc')->get();
+
+        // История операций (поле currency_id)
         $histories = History::with('currency')
-            ->orderBy('created_at', 'asc')
+            ->orderBy('created_at','asc')
             ->paginate(100, ['*'], 'page', $pageNum);
 
-        // 5) Сейчас вместо «итог за всё время», делаем «итог по текущей странице $histories»
+        // Итог по видимой странице истории (для второго блока таблицы)
         $totals = [];
-        // Инициализируем нулями для каждой валюты, чтобы всегда были ключи
         foreach ($currencies as $c) {
             $totals[$c->id] = 0;
         }
-
-        // Получаем коллекцию моделей из пагинатора (LengthAwarePaginator)
-        $visibleHistories = $histories->getCollection(); // это коллекция из текущей страницы
-
-        // Суммируем amount по currency_id только среди видимых (текущей страницы)
-        foreach ($visibleHistories as $h) {
+        foreach ($histories->items() as $h) {
             if ($h->currency_id) {
                 $totals[$h->currency_id] += $h->amount;
             }
@@ -222,42 +210,43 @@ class MainController extends Controller
 
         return view('pages.main', compact(
             'apps',
-            'histories',
             'currencies',
             'exchangers',
             'saleCrypts',
             'transfers',
             'payments',
             'purchases',
+            'histories',
             'totals'
         ));
     }
 
 
+
     /**
-     * AJAX: подгрузка следующих 20 заявок (для кнопки «Загрузить ещё»).
-     * Здесь не обязательно отдавать currencies, т.к. в AJAX мы уже вёрстаем ячейки,
-     * но если надо — можно добавить точно так же.
+     * AJAX: возвращает JSON с очередной порцией (20 штук) заявок для «Загрузить ещё».
      */
     public function apiApplications(Request $request)
     {
-        $pageNum = (int)$request->get('page', 1);
+        $pageNum = (int) $request->get('page', 1);
         $perPage = 20;
 
         try {
             $this->fetchAndSyncRemote($pageNum);
         } catch (\Exception $e) {
-            Log::error("apiApplications: ошибка синхронизации данных", ['error' => $e->getMessage()]);
+            Log::error("apiApplications: ошибка синхронизации", [
+                'error' => $e->getMessage()
+            ]);
         }
 
-        $apps = $this->baseQuery()
-            ->whereIn('status', ['выполненная заявка', 'оплаченная заявка'])
+        // **ВАЖНО**: здесь обязательно with(...), чтобы в JSON-ответе были вложенные sellCurrency, buyCurrency, expenseCurrency и user
+        $apps = Application::with(['sellCurrency','buyCurrency','expenseCurrency','user'])
+            ->whereIn('status', ['выполненная заявка','оплаченная заявка'])
             ->orderByDesc('app_created_at')
             ->paginate($perPage, ['*'], 'page', $pageNum);
 
-        // Здесь возвращаем только заявки, но валюты уже есть в JavaScript-шаблоне
         return response()->json([
-            'data' => $apps->items(),
+            'data'     => $apps->items(),
             'has_more' => $apps->hasMorePages(),
         ]);
     }
