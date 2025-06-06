@@ -1,0 +1,13 @@
+@import "tailwindcss";
+@source "../views";
+
+
+/* Положительный итог (плюс): зелёный фон и тёмно-зелёный текст */
+#usdt-total-cell.positive {
+    @apply text-green-800;
+}
+
+/* Отрицательный итог (минус): красный фон и тёмно-красный текст */
+#usdt-total-cell.negative {
+    @apply text-red-800;
+}
