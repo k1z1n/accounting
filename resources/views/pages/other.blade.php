@@ -544,7 +544,7 @@
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                   d="M4 12h16m-8-8v16" />
         </svg>
-        Создать обмен
+        Создать перевод
     </button>
 
     <button

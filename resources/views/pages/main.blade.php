@@ -727,7 +727,7 @@
             {{-- 1) Transfers --}}
             <div class="bg-white rounded-xl shadow-md overflow-x-auto">
                 <div class="px-6 py-4">
-                    <h2 class="text-xl font-semibold text-gray-800">Обмены</h2>
+                    <h2 class="text-xl font-semibold text-gray-800">Переводы</h2>
                 </div>
                 <table class="min-w-full divide-y divide-gray-200 table-auto">
                     <thead class="bg-gray-100">
