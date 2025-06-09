@@ -202,6 +202,7 @@
                                 <button
                                     class="editBtn px-3 py-1 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition text-xs"
                                     data-id="{{ $d->id }}"
+                                    data-app_id="{{ $d->app_id  }}"
                                     data-sell_amount="{{ $d->sell_amount }}"
                                     data-sell_currency="{{ optional($d->sellCurrency)->code }}"
                                     data-buy_amount="{{ $d->buy_amount }}"
@@ -400,6 +401,7 @@
 
                         button.addEventListener('click', () => {
                             const id              = button.dataset.id;
+                            const appId           = button.dataset.app_id;
                             const sellAmount      = button.dataset.sell_amount;
                             const sellCurrency    = button.dataset.sell_currency;
                             const buyAmount       = button.dataset.buy_amount;
@@ -410,7 +412,7 @@
                             const orderId         = button.dataset.order_id;
 
                             document.getElementById('edit_app_id').value = id;
-                            modalAppIdLabel.textContent                  = `#${id}`;
+                            modalAppIdLabel.textContent                  = `#${appId}`;
                             document.getElementById('edit_sell_amount').value   = sellAmount   || '';
                             document.getElementById('edit_buy_amount').value    = buyAmount    || '';
                             document.getElementById('edit_expense_amount').value= expenseAmount|| '';
@@ -769,8 +771,8 @@
                             <td class="px-6 py-4 text-sm whitespace-nowrap">
                                 @if($t->commission !== null)
                                     @php $comm = rtrim(rtrim((string)$t->commission, '0'), '.'); @endphp
-                                    <span class="{{ $t->commission > 0 ? 'text-green-600' : 'text-red-600' }}">
-                                            {{ $t->commission > 0 ? '+' : '-' }}{{ ltrim($comm, '-') }}
+                                    <span class="text-red-600">
+                                            -{{ ltrim($comm, '-') }}
                                         </span>
                                     {{ optional($t->commissionCurrency)->code ?? '' }}
                                 @else

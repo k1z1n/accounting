@@ -434,7 +434,7 @@
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                     <label for="add_purchase_sale_amount" class="block text-sm font-medium text-gray-700 mb-1">
-                        Сумма «Продажа»
+                        Сумма потраченного usdt
                     </label>
                     <input
                         type="number"
@@ -448,7 +448,7 @@
                 </div>
                 <div>
                     <label for="add_purchase_sale_currency_id" class="block text-sm font-medium text-gray-700 mb-1">
-                        Валюта «Продажа»
+                        Валюта потраченного usdt
                     </label>
                     <select
                         name="sale_currency_id"
@@ -470,7 +470,7 @@
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                     <label for="add_purchase_received_amount" class="block text-sm font-medium text-gray-700 mb-1">
-                        Сумма «Получено»
+                        Сумма полученной крипты
                     </label>
                     <input
                         type="number"
@@ -484,7 +484,7 @@
                 </div>
                 <div>
                     <label for="add_purchase_received_currency_id" class="block text-sm font-medium text-gray-700 mb-1">
-                        Валюта «Получено»
+                        Валюта полученной крипты
                     </label>
                     <select
                         name="received_currency_id"
