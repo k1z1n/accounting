@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Exchanger;
 use App\Models\History;
 use App\Models\LoginLog;
 use App\Models\Payment;
@@ -282,5 +283,32 @@ class AdminController extends Controller
             'message'  => 'Purchase создана успешно',
             'purchase' => $purchase,
         ], 201);
+    }
+
+
+    /**
+     * Показывает форму добавления новой платформы.
+     */
+    public function createExchanger()
+    {
+        return view('admin.platform-create');
+    }
+
+    /**
+     * Сохраняет новую платформу в БД.
+     */
+    public function storeExchanger(Request $request)
+    {
+        $request->validate([
+            'title' => 'required|string|max:255',
+        ]);
+
+        Exchanger::create([
+            'title' => $request->input('title'),
+        ]);
+
+        return redirect()
+            ->route('exchangers.create')
+            ->with('success', 'Новая платформа успешно добавлена');
     }
 }

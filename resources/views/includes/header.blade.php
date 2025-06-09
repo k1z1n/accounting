@@ -18,9 +18,9 @@
                                 class="hidden group-hover:block absolute left-0 top-full w-48 bg-white
                                        border border-gray-200 rounded-md shadow-lg z-10 mt-0">
                                 <li>
-                                    <a href=""
+                                    <a href="{{ route('exchangers.create') }}"
                                        class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                        Добавить обменник
+                                        Добавить платформу
                                     </a>
                                 </li>
                                 <li>

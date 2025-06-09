@@ -24,6 +24,9 @@ Route::middleware('auth')->group(function () {
 });
 
 Route::middleware('admin')->prefix('admin')->group(function () {
+
+    Route::get('exchangers/create', [AdminController::class, 'createExchanger'])->name('exchangers.create');
+    Route::post('exchangers', [AdminController::class, 'storeExchanger'])->name('exchangers.store');
     Route::post('payments',   [AdminController::class, 'storePayment'])->name('payments.store');
     Route::post('transfers',  [AdminController::class, 'storeTransfer'])->name('transfers.store');
     Route::post('salecrypts', [AdminController::class, 'storeSaleCrypt'])->name('salecrypts.store');
