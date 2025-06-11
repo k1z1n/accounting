@@ -945,67 +945,124 @@
                 </div>
             </div>
 
-            {{-- Модальное окно редактирования покупки --}}
-            <div id="editPurchaseModal"
-                 class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
-                <div class="bg-white rounded-xl shadow-xl p-6 w-full max-w-md relative">
-                    <button id="closeEditPurchase"
-                            class="absolute top-3 right-3 text-gray-500 hover:text-gray-700">&times;</button>
-                    <h3 class="text-2xl font-semibold mb-4">
-                        Редактировать покупку <span id="purchaseModalId" class="text-blue-600"></span>
-                    </h3>
-                    <form id="editPurchaseForm" class="space-y-4">
+            {{-- Модальное окно редактирования покупки (стиль «Добавить») --}}
+            <div
+                id="modalEditPurchaseBackdrop"
+                class="fixed inset-0 flex items-center justify-center bg-black/20 backdrop-blur-sm z-50 hidden"
+            >
+                <div id="modalEditPurchaseClose" class="absolute inset-0"></div>
+
+                <div class="bg-white rounded-xl shadow-xl p-6 relative z-10 w-full max-w-md animate-fadeIn">
+                    <header class="mb-6 border-b border-gray-200 pb-3">
+                        <h3 class="text-2xl font-semibold text-gray-800">
+                            Редактировать покупку <span id="purchaseModalId" class="text-blue-600"></span>
+                        </h3>
+                    </header>
+                    <form id="editPurchaseForm" class="space-y-5">
+                        @csrf
                         <input type="hidden" id="edit_purchase_id">
-                        {{-- Exchanger --}}
+
+                        {{-- 1) Платформа --}}
                         <div>
-                            <label class="block text-sm font-medium text-gray-700">Платформа</label>
-                            <select id="edit_purchase_exchanger"
-                                    class="w-full border-gray-300 rounded p-2">
-                                @foreach($exchangers as $ex)
-                                    <option value="{{ $ex->id }}">{{ $ex->title }}</option>
+                            <label for="edit_purchase_exchanger" class="block text-sm font-medium text-gray-700 mb-1">
+                                Платформа
+                            </label>
+                            <select
+                                id="edit_purchase_exchanger"
+                                class="block w-full bg-white border border-gray-300 rounded-md shadow-sm
+                           px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500
+                           hover:bg-gray-50 transition duration-150 ease-in-out"
+                            >
+                                <option value="" disabled>— Выберите платформу —</option>
+                                @foreach($exchangers as $e)
+                                    <option value="{{ $e->id }}">{{ $e->title }}</option>
                                 @endforeach
                             </select>
+                            <p class="text-red-600 text-sm mt-1" id="err_edit_purchase_exchanger"></p>
                         </div>
-                        {{-- Received --}}
-                        <div class="grid grid-cols-2 gap-4">
+
+                        {{-- 2) «Получено»: сумма + валюта --}}
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
-                                <label class="block text-sm font-medium text-gray-700">Получено</label>
-                                <input type="number" step="0.00000001" id="edit_received_amount"
-                                       class="w-full border-gray-300 rounded p-2">
+                                <label for="edit_received_amount" class="block text-sm font-medium text-gray-700 mb-1">
+                                    Получено +
+                                </label>
+                                <input
+                                    type="number"
+                                    step="0.00000001"
+                                    id="edit_received_amount"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    placeholder="0.00123456"
+                                >
+                                <p class="text-red-600 text-sm mt-1" id="err_edit_received_amount"></p>
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-gray-700">Валюта</label>
-                                <select id="edit_received_currency"
-                                        class="w-full border-gray-300 rounded p-2">
+                                <label for="edit_received_currency" class="block text-sm font-medium text-gray-700 mb-1">
+                                    Валюта
+                                </label>
+                                <select
+                                    id="edit_received_currency"
+                                    class="block w-full bg-white border border-gray-300 rounded-md shadow-sm
+                               px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500
+                               hover:bg-gray-50 transition duration-150 ease-in-out"
+                                >
+                                    <option value="" disabled>— Выберите валюту —</option>
                                     @foreach($currencies as $c)
                                         <option value="{{ $c->id }}">{{ $c->code }} — {{ $c->name }}</option>
                                     @endforeach
                                 </select>
+                                <p class="text-red-600 text-sm mt-1" id="err_edit_received_currency"></p>
                             </div>
                         </div>
-                        {{-- Sale --}}
-                        <div class="grid grid-cols-2 gap-4">
+
+                        {{-- 3) «Продано»: сумма + валюта --}}
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
-                                <label class="block text-sm font-medium text-gray-700">Продано</label>
-                                <input type="number" step="0.00000001" id="edit_sale_amount"
-                                       class="w-full border-gray-300 rounded p-2">
+                                <label for="edit_sale_amount" class="block text-sm font-medium text-gray-700 mb-1">
+                                    Продано −
+                                </label>
+                                <input
+                                    type="number"
+                                    step="0.00000001"
+                                    id="edit_sale_amount"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    placeholder="0.00012345"
+                                >
+                                <p class="text-red-600 text-sm mt-1" id="err_edit_sale_amount"></p>
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-gray-700">Валюта</label>
-                                <select id="edit_sale_currency"
-                                        class="w-full border-gray-300 rounded p-2">
+                                <label for="edit_sale_currency" class="block text-sm font-medium text-gray-700 mb-1">
+                                    Валюта
+                                </label>
+                                <select
+                                    id="edit_sale_currency"
+                                    class="block w-full bg-white border border-gray-300 rounded-md shadow-sm
+                               px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500
+                               hover:bg-gray-50 transition duration-150 ease-in-out"
+                                >
+                                    <option value="" disabled>— Выберите валюту —</option>
                                     @foreach($currencies as $c)
                                         <option value="{{ $c->id }}">{{ $c->code }} — {{ $c->name }}</option>
                                     @endforeach
                                 </select>
+                                <p class="text-red-600 text-sm mt-1" id="err_edit_sale_currency"></p>
                             </div>
                         </div>
-                        <div class="flex justify-end space-x-2">
-                            <button type="button" id="cancelEditPurchase"
-                                    class="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300">Отмена
+
+                        {{-- Кнопки --}}
+                        <div class="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+                            <button
+                                type="button"
+                                id="cancelEditPurchase"
+                                class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition"
+                            >
+                                Отмена
                             </button>
-                            <button type="submit"
-                                    class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">Сохранить
+                            <button
+                                type="submit"
+                                class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
+                            >
+                                Сохранить
                             </button>
                         </div>
                     </form>
@@ -1013,21 +1070,31 @@
             </div>
 
             {{-- Модальное окно подтверждения удаления покупки --}}
-            <div id="deletePurchaseModal"
-                 class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
-                <div class="bg-white rounded-xl shadow-xl p-6 w-full max-w-sm relative">
-                    <button id="closeDeletePurchase"
-                            class="absolute top-3 right-3 text-gray-500 hover:text-gray-700">&times;</button>
-                    <h3 class="text-xl font-semibold mb-4">
-                        Удалить покупку <span id="deletePurchaseId" class="text-blue-600"></span>?
-                    </h3>
-                    <p class="mb-6">Все связанные записи в истории будут удалены.</p>
-                    <div class="flex justify-end space-x-2">
-                        <button type="button" id="cancelDeletePurchase"
-                                class="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300">Отмена
+            <div
+                id="modalDeletePurchaseBackdrop"
+                class="fixed inset-0 flex items-center justify-center bg-black/20 backdrop-blur-sm z-50 hidden"
+            >
+                <div id="modalDeletePurchaseClose" class="absolute inset-0"></div>
+                <div class="bg-white rounded-xl shadow-xl p-6 relative z-10 w-full max-w-sm animate-fadeIn">
+                    <header class="mb-4">
+                        <h3 class="text-xl font-semibold text-gray-800">
+                            Удалить покупку <span id="deletePurchaseId" class="text-blue-600"></span>?
+                        </h3>
+                    </header>
+                    <p class="mb-6 text-gray-700">Все связанные записи в истории будут удалены.</p>
+                    <div class="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+                        <button
+                            type="button"
+                            id="cancelDeletePurchase"
+                            class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition"
+                        >
+                            Отмена
                         </button>
-                        <button id="confirmDeletePurchase"
-                                class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">Удалить
+                        <button
+                            id="confirmDeletePurchase"
+                            class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
+                        >
+                            Удалить
                         </button>
                     </div>
                 </div>
@@ -1035,14 +1102,19 @@
 
             <script>
                 document.addEventListener('DOMContentLoaded', () => {
-                    const editModal   = document.getElementById('editPurchaseModal');
-                    const deleteModal = document.getElementById('deletePurchaseModal');
+                    const editModal   = document.getElementById('modalEditPurchaseBackdrop');
+                    const deleteModal = document.getElementById('modalDeletePurchaseBackdrop');
 
                     // Закрытие
-                    document.getElementById('closeEditPurchase').onclick = () => editModal.classList.add('hidden');
-                    document.getElementById('cancelEditPurchase').onclick = () => editModal.classList.add('hidden');
-                    document.getElementById('closeDeletePurchase').onclick = () => deleteModal.classList.add('hidden');
-                    document.getElementById('cancelDeletePurchase').onclick = () => deleteModal.classList.add('hidden');
+                    document.getElementById('modalEditPurchaseClose')
+                        ?.addEventListener('click', () => editModal.classList.add('hidden'));
+                    document.getElementById('cancelEditPurchase')
+                        ?.addEventListener('click', () => editModal.classList.add('hidden'));
+
+                    document.getElementById('modalDeletePurchaseClose')
+                        ?.addEventListener('click', () => deleteModal.classList.add('hidden'));
+                    document.getElementById('cancelDeletePurchase')
+                        ?.addEventListener('click', () => deleteModal.classList.add('hidden'));
 
                     // Открытие редактирования
                     document.querySelectorAll('.edit-purchase-btn').forEach(btn => {
