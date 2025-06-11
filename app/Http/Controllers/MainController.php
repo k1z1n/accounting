@@ -44,11 +44,11 @@ class MainController extends Controller
 
         $exchangers = [
             'obama' => [
-                'url'     => 'https://obama.ru/wp-admin/admin.php?page=pn_bids&page_num=' . $pageNum,
+                'url' => 'https://obama.ru/wp-admin/admin.php?page=pn_bids&page_num=' . $pageNum,
                 'cookies' => config('exchanger.obama.cookie'),
             ],
             'ural' => [
-                'url'     => 'https://ural-obmen.ru/wp-admin/admin.php?page=pn_bids&page_num=' . $pageNum,
+                'url' => 'https://ural-obmen.ru/wp-admin/admin.php?page=pn_bids&page_num=' . $pageNum,
                 'cookies' => config('exchanger.ural.cookie'),
             ],
         ];
@@ -58,11 +58,11 @@ class MainController extends Controller
         foreach ($exchangers as $exchangerName => $cfg) {
             try {
                 $response = Http::withHeaders([
-                    'Cookie'     => $cfg['cookies'],
+                    'Cookie' => $cfg['cookies'],
                     'User-Agent' => 'Mozilla/5.0',
                 ])->timeout(15)->get($cfg['url']);
 
-                if (! $response->successful()) {
+                if (!$response->successful()) {
                     Log::error("fetchAndSyncRemote: HTTP {$response->status()} при запросе к {$exchangerName}", [
                         'url' => $cfg['url']
                     ]);
@@ -81,7 +81,7 @@ class MainController extends Controller
                     try {
                         // 1) Статус заявки
                         $status = trim($node->filter('.onebid_item.item_bid_status .stname')->text(''));
-                        if (! in_array($status, $allowedStatuses, true)) {
+                        if (!in_array($status, $allowedStatuses, true)) {
                             return;
                         }
 
@@ -99,42 +99,42 @@ class MainController extends Controller
 
                         // 3) Приход (sale_text), например «75000 RUB»
                         $sum1dcText = trim($node->filter('.onebid_item.item_bid_sum1dc')->text(''));
-                        $saleText    = $sum1dcText;
+                        $saleText = $sum1dcText;
 
                         // 4) Номер заявки (ID)
                         $rawId = trim($node->filter('.bids_label_txt[title^="ID"]')->text(''));
-                        $id    = (int) preg_replace('/\D/u', '', $rawId);
+                        $id = (int)preg_replace('/\D/u', '', $rawId);
 
                         // 5) Собираем в коллекцию «на upsert»
                         $records->push([
-                            'exchanger'         => $exchangerName,
-                            'app_id'            => $id,
-                            'app_created_at'    => $createdAt,
-                            'status'            => $status,
-                            'sale_text'         => $saleText,
-                            'sell_amount'       => null,
-                            'sell_currency_id'  => null,
-                            'buy_amount'        => null,
-                            'buy_currency_id'   => null,
-                            'expense_amount'    => null,
-                            'expense_currency_id'=> null,
-                            'merchant'          => null,
-                            'order_id'          => null,
-                            'user_id'           => null,
-                            'created_at'        => now()->toDateTimeString(),
-                            'updated_at'        => now()->toDateTimeString(),
+                            'exchanger' => $exchangerName,
+                            'app_id' => $id,
+                            'app_created_at' => $createdAt,
+                            'status' => $status,
+                            'sale_text' => $saleText,
+                            'sell_amount' => null,
+                            'sell_currency_id' => null,
+                            'buy_amount' => null,
+                            'buy_currency_id' => null,
+                            'expense_amount' => null,
+                            'expense_currency_id' => null,
+                            'merchant' => null,
+                            'order_id' => null,
+                            'user_id' => null,
+                            'created_at' => now()->toDateTimeString(),
+                            'updated_at' => now()->toDateTimeString(),
                         ]);
                     } catch (\Exception $e) {
                         Log::error("fetchAndSyncRemote: ошибка парсинга карточки у {$exchangerName}", [
-                            'error'  => $e->getMessage(),
-                            'snippet'=> substr($node->html(), 0, 200),
+                            'error' => $e->getMessage(),
+                            'snippet' => substr($node->html(), 0, 200),
                         ]);
                     }
                 });
             } catch (\Exception $e) {
                 Log::error("fetchAndSyncRemote: исключение при запросе/парсинге {$exchangerName}", [
                     'error' => $e->getMessage(),
-                    'url'   => $cfg['url']
+                    'url' => $cfg['url']
                 ]);
             }
         }
@@ -165,7 +165,7 @@ class MainController extends Controller
      */
     public function viewMain(Request $request)
     {
-        $pageNum = (int) $request->get('page', 1);
+        $pageNum = (int)$request->get('page', 1);
         $perPage = 20;
 
         try {
@@ -178,7 +178,7 @@ class MainController extends Controller
 
         // Берём «выполненные» и «оплаченные» заявки, вместе с отношениями sellCurrency, buyCurrency, expenseCurrency, user
         $apps = $this->baseQuery()
-            ->whereIn('status', ['выполненная заявка','оплаченная заявка'])
+            ->whereIn('status', ['выполненная заявка', 'оплаченная заявка'])
             ->orderByDesc('app_created_at')
             ->paginate($perPage, ['*'], 'page', $pageNum);
 
@@ -187,14 +187,14 @@ class MainController extends Controller
 
         // Остальные блоки (Transfers, Payments, Purchase, SaleCrypt, History)
         $exchangers = Exchanger::orderBy('title')->get();
-        $saleCrypts = SaleCrypt::orderBy('created_at','desc')->get();
-        $transfers  = Transfer::orderBy('created_at','desc')->get();
-        $payments   = Payment::orderBy('created_at','desc')->get();
-        $purchases  = Purchase::orderBy('created_at','desc')->get();
+        $saleCrypts = SaleCrypt::orderBy('created_at', 'desc')->get();
+        $transfers = Transfer::orderBy('created_at', 'desc')->get();
+        $payments = Payment::orderBy('created_at', 'desc')->get();
+        $purchases = Purchase::orderBy('created_at', 'desc')->get();
 
         // История операций (поле currency_id)
         $histories = History::with('currency')
-            ->orderBy('created_at','asc')
+            ->orderBy('created_at', 'asc')
             ->paginate(100, ['*'], 'page', $pageNum);
 
         // Итог по видимой странице истории (для второго блока таблицы)
@@ -222,13 +222,12 @@ class MainController extends Controller
     }
 
 
-
     /**
      * AJAX: возвращает JSON с очередной порцией (20 штук) заявок для «Загрузить ещё».
      */
     public function apiApplications(Request $request)
     {
-        $pageNum = (int) $request->get('page', 1);
+        $pageNum = (int)$request->get('page', 1);
         $perPage = 20;
 
         try {
@@ -240,13 +239,13 @@ class MainController extends Controller
         }
 
         // **ВАЖНО**: здесь обязательно with(...), чтобы в JSON-ответе были вложенные sellCurrency, buyCurrency, expenseCurrency и user
-        $apps = Application::with(['sellCurrency','buyCurrency','expenseCurrency','user'])
-            ->whereIn('status', ['выполненная заявка','оплаченная заявка'])
+        $apps = Application::with(['sellCurrency', 'buyCurrency', 'expenseCurrency', 'user'])
+            ->whereIn('status', ['выполненная заявка', 'оплаченная заявка'])
             ->orderByDesc('app_created_at')
             ->paginate($perPage, ['*'], 'page', $pageNum);
 
         return response()->json([
-            'data'     => $apps->items(),
+            'data' => $apps->items(),
             'has_more' => $apps->hasMorePages(),
         ]);
     }
@@ -258,15 +257,15 @@ class MainController extends Controller
     public function update(Request $request, $id)
     {
         $request->validate([
-            'sale_text'        => 'nullable|string|max:64',
-            'sell_amount'      => 'nullable|numeric|min:0',
-            'sell_currency'    => 'nullable|string|max:8',
-            'buy_amount'       => 'nullable|numeric|min:0',
-            'buy_currency'     => 'nullable|string|max:8',
-            'expense_amount'   => 'nullable|numeric|min:0',
+            'sale_text' => 'nullable|string|max:64',
+            'sell_amount' => 'nullable|numeric|min:0',
+            'sell_currency' => 'nullable|string|max:8',
+            'buy_amount' => 'nullable|numeric|min:0',
+            'buy_currency' => 'nullable|string|max:8',
+            'expense_amount' => 'nullable|numeric|min:0',
             'expense_currency' => 'nullable|string|max:8',
-            'merchant'         => 'nullable|string|max:128',
-            'order_id'         => 'nullable|string|max:128',
+            'merchant' => 'nullable|string|max:128',
+            'order_id' => 'nullable|string|max:128',
         ]);
 
         $app = Application::findOrFail($id);
@@ -274,16 +273,16 @@ class MainController extends Controller
         //
         // 1) Сохраняем sale_text (приход) — парсим «число + код валюты», если есть
         //
-        $amount         = null;
+        $amount = null;
         $saleCurrencyId = null;
 
         if ($app->sale_text) {
             $saleText = $app->sale_text;
             Log::info("Update: received sale_text='{$saleText}' for app_id={$app->id}");
 
-            $parts     = explode(' ', $saleText, 2);
+            $parts = explode(' ', $saleText, 2);
             $rawAmount = $parts[0] ?? null;
-            $rawCode   = $parts[1] ?? null;
+            $rawCode = $parts[1] ?? null;
 
             if (is_numeric($rawAmount)) {
                 $amount = floatval($rawAmount);
@@ -300,7 +299,7 @@ class MainController extends Controller
             }
 
             if ($amount !== null && $currencyCode) {
-                $cur            = Currency::firstOrCreate(
+                $cur = Currency::firstOrCreate(
                     ['code' => $currencyCode],
                     ['name' => $currencyCode]
                 );
@@ -318,7 +317,7 @@ class MainController extends Controller
         // 2) «Продажа» (sell_*)
         //
         if ($request->filled('sell_currency')) {
-            $curSell               = Currency::firstOrCreate(
+            $curSell = Currency::firstOrCreate(
                 ['code' => mb_strtoupper($request->sell_currency)],
                 ['name' => mb_strtoupper($request->sell_currency)]
             );
@@ -335,7 +334,7 @@ class MainController extends Controller
         // 3) «Купля» (buy_*)
         //
         if ($request->filled('buy_currency')) {
-            $curBuy             = Currency::firstOrCreate(
+            $curBuy = Currency::firstOrCreate(
                 ['code' => mb_strtoupper($request->buy_currency)],
                 ['name' => mb_strtoupper($request->buy_currency)]
             );
@@ -352,7 +351,7 @@ class MainController extends Controller
         // 4) «Расход» (expense_*)
         //
         if ($request->filled('expense_currency')) {
-            $curExpense                 = Currency::firstOrCreate(
+            $curExpense = Currency::firstOrCreate(
                 ['code' => mb_strtoupper($request->expense_currency)],
                 ['name' => mb_strtoupper($request->expense_currency)]
             );
@@ -370,7 +369,7 @@ class MainController extends Controller
         //
         $app->merchant = $request->merchant ?: null;
         $app->order_id = $request->order_id ?: null;
-        $app->user_id  = auth()->id();
+        $app->user_id = auth()->id();
         Log::info("Set merchant=" . ($app->merchant ?? 'null') .
             ", order_id=" . ($app->order_id ?? 'null') . " for app_id={$app->id}");
 
@@ -389,9 +388,9 @@ class MainController extends Controller
         if ($amount !== null && $saleCurrencyId !== null && $amount > 0) {
             History::create([
                 'sourceable_type' => Application::class,
-                'sourceable_id'   => $app->id,
-                'amount'          => +$amount,
-                'currency_id'     => $saleCurrencyId,
+                'sourceable_id' => $app->id,
+                'amount' => +$amount,
+                'currency_id' => $saleCurrencyId,
             ]);
             Log::info("History created for sale_text (income) +{$amount}, currency_id={$saleCurrencyId}");
         }
@@ -400,9 +399,9 @@ class MainController extends Controller
         if ($app->sell_amount !== null && $app->sell_currency_id !== null && $app->sell_amount > 0) {
             History::create([
                 'sourceable_type' => Application::class,
-                'sourceable_id'   => $app->id,
-                'amount'          => -$app->sell_amount,
-                'currency_id'     => $app->sell_currency_id,
+                'sourceable_id' => $app->id,
+                'amount' => -$app->sell_amount,
+                'currency_id' => $app->sell_currency_id,
             ]);
             Log::info("History created for sell_amount (expense) -{$app->sell_amount}, currency_id={$app->sell_currency_id}");
         }
@@ -411,9 +410,9 @@ class MainController extends Controller
         if ($app->buy_amount !== null && $app->buy_currency_id !== null && $app->buy_amount > 0) {
             History::create([
                 'sourceable_type' => Application::class,
-                'sourceable_id'   => $app->id,
-                'amount'          => +$app->buy_amount,
-                'currency_id'     => $app->buy_currency_id,
+                'sourceable_id' => $app->id,
+                'amount' => +$app->buy_amount,
+                'currency_id' => $app->buy_currency_id,
             ]);
             Log::info("History created for buy_amount (income) +{$app->buy_amount}, currency_id={$app->buy_currency_id}");
         }
@@ -422,9 +421,9 @@ class MainController extends Controller
         if ($app->expense_amount !== null && $app->expense_currency_id !== null && $app->expense_amount > 0) {
             History::create([
                 'sourceable_type' => Application::class,
-                'sourceable_id'   => $app->id,
-                'amount'          => -$app->expense_amount,
-                'currency_id'     => $app->expense_currency_id,
+                'sourceable_id' => $app->id,
+                'amount' => -$app->expense_amount,
+                'currency_id' => $app->expense_currency_id,
             ]);
             Log::info("History created for expense_amount (expense) -{$app->expense_amount}, currency_id={$app->expense_currency_id}");
         }
@@ -453,11 +452,11 @@ class MainController extends Controller
         $usdtTotal = 0.0;
 
         foreach ($totalsByCurrency as $row) {
-            $currencyId   = $row->currency_id;
+            $currencyId = $row->currency_id;
             $sumInCurrency = (float)$row->total_amount; // сумма (положительная или отрицательная) в этой валюте
 
             // Код валюты, например "BTC", "RUB", "USDT"
-            if (! isset($currencyCodes[$currencyId])) {
+            if (!isset($currencyCodes[$currencyId])) {
                 // Если вдруг нет такого кода – пропускаем
                 Log::warning("usdtTotal: нет записи о валюте с ID={$currencyId} в таблице currencies");
                 continue;
@@ -475,13 +474,13 @@ class MainController extends Controller
                 // Крайне важно: здесь мы используем именно эндпоинт /v1/exchange-rate/{currency}/list
                 $response = Http::timeout(5)->get("https://api.heleket.com/v1/exchange-rate/{$code}/list");
 
-                if (! $response->successful()) {
+                if (!$response->successful()) {
                     Log::error("usdtTotal: HTTP {$response->status()} при запросе курса {$code}_USDT");
                     continue;
                 }
 
                 $json = $response->json();
-                if (! isset($json['result']) || ! is_array($json['result'])) {
+                if (!isset($json['result']) || !is_array($json['result'])) {
                     Log::error("usdtTotal: неожиданный формат ответа для {$code}: " . $response->body());
                     continue;
                 }
@@ -504,8 +503,7 @@ class MainController extends Controller
                 // Пересчитываем сумму в USDT:
                 // если сумма negative (расход) — тогда сумма * rate будет тоже negative
                 $usdtTotal += $sumInCurrency * $foundRate;
-            }
-            catch (\Throwable $e) {
+            } catch (\Throwable $e) {
                 Log::error("usdtTotal: ошибка при запросе курса {$code}_USDT: " . $e->getMessage());
                 continue;
             }
@@ -517,5 +515,67 @@ class MainController extends Controller
         return response()->json([
             'usdt_total' => $usdtTotal,
         ]);
+    }
+
+
+    public function dashboard()
+    {
+        // Ваша обычная логика…
+        $totalUsd = 0;
+        $availableUsd = 0;
+        $baseCurrency = Currency::where('code', 'USD')->first();
+
+        // Попытка взять реальные данные
+        $wallets = auth()->user()->get();
+        $transactions = auth()->user()
+            ->latest()
+            ->take(5)
+            ->get();
+
+        // Если кошельков нет – создаём 5 случайных записей
+        if ($wallets->isEmpty()) {
+            $sampleCodes = ['BTC', 'ETH', 'USDT', 'XRP', 'LTC'];
+            $wallets = collect($sampleCodes)->map(function ($code) {
+                return (object)[
+                    'currency' => (object)[
+                        'code' => $code,
+                        'icon_url' => "https://dummyimage.com/32x32/000/fff&text={$code}"
+                    ],
+                    'balance' => rand(1, 999999) / 10000  // от 0.0001 до 99.9999
+                ];
+            });
+            // Пересчитаем общий баланс
+            $totalUsd = $wallets->sum(fn($w) => $w->balance * rand(100, 50000) / 100);
+            $availableUsd = $totalUsd * 0.8;
+        } else {
+            // если реальные есть – суммируем по ним
+            $totalUsd = $wallets->sum(fn($w) => $w->balance_in_usd);
+            $availableUsd = $wallets->sum(fn($w) => $w->available_in_usd);
+        }
+
+        // Если транзакций нет – создаём 5 рандомных
+        if ($transactions->isEmpty()) {
+            $types = ['Получено', 'Отправлено'];
+            $transactions = collect(range(1, 5))->map(function () {
+                $sampleCodes = ['BTC', 'ETH', 'USDT', 'XRP', 'LTC'];
+                $amt = random_int(1, 999999) / 10000;
+                $sign = random_int(0, 1) ? 1 : -1;
+                $code = $sampleCodes[array_rand($sampleCodes)];
+                return (object)[
+                    'type' => $sign > 0 ? 'Получено' : 'Отправлено',
+                    'date' => now()->subMinutes(random_int(1, 300)),
+                    'amount' => $amt * $sign,
+                    'currency' => (object)['code' => $code]
+                ];
+            });
+        }
+
+        return view('pages.profile', compact(
+            'totalUsd',
+            'availableUsd',
+            'baseCurrency',
+            'wallets',
+            'transactions'
+        ));
     }
 }

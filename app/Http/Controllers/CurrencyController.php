@@ -8,40 +8,44 @@ use Illuminate\Validation\Rule;
 
 class CurrencyController extends Controller
 {
-    /**
-     * Показывает форму создания новой валюты.
-     */
     public function create()
     {
         return view('admin.currencies-create');
     }
 
-    /**
-     * Сохраняет новую валюту в БД.
-     */
+    public function edit(Currency $currency)
+    {
+        return view('admin.currency.edit', compact('currency'));
+    }
+
     public function store(Request $request)
     {
-        // Валидация: код должен быть уникальным и состоять из 1–8 символов (латиница, цифры).
-        // name может быть до 64 символов.
         $data = $request->validate([
-            'code' => [
-                'required',
-                'string',
-                'max:8',
-                'regex:/^[A-Za-z0-9]+$/u',
-                Rule::unique('currencies', 'code'),
-            ],
+            'code' => 'required|string|max:8|unique:currencies,code',
+            'color' => 'nullable|string|max:7',
             'name' => 'required|string|max:64',
         ]);
+        Currency::create($data);
+        return redirect()->route('view.currencies')
+            ->with('success', 'Валюта добавлена');
+    }
 
-        Currency::create([
-            'code' => mb_strtoupper($data['code']),
-            'name' => $data['name'],
+    public function update(Request $request, Currency $currency)
+    {
+        $data = $request->validate([
+            'code' => 'required|string|max:8|unique:currencies,code,' . $currency->id,
+            'color' => 'nullable|string|max:7',
+            'name' => 'required|string|max:64',
         ]);
+        $currency->update($data);
+        return redirect()->route('view.currencies')
+            ->with('success', 'Валюта обновлена');
+    }
 
-        // После успешного сохранения перенаправим обратно на форму с флеш-сообщением.
-        return redirect()
-            ->route('view.currency.create')
-            ->with('success', 'Валюта «' . mb_strtoupper($data['code']) . '» успешно добавлена.');
+    public function destroy(Currency $currency)
+    {
+        $currency->delete();
+        return redirect()->route('view.currencies')
+            ->with('success', 'Валюта удалена');
     }
 }

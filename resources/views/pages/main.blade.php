@@ -178,19 +178,43 @@
                 <thead class="bg-gray-100">
                 <tr class="sticky top-0">
                     @if(auth()->user()->role === 'admin')
-                        <th class="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Действие</th>
-                        <th class="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Кто изменил</th>
+                        <th class="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">
+                            Действие
+                        </th>
+                        <th class="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">
+                            Кто изменил
+                        </th>
                     @endif
-                    <th class="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Номер заявки</th>
-                    <th class="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Дата создания</th>
-                    <th class="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Обменник</th>
-                    <th class="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Статус</th>
-                    <th class="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Приход+</th>
-                    <th class="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Продажа−</th>
-                    <th class="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Купля+</th>
-                    <th class="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Расход−</th>
-                    <th class="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Мерчант</th>
-                    <th class="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">ID ордера</th>
+                    <th class="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">
+                        Номер заявки
+                    </th>
+                    <th class="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Дата
+                        создания
+                    </th>
+                    <th class="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">
+                        Обменник
+                    </th>
+                    <th class="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">
+                        Статус
+                    </th>
+                    <th class="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">
+                        Приход+
+                    </th>
+                    <th class="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">
+                        Продажа−
+                    </th>
+                    <th class="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">
+                        Купля+
+                    </th>
+                    <th class="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">
+                        Расход−
+                    </th>
+                    <th class="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">
+                        Мерчант
+                    </th>
+                    <th class="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">ID
+                        ордера
+                    </th>
                 </tr>
                 </thead>
                 <tbody id="appsTbody" class="bg-white divide-y divide-gray-200">
@@ -211,7 +235,8 @@
                                     data-expense_currency="{{ optional($d->expenseCurrency)->code }}"
                                     data-merchant="{{ $d->merchant }}"
                                     data-order_id="{{ $d->order_id }}"
-                                >Редактировать</button>
+                                >Редактировать
+                                </button>
                             </td>
                             {{-- Кто изменил --}}
                             <td class="px-5 py-4 whitespace-nowrap text-sm text-gray-900 text-center">
@@ -246,7 +271,9 @@
                                     $curCode = $parts[1] ?? '';
                                 @endphp
                                 <span class="text-green-600">+{{ $amount }}</span>
-                                @if($curCode) &nbsp;{{ $curCode }} @endif
+                                @if($curCode)
+                                    &nbsp;{{ $curCode }}
+                                @endif
                             @else
                                 —
                             @endif
@@ -364,11 +391,11 @@
                 };
 
                 // ========== Модальное окно редактирования ==========
-                const editModal              = document.getElementById('editModalBackdrop');
-                const closeEditModalBtn      = document.getElementById('closeEditModalBtn');
+                const editModal = document.getElementById('editModalBackdrop');
+                const closeEditModalBtn = document.getElementById('closeEditModalBtn');
                 const editModalBackdropClose = document.getElementById('editModalBackdropClose');
-                const modalAppIdLabel        = document.getElementById('modalAppId');
-                const editForm               = document.getElementById('editForm');
+                const modalAppIdLabel = document.getElementById('modalAppId');
+                const editForm = document.getElementById('editForm');
 
                 function showEditModal() {
                     editModal.classList.remove('hidden');
@@ -378,7 +405,7 @@
                 function hideEditModal() {
                     editModal.classList.add('hidden');
                     document.body.style.overflow = '';
-                    ['sell_amount','sell_currency','buy_amount','buy_currency','expense_amount','expense_currency','merchant','order_id']
+                    ['sell_amount', 'sell_currency', 'buy_amount', 'buy_currency', 'expense_amount', 'expense_currency', 'merchant', 'order_id']
                         .forEach(f => {
                             const errEl = document.getElementById('err_' + f);
                             if (errEl) errEl.textContent = '';
@@ -400,27 +427,27 @@
                         button.dataset.listenerAdded = 'true';
 
                         button.addEventListener('click', () => {
-                            const id              = button.dataset.id;
-                            const appId           = button.dataset.app_id;
-                            const sellAmount      = button.dataset.sell_amount;
-                            const sellCurrency    = button.dataset.sell_currency;
-                            const buyAmount       = button.dataset.buy_amount;
-                            const buyCurrency     = button.dataset.buy_currency;
-                            const expenseAmount   = button.dataset.expense_amount;
+                            const id = button.dataset.id;
+                            const appId = button.dataset.app_id;
+                            const sellAmount = button.dataset.sell_amount;
+                            const sellCurrency = button.dataset.sell_currency;
+                            const buyAmount = button.dataset.buy_amount;
+                            const buyCurrency = button.dataset.buy_currency;
+                            const expenseAmount = button.dataset.expense_amount;
                             const expenseCurrency = button.dataset.expense_currency;
-                            const merchant        = button.dataset.merchant;
-                            const orderId         = button.dataset.order_id;
+                            const merchant = button.dataset.merchant;
+                            const orderId = button.dataset.order_id;
 
                             document.getElementById('edit_app_id').value = id;
-                            modalAppIdLabel.textContent                  = `#${appId}`;
-                            document.getElementById('edit_sell_amount').value   = sellAmount   || '';
-                            document.getElementById('edit_buy_amount').value    = buyAmount    || '';
-                            document.getElementById('edit_expense_amount').value= expenseAmount|| '';
-                            document.getElementById('edit_merchant').value      = merchant     || '';
-                            document.getElementById('edit_order_id').value      = orderId      || '';
-                            document.getElementById('edit_sell_currency').value   = sellCurrency   || '';
-                            document.getElementById('edit_buy_currency').value    = buyCurrency    || '';
-                            document.getElementById('edit_expense_currency').value= expenseCurrency|| '';
+                            modalAppIdLabel.textContent = `#${appId}`;
+                            document.getElementById('edit_sell_amount').value = sellAmount || '';
+                            document.getElementById('edit_buy_amount').value = buyAmount || '';
+                            document.getElementById('edit_expense_amount').value = expenseAmount || '';
+                            document.getElementById('edit_merchant').value = merchant || '';
+                            document.getElementById('edit_order_id').value = orderId || '';
+                            document.getElementById('edit_sell_currency').value = sellCurrency || '';
+                            document.getElementById('edit_buy_currency').value = buyCurrency || '';
+                            document.getElementById('edit_expense_currency').value = expenseCurrency || '';
 
                             showEditModal();
                         });
@@ -432,7 +459,7 @@
                 // Отправка формы редактирования
                 editForm.addEventListener('submit', function (e) {
                     e.preventDefault();
-                    ['sell_amount','sell_currency','buy_amount','buy_currency','expense_amount','expense_currency','merchant','order_id']
+                    ['sell_amount', 'sell_currency', 'buy_amount', 'buy_currency', 'expense_amount', 'expense_currency', 'merchant', 'order_id']
                         .forEach(f => {
                             const errEl = document.getElementById('err_' + f);
                             if (errEl) errEl.textContent = '';
@@ -440,14 +467,14 @@
 
                     const id = document.getElementById('edit_app_id').value;
                     const data = {
-                        sell_amount:    document.getElementById('edit_sell_amount').value.trim(),
-                        sell_currency:  document.getElementById('edit_sell_currency').value.trim(),
-                        buy_amount:     document.getElementById('edit_buy_amount').value.trim(),
-                        buy_currency:   document.getElementById('edit_buy_currency').value.trim(),
+                        sell_amount: document.getElementById('edit_sell_amount').value.trim(),
+                        sell_currency: document.getElementById('edit_sell_currency').value.trim(),
+                        buy_amount: document.getElementById('edit_buy_amount').value.trim(),
+                        buy_currency: document.getElementById('edit_buy_currency').value.trim(),
                         expense_amount: document.getElementById('edit_expense_amount').value.trim(),
                         expense_currency: document.getElementById('edit_expense_currency').value.trim(),
-                        merchant:       document.getElementById('edit_merchant').value.trim(),
-                        order_id:       document.getElementById('edit_order_id').value.trim(),
+                        merchant: document.getElementById('edit_merchant').value.trim(),
+                        order_id: document.getElementById('edit_order_id').value.trim(),
                     };
 
                     fetch(`/applications/${id}`, {
@@ -555,7 +582,7 @@
                                 if (d.sale_text) {
                                     const parts = d.sale_text.split(' ');
                                     const amount = parts[0] || '';
-                                    const cur    = parts[1] || '';
+                                    const cur = parts[1] || '';
                                     rowHtml += `<td class="px-5 py-4 whitespace-nowrap text-sm text-gray-900">
                                                 <span class="text-green-600">+${amount}</span>${cur ? '&nbsp;' + cur : ''}
                                             </td>`;
@@ -578,7 +605,7 @@
                                 if (d.buy_amount !== null && d.buy_currency) {
                                     let buy = String(d.buy_amount).replace(/\.?0+$/, '');
                                     const sign = d.buy_amount > 0 ? '+' : '-';
-                                    const cls  = d.buy_amount > 0 ? 'text-green-600' : 'text-red-600';
+                                    const cls = d.buy_amount > 0 ? 'text-green-600' : 'text-red-600';
                                     buy = buy.replace(/^-/, '');
                                     rowHtml += `<td class="px-5 py-4 whitespace-nowrap text-sm">
                                                 <span class="${cls}">${sign}${buy}</span>&nbsp;${d.buy_currency.code}
@@ -617,7 +644,7 @@
                             });
 
                             btn.dataset.nextPage = parseInt(nextPage) + 1;
-                            btn.dataset.hasMore  = json.has_more ? 'true' : 'false';
+                            btn.dataset.hasMore = json.has_more ? 'true' : 'false';
                             btn.disabled = false;
                             btn.textContent = json.has_more ? 'Загрузить ещё' : 'Больше заявок нет';
 
@@ -644,7 +671,21 @@
                 <tr>
                     @foreach($currencies as $currency)
                         <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">
-                            {{ $currency->code }}
+                            @php
+                                // Предполагаем, что в БД хранится строка вида "#FF0000" или "FF0000"
+                                $hex = ltrim($currency->color ?? '', '#');
+                            @endphp
+
+                            @if($hex)
+                                <div
+                                    class="inline-block px-2 py-1 rounded text-white text-xs"
+                                    style="background-color: #{{ $hex }};"
+                                >
+                                    {{ $currency->code }}
+                                </div>
+                            @else
+                                {{ $currency->code }}
+                            @endif
                         </th>
                     @endforeach
                 </tr>
@@ -763,6 +804,7 @@
                                     <span class="">
                                             {{ ltrim($amt, '-') }}
                                         </span>
+{{--                                <span class="{{ $t->ammountCurrency->color ?? 'bg-[#' . $t->ammountCurrency->color . ']'  }}"></span>--}}
                                     {{ optional($t->amountCurrency)->code ?? '' }}
                                 @else
                                     —
@@ -836,49 +878,60 @@
                 </div>
             </div>
 
-            {{-- 3) Purchases --}}
+            {{-- … предыдущие блоки … --}}
+
+            {{-- 3) Покупки --}}
+            {{-- 3) Покупки --}}
             <div class="bg-white rounded-xl shadow-md overflow-x-auto">
-                <div class="px-6 py-4">
+                <div class="px-6 py-4 flex justify-between items-center">
                     <h2 class="text-xl font-semibold text-gray-800">Покупка крипты</h2>
                 </div>
                 <table class="min-w-full divide-y divide-gray-200 table-auto">
                     <thead class="bg-gray-100">
                     <tr class="sticky top-0">
-                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">
-                            Платформа
-                        </th>
-                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">
-                            Сумма получено +
-                        </th>
-                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">
-                            Сумма продажи –
-                        </th>
+                        @if(auth()->user()->role === 'admin')
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Действие</th>
+                        @endif
+                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Платформа</th>
+                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Получено +</th>
+                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Продано −</th>
                     </tr>
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-200">
                     @foreach($purchases as $pc)
-                        <tr class="hover:bg-gray-50">
-                            <td class="px-6 py-4 text-sm text-gray-900 whitespace-nowrap">
+                        <tr class="hover:bg-gray-50" data-purchase-id="{{ $pc->id }}">
+                            @if(auth()->user()->role === 'admin')
+                                <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                    <button
+                                        class="edit-purchase-btn px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-xs"
+                                        data-id="{{ $pc->id }}"
+                                        data-exchanger-id="{{ $pc->exchanger_id }}"
+                                        data-received-amount="{{ $pc->received_amount }}"
+                                        data-received-currency-id="{{ $pc->received_currency_id }}"
+                                        data-sale-amount="{{ $pc->sale_amount }}"
+                                        data-sale-currency-id="{{ $pc->sale_currency_id }}"
+                                    >Редактировать</button>
+                                    <button
+                                        class="delete-purchase-btn ml-2 px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-xs"
+                                        data-id="{{ $pc->id }}"
+                                    >Удалить</button>
+                                </td>
+                            @endif
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                 {{ optional($pc->exchanger)->title ?? '—' }}
                             </td>
-                            <td class="px-6 py-4 text-sm whitespace-nowrap">
-                                @if($pc->received_amount !== null)
-                                    @php $sa = rtrim(rtrim((string)$pc->received_amount, '0'), '.'); @endphp
-                                    <span class="{{ $pc->received_amount > 0 ? 'text-green-600' : 'text-red-600' }}">
-                                            +{{ ltrim($sa, '-') }}
-                                        </span>
-                                    {{ optional($pc->saleCurrency)->code ?? '—' }}
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                @if(!is_null($pc->received_amount))
+                                    <span class="text-green-600">+{{ rtrim(rtrim((string)$pc->received_amount, '0'), '.') }}</span>
+                                    {{ optional($pc->receivedCurrency)->code }}
                                 @else
                                     —
                                 @endif
                             </td>
-                            <td class="px-6 py-4 text-sm whitespace-nowrap">
-                                @if($pc->sale_amount !== null)
-                                    @php $ra = rtrim(rtrim((string)$pc->sale_amount, '0'), '.'); @endphp
-                                    <span class="text-red-600">
-                                            -{{ ltrim($ra, '-') }}
-                                        </span>
-                                    {{ optional($pc->receivedCurrency)->code ?? '—' }}
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                @if(!is_null($pc->sale_amount))
+                                    <span class="text-red-600">-{{ rtrim(rtrim((string)$pc->sale_amount, '0'), '.') }}</span>
+                                    {{ optional($pc->saleCurrency)->code }}
                                 @else
                                     —
                                 @endif
@@ -891,6 +944,185 @@
                     <span class="text-sm text-gray-500">Ещё</span>
                 </div>
             </div>
+
+            {{-- Модальное окно редактирования покупки --}}
+            <div id="editPurchaseModal"
+                 class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+                <div class="bg-white rounded-xl shadow-xl p-6 w-full max-w-md relative">
+                    <button id="closeEditPurchase"
+                            class="absolute top-3 right-3 text-gray-500 hover:text-gray-700">&times;</button>
+                    <h3 class="text-2xl font-semibold mb-4">
+                        Редактировать покупку <span id="purchaseModalId" class="text-blue-600"></span>
+                    </h3>
+                    <form id="editPurchaseForm" class="space-y-4">
+                        <input type="hidden" id="edit_purchase_id">
+                        {{-- Exchanger --}}
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Платформа</label>
+                            <select id="edit_purchase_exchanger"
+                                    class="w-full border-gray-300 rounded p-2">
+                                @foreach($exchangers as $ex)
+                                    <option value="{{ $ex->id }}">{{ $ex->title }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        {{-- Received --}}
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Получено</label>
+                                <input type="number" step="0.00000001" id="edit_received_amount"
+                                       class="w-full border-gray-300 rounded p-2">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Валюта</label>
+                                <select id="edit_received_currency"
+                                        class="w-full border-gray-300 rounded p-2">
+                                    @foreach($currencies as $c)
+                                        <option value="{{ $c->id }}">{{ $c->code }} — {{ $c->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                        {{-- Sale --}}
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Продано</label>
+                                <input type="number" step="0.00000001" id="edit_sale_amount"
+                                       class="w-full border-gray-300 rounded p-2">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Валюта</label>
+                                <select id="edit_sale_currency"
+                                        class="w-full border-gray-300 rounded p-2">
+                                    @foreach($currencies as $c)
+                                        <option value="{{ $c->id }}">{{ $c->code }} — {{ $c->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                        <div class="flex justify-end space-x-2">
+                            <button type="button" id="cancelEditPurchase"
+                                    class="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300">Отмена
+                            </button>
+                            <button type="submit"
+                                    class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">Сохранить
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            {{-- Модальное окно подтверждения удаления покупки --}}
+            <div id="deletePurchaseModal"
+                 class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+                <div class="bg-white rounded-xl shadow-xl p-6 w-full max-w-sm relative">
+                    <button id="closeDeletePurchase"
+                            class="absolute top-3 right-3 text-gray-500 hover:text-gray-700">&times;</button>
+                    <h3 class="text-xl font-semibold mb-4">
+                        Удалить покупку <span id="deletePurchaseId" class="text-blue-600"></span>?
+                    </h3>
+                    <p class="mb-6">Все связанные записи в истории будут удалены.</p>
+                    <div class="flex justify-end space-x-2">
+                        <button type="button" id="cancelDeletePurchase"
+                                class="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300">Отмена
+                        </button>
+                        <button id="confirmDeletePurchase"
+                                class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">Удалить
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <script>
+                document.addEventListener('DOMContentLoaded', () => {
+                    const editModal   = document.getElementById('editPurchaseModal');
+                    const deleteModal = document.getElementById('deletePurchaseModal');
+
+                    // Закрытие
+                    document.getElementById('closeEditPurchase').onclick = () => editModal.classList.add('hidden');
+                    document.getElementById('cancelEditPurchase').onclick = () => editModal.classList.add('hidden');
+                    document.getElementById('closeDeletePurchase').onclick = () => deleteModal.classList.add('hidden');
+                    document.getElementById('cancelDeletePurchase').onclick = () => deleteModal.classList.add('hidden');
+
+                    // Открытие редактирования
+                    document.querySelectorAll('.edit-purchase-btn').forEach(btn => {
+                        btn.addEventListener('click', () => {
+                            const id             = btn.dataset.id;
+                            const exchangerId    = btn.dataset.exchangerId;
+                            const receivedAmount = btn.dataset.receivedAmount;
+                            const receivedCurrId = btn.dataset.receivedCurrencyId;
+                            const saleAmount     = btn.dataset.saleAmount;
+                            const saleCurrId     = btn.dataset.saleCurrencyId;
+
+                            document.getElementById('edit_purchase_id').value            = id;
+                            document.getElementById('purchaseModalId').textContent       = `#${id}`;
+                            document.getElementById('edit_purchase_exchanger').value     = exchangerId;
+                            document.getElementById('edit_received_amount').value        = receivedAmount;
+                            document.getElementById('edit_received_currency').value      = receivedCurrId;
+                            document.getElementById('edit_sale_amount').value            = saleAmount;
+                            document.getElementById('edit_sale_currency').value          = saleCurrId;
+
+                            editModal.classList.remove('hidden');
+                        });
+                    });
+
+                    // Открытие удаления
+                    document.querySelectorAll('.delete-purchase-btn').forEach(btn => {
+                        btn.addEventListener('click', () => {
+                            const id = btn.dataset.id;
+                            document.getElementById('deletePurchaseId').textContent = `#${id}`;
+                            document.getElementById('confirmDeletePurchase').dataset.id = id;
+                            deleteModal.classList.remove('hidden');
+                        });
+                    });
+
+                    // Сохранить изменения
+                    document.getElementById('editPurchaseForm').addEventListener('submit', e => {
+                        e.preventDefault();
+                        const id = document.getElementById('edit_purchase_id').value;
+                        const data = {
+                            exchanger_id:         document.getElementById('edit_purchase_exchanger').value,
+                            received_amount:      document.getElementById('edit_received_amount').value,
+                            received_currency_id: document.getElementById('edit_received_currency').value,
+                            sale_amount:          document.getElementById('edit_sale_amount').value,
+                            sale_currency_id:     document.getElementById('edit_sale_currency').value,
+                        };
+                        fetch(`/admin/purchases/${id}`, {
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type':     'application/json',
+                                'X-CSRF-TOKEN':      document.querySelector('meta[name="csrf-token"]').content,
+                                'X-Requested-With': 'XMLHttpRequest'
+                            },
+                            body: JSON.stringify(data)
+                        })
+                            .then(r => {
+                                if (!r.ok) throw new Error(r.status);
+                                return r.json();
+                            })
+                            .then(() => location.reload())
+                            .catch(() => alert('Не удалось сохранить изменения'));
+                    });
+
+                    // Удалить
+                    document.getElementById('confirmDeletePurchase').addEventListener('click', () => {
+                        const id = document.getElementById('confirmDeletePurchase').dataset.id;
+                        fetch(`/admin/purchases/${id}`, {
+                            method: 'DELETE',
+                            headers: {
+                                'X-CSRF-TOKEN':      document.querySelector('meta[name="csrf-token"]').content,
+                                'X-Requested-With': 'XMLHttpRequest'
+                            }
+                        })
+                            .then(r => {
+                                if (!r.ok) throw new Error(r.status);
+                                return r.json();
+                            })
+                            .then(() => location.reload())
+                            .catch(() => alert('Не удалось удалить запись'));
+                    });
+                });
+            </script>
 
             {{-- 2) SaleCrypts --}}
             <div class="bg-white rounded-xl shadow-md overflow-x-auto">

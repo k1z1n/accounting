@@ -1,0 +1,23 @@
+<?php
+return [
+    'exchanger_id'         => 'Обменник',
+    'sale_text'            => 'Приход',
+    'sell_amount'          => 'Сумма продажи',
+    'sell_currency_id'     => 'Валюта продажи',
+    'buy_amount'           => 'Сумма покупки',
+    'buy_currency_id'      => 'Валюта покупки',
+    'expense_amount'       => 'Сумма расхода',
+    'expense_currency_id'  => 'Валюта расхода',
+    'merchant'             => 'Мерчант',
+    'order_id'             => 'ID ордера',
+    'received_amount'      => 'Сумма получено',
+    'received_currency_id' => 'Валюта получено',
+    'fixed_amount'         => 'Сумма «Фикс»',
+    'fixed_currency_id'    => 'Валюта «Фикс»',
+    'amount'               => 'Сумма перевода',
+    'amount_id'            => 'Валюта перевода',
+    'commission'           => 'Комиссия',
+    'commission_id'        => 'Валюта комиссии',
+    'comment'              => 'Комментарий',
+    'user_id'              => 'Пользователь',
+];

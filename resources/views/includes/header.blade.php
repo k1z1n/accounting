@@ -11,6 +11,27 @@
 
                 @auth
                     @if(auth()->user()->role === 'admin')
+
+                            <li class="relative group">
+                                <span class="cursor-pointer hover:text-gray-800">Списки</span>
+                                <ul
+                                    class="hidden group-hover:block absolute left-0 top-full w-48 bg-white
+                                       border border-gray-200 rounded-md shadow-lg z-10 mt-0">
+                                    <li>
+                                        <a href="{{ route('view.exchangers') }}"
+                                           class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                            Список платформ
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="{{ route('view.currencies') }}"
+                                           class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                            Список валют
+                                        </a>
+                                    </li>
+                                </ul>
+                            </li>
+
                         {{-- Пункт с выпадающим меню --}}
                         <li class="relative group">
                             <span class="cursor-pointer hover:text-gray-800">Добавление</span>
@@ -49,7 +70,7 @@
                                     </a>
                                 </li>
                                 <li>
-                                    <a href="{{ route('view.user.logs') }}"
+                                    <a href="{{ route('view.update.logs') }}"
                                        class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                          Логи изменений заявок
                                     </a>
