@@ -31,4 +31,30 @@ return [
         ],
     ],
 
+    'heleket' => [
+        'obama' => [
+            'balance_url'   => env('HELEKET_OBAMA_BALANCE_URL'),
+            'merchant_uuid' => env('HELEKET_OBAMA_MERCHANT_UUID'),
+            'api_key'       => env('HELEKET_OBAMA_API_KEY'),
+        ],
+        'ural' => [
+            'balance_url'   => env('HELEKET_URAL_BALANCE_URL'),
+            'merchant_uuid' => env('HELEKET_URAL_MERCHANT_UUID'),
+            'api_key'       => env('HELEKET_URAL_API_KEY'),
+        ],
+    ],
+
+    'rapira' => [
+        'obama' => [
+            'balance_url' => env('RAPIRA_OBAMA_BALANCE_URL'),
+            'uid'         => env('RAPIRA_OBAMA_UID'),
+            'private_key' => env('RAPIRA_OBAMA_PRIVATE_KEY'), // base64-encoded PEM
+        ],
+        'ural' => [
+            'balance_url' => env('RAPIRA_URAL_BALANCE_URL'),
+            'uid'         => env('RAPIRA_URAL_UID'),
+            'private_key' => env('RAPIRA_URAL_PRIVATE_KEY'),
+        ],
+    ],
+
 ];
