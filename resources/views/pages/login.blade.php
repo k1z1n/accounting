@@ -3,7 +3,7 @@
 @section('title','Вход')
 
 @section('content')
-    <div class="flex items-center justify-center min-h-screen bg-gray-900 py-6">
+    <div class="flex items-center justify-center min-h-screen">
         <div class="w-full max-w-md bg-[#191919] rounded-xl shadow-md border border-[#2d2d2d] p-8">
             <h2 class="text-2xl font-semibold text-white mb-6 text-center">Войти</h2>
 
