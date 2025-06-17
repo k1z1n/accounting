@@ -10,5 +10,5 @@ Artisan::command('inspire', function () {
 
 
 Schedule::command('app:calculate-daily-usdt-summary')
-    ->dailyAt('21:55')
+    ->everyMinute()
     ->timezone('Europe/Moscow');
