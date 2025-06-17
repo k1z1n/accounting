@@ -1,572 +1,652 @@
 {{-- ==============================================
-            МОДАЛЬНОЕ ОКНО: создать новую Payment
-           ============================================== --}}
+     МОДАЛЬНОЕ ОКНО: создать новую Payment
+   ============================================== --}}
 <div
-    id="modalAddPaymentBackdrop"
-    class="fixed inset-0 flex items-center justify-center bg-black/20 backdrop-blur-sm z-50 hidden"
+        id="modalAddPaymentBackdrop"
+        class="fixed inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm z-50 hidden mb-0"
 >
-    <div
-        class="absolute inset-0"
-        id="modalAddPaymentClose"
-    ></div>
-    <div class="bg-white rounded-xl shadow-xl p-6 relative z-10 w-full max-w-md animate-fadeIn">
-        <header class="mb-6 border-b border-gray-200 pb-3">
-            <h3 class="text-2xl font-semibold text-gray-800">Добавить оплату</h3>
+    <div id="modalAddPaymentClose" class="absolute inset-0"></div>
+
+    <div class="bg-[#1F1F1F] text-white rounded-xl shadow-2xl p-6 relative z-10 w-full max-w-md animate-fadeIn">
+        <header class="mb-6 border-b border-gray-700 pb-3">
+            <h3 class="text-2xl font-semibold">Добавить оплату</h3>
         </header>
         <form id="formAddPayment" class="space-y-5">
             @csrf
 
-            {{-- Платформа (exchanger) --}}
+            {{-- Платформа --}}
             <div>
-                <label for="add_exchanger_id" class="block text-sm font-medium text-gray-700 mb-1">
-                    Платформа (откуда деньги переводятся)
+                <label for="add_exchanger_id" class="block text-sm font-medium text-gray-300 mb-1">
+                    Платформа
                 </label>
-                <select
-                    name="exchanger_id"
-                    id="add_exchanger_id"
-                    class="block w-full bg-white border border-gray-300 rounded-md shadow-sm px-3 py-2
-                           focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500
-                           hover:bg-gray-50 transition duration-150 ease-in-out"
-                >
-                    <option value="" selected>— Выберите платформу —</option>
-                    @foreach($exchangers as $e)
-                        <option value="{{ $e->id }}">{{ $e->title }}</option>
-                    @endforeach
-                </select>
-                <p class="text-red-600 text-sm mt-1" id="err_add_exchanger_id"></p>
+                <div class="relative">
+                    <select
+                            name="exchanger_id"
+                            id="add_exchanger_id"
+                            class="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2 pr-8
+                               focus:outline-none focus:ring-2 focus:ring-cyan-500 transition"
+                    >
+                        <option value="" selected>— Выберите платформу —</option>
+                        @foreach($exchangers as $e)
+                            <option value="{{ $e->id }}">{{ $e->title }}</option>
+                        @endforeach
+                    </select>
+                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
+                        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M19 9l-7 7-7-7"/>
+                        </svg>
+                    </div>
+                </div>
+                <p id="err_add_exchanger_id" class="mt-1 text-sm text-red-500"></p>
             </div>
 
-            {{-- Сумма продажи --}}
-            <div>
-                <label for="add_sell_amount" class="block text-sm font-medium text-gray-700 mb-1">
-                    Сумма (продажа)
-                </label>
-                <input
-                    type="number"
-                    step="0.00000001"
-                    name="sell_amount"
-                    id="add_sell_amount"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Например, 100.50"
-                >
-                <p class="text-red-600 text-sm mt-1" id="err_add_sell_amount"></p>
+            {{-- Сумма --}}
+            {{-- Получено --}}
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label for="add_sell_amount" class="block text-sm font-medium text-gray-300 mb-1">
+                        Сумма (продажа)
+                    </label>
+                    <input
+                            type="number"
+                            step="0.00000001"
+                            name="sell_amount"
+                            id="add_sell_amount"
+                            class="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2
+                           focus:outline-none focus:ring-2 focus:ring-cyan-500 transition"
+                            placeholder="Например, 100.50"
+                    >
+                    <p id="err_add_sell_amount" class="mt-1 text-sm text-red-500"></p>
+                </div>
+                {{-- Валюта --}}
+                <div>
+                    <label for="add_sell_currency_id" class="block text-sm font-medium text-gray-300 mb-1">
+                        Валюта (продажа)
+                    </label>
+                    <div class="relative">
+                        <select
+                                name="sell_currency_id"
+                                id="add_sell_currency_id"
+                                class="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2 pr-8
+                               focus:outline-none focus:ring-2 focus:ring-cyan-500 transition"
+                        >
+                            <option value="" selected>— Выберите валюту —</option>
+                            @foreach($currencies as $c)
+                                <option value="{{ $c->id }}">{{ $c->code }} — {{ $c->name }}</option>
+                            @endforeach
+                        </select>
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
+                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                      d="M19 9l-7 7-7-7"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <p id="err_add_sell_currency_id" class="mt-1 text-sm text-red-500"></p>
+                </div>
             </div>
 
-            {{-- Валюта продажи --}}
-            <div>
-                <label for="add_sell_currency_id" class="block text-sm font-medium text-gray-700 mb-1">
-                    Валюта (продажа)
-                </label>
-                <select
-                    name="sell_currency_id"
-                    id="add_sell_currency_id"
-                    class="block w-full bg-white border border-gray-300 rounded-md shadow-sm px-3 py-2
-                           focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500
-                           hover:bg-gray-50 transition duration-150 ease-in-out"
-                >
-                    <option value="" selected>— Выберите валюту —</option>
-                    @foreach($currencies as $c)
-                        <option value="{{ $c->id }}">{{ $c->code }} — {{ $c->name }}</option>
-                    @endforeach
-                </select>
-                <p class="text-red-600 text-sm mt-1" id="err_add_sell_currency_id"></p>
-            </div>
 
             {{-- Комментарий --}}
             <div>
-                <label for="add_comment" class="block text-sm font-medium text-gray-700 mb-1">
+                <label for="add_comment" class="block text-sm font-medium text-gray-300 mb-1">
                     Комментарий
                 </label>
                 <textarea
-                    name="comment"
-                    id="add_comment"
-                    rows="2"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Дополнительная информация"
+                        name="comment"
+                        id="add_comment"
+                        rows="2"
+                        class="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2
+                           focus:outline-none focus:ring-2 focus:ring-cyan-500 transition"
+                        placeholder="Дополнительная информация"
                 ></textarea>
-                <p class="text-red-600 text-sm mt-1" id="err_add_comment"></p>
+                <p id="err_add_comment" class="mt-1 text-sm text-red-500"></p>
             </div>
 
-            <div class="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+            <div class="flex justify-end space-x-3 pt-4 border-t border-gray-700">
                 <button
-                    type="button"
-                    id="btnCloseAddPayment"
-                    class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition"
-                >
-                    Отмена
+                        type="button"
+                        id="btnCloseAddPayment"
+                        class="px-4 py-2 bg-gray-700 text-gray-300 rounded-lg hover:bg-gray-600 transition"
+                >Отмена
                 </button>
                 <button
-                    type="submit"
-                    class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
-                >
-                    Сохранить
+                        type="submit"
+                        class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-500 transition"
+                >Сохранить
                 </button>
             </div>
         </form>
     </div>
 </div>
-{{-- /END МОДАЛЬНОЕ ОКНО: добавить Payment --}}
 
 
 {{-- ==============================================
      МОДАЛЬНОЕ ОКНО: создать новый Transfer
-    ============================================== --}}
+   ============================================== --}}
 <div
-    id="modalAddTransferBackdrop"
-    class="fixed inset-0 flex items-center justify-center bg-black/20 backdrop-blur-sm z-50 hidden"
+        id="modalAddTransferBackdrop"
+        class="fixed inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm z-50 hidden mb-0"
 >
-    <div
-        class="absolute inset-0"
-        id="modalAddTransferClose"
-    ></div>
-    <div class="bg-white rounded-xl shadow-xl p-6 relative z-10 w-full max-w-md animate-fadeIn">
-        <header class="mb-6 border-b border-gray-200 pb-3">
-            <h3 class="text-2xl font-semibold text-gray-800">Добавить обмен</h3>
+    <div id="modalAddTransferClose" class="absolute inset-0"></div>
+
+    <div class="bg-[#1F1F1F] text-white rounded-xl shadow-2xl p-6 relative z-10 w-full max-w-md animate-fadeIn">
+        <header class="mb-6 border-b border-gray-700 pb-3">
+            <h3 class="text-2xl font-semibold">Добавить перевод</h3>
         </header>
         <form id="formAddTransfer" class="space-y-5">
             @csrf
 
-            {{-- Платформа: откуда --}}
+            {{-- Откуда --}}
             <div>
-                <label for="add_from_id" class="block text-sm font-medium text-gray-700 mb-1">
-                    Платформа “откуда”
+                <label for="add_from_id" class="block text-sm font-medium text-gray-300 mb-1">
+                    Платформа «откуда»
                 </label>
-                <select
-                    name="exchanger_from_id"
-                    id="add_from_id"
-                    class="block w-full bg-white border border-gray-300 rounded-md shadow-sm
-                           px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500
-                           hover:bg-gray-50 transition duration-150 ease-in-out"
-                >
-                    <option value="" selected>— Выберите платформу —</option>
-                    @foreach($exchangers as $e)
-                        <option value="{{ $e->id }}">{{ $e->title }}</option>
-                    @endforeach
-                </select>
-                <p class="text-red-600 text-sm mt-1" id="err_add_from_id"></p>
+                <div class="relative">
+                    <select
+                            name="exchanger_from_id"
+                            id="add_from_id"
+                            class="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2 pr-8
+                               focus:outline-none focus:ring-2 focus:ring-cyan-500 transition"
+                    >
+                        <option value="" selected>— Выберите платформу —</option>
+                        @foreach($exchangers as $e)
+                            <option value="{{ $e->id }}">{{ $e->title }}</option>
+                        @endforeach
+                    </select>
+                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
+                        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M19 9l-7 7-7-7"/>
+                        </svg>
+                    </div>
+                </div>
+                <p id="err_add_from_id" class="mt-1 text-sm text-red-500"></p>
             </div>
 
-            {{-- Платформа: куда --}}
+            {{-- Куда --}}
             <div>
-                <label for="add_to_id" class="block text-sm font-medium text-gray-700 mb-1">
-                    Платформа “куда”
+                <label for="add_to_id" class="block text-sm font-medium text-gray-300 mb-1">
+                    Платформа «куда»
                 </label>
-                <select
-                    name="exchanger_to_id"
-                    id="add_to_id"
-                    class="block w-full bg-white border border-gray-300 rounded-md shadow-sm
-                           px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500
-                           hover:bg-gray-50 transition duration-150 ease-in-out"
-                >
-                    <option value="" selected>— Выберите платформу —</option>
-                    @foreach($exchangers as $e)
-                        <option value="{{ $e->id }}">{{ $e->title }}</option>
-                    @endforeach
-                </select>
-                <p class="text-red-600 text-sm mt-1" id="err_add_to_id"></p>
+                <div class="relative">
+                    <select
+                            name="exchanger_to_id"
+                            id="add_to_id"
+                            class="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2 pr-8
+                               focus:outline-none focus:ring-2 focus:ring-cyan-500 transition"
+                    >
+                        <option value="" selected>— Выберите платформу —</option>
+                        @foreach($exchangers as $e)
+                            <option value="{{ $e->id }}">{{ $e->title }}</option>
+                        @endforeach
+                    </select>
+                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
+                        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M19 9l-7 7-7-7"/>
+                        </svg>
+                    </div>
+                </div>
+                <p id="err_add_to_id" class="mt-1 text-sm text-red-500"></p>
             </div>
 
-            {{-- Сумма --}}
-            <div>
-                <label for="add_amount" class="block text-sm font-medium text-gray-700 mb-1">
-                    Сумма
-                </label>
-                <input
-                    type="number"
-                    step="0.00000001"
-                    name="amount"
-                    id="add_amount"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Например, 50.00"
-                >
-                <p class="text-red-600 text-sm mt-1" id="err_add_amount"></p>
-            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">                 {{-- Сумма --}}
+                <div>
+                    <label for="add_amount" class="block text-sm font-medium text-gray-300 mb-1">
+                        Сумма
+                    </label>
+                    <input
+                            type="number"
+                            step="0.00000001"
+                            name="amount"
+                            id="add_amount"
+                            class="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2
+                           focus:outline-none focus:ring-2 focus:ring-cyan-500 transition"
+                            placeholder="Например, 50.00"
+                    >
+                    <p id="err_add_amount" class="mt-1 text-sm text-red-500"></p>
+                </div>
 
-            {{-- Валюта суммы --}}
-            <div>
-                <label for="add_amount_id" class="block text-sm font-medium text-gray-700 mb-1">
-                    Валюта суммы
-                </label>
-                <select
-                    name="amount_id"
-                    id="add_amount_id"
-                    class="block w-full bg-white border border-gray-300 rounded-md shadow-sm
-                           px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500
-                           hover:bg-gray-50 transition duration-150 ease-in-out"
-                >
-                    <option value="" selected>— Выберите валюту —</option>
-                    @foreach($currencies as $c)
-                        <option value="{{ $c->id }}">{{ $c->code }} — {{ $c->name }}</option>
-                    @endforeach
-                </select>
-                <p class="text-red-600 text-sm mt-1" id="err_add_amount_id"></p>
+                {{-- Валюта --}}
+                <div>
+                    <label for="add_amount_id" class="block text-sm font-medium text-gray-300 mb-1">
+                        Валюта суммы
+                    </label>
+                    <div class="relative">
+                        <select
+                                name="amount_id"
+                                id="add_amount_id"
+                                class="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2 pr-8
+                               focus:outline-none focus:ring-2 focus:ring-cyan-500 transition"
+                        >
+                            <option value="" selected>— Выберите валюту —</option>
+                            @foreach($currencies as $c)
+                                <option value="{{ $c->id }}">{{ $c->code }} — {{ $c->name }}</option>
+                            @endforeach
+                        </select>
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
+                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor"
+                                 viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                      d="M19 9l-7 7-7-7"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <p id="err_add_amount_id" class="mt-1 text-sm text-red-500"></p>
+                </div>
             </div>
-
             {{-- Комиссия --}}
-            <div>
-                <label for="add_commission" class="block text-sm font-medium text-gray-700 mb-1">
-                    Комиссия
-                </label>
-                <input
-                    type="number"
-                    step="0.00000001"
-                    name="commission"
-                    id="add_commission"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Например, 0.0001"
-                >
-                <p class="text-red-600 text-sm mt-1" id="err_add_commission"></p>
-            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label for="add_commission" class="block text-sm font-medium text-gray-300 mb-1">
+                        Комиссия
+                    </label>
+                    <input
+                            type="number"
+                            step="0.00000001"
+                            name="commission"
+                            id="add_commission"
+                            class="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2
+                           focus:outline-none focus:ring-2 focus:ring-cyan-500 transition"
+                            placeholder="Например, 0.0001"
+                    >
+                    <p id="err_add_commission" class="mt-1 text-sm text-red-500"></p>
+                </div>
 
-            {{-- Валюта комиссии --}}
-            <div>
-                <label for="add_commission_id" class="block text-sm font-medium text-gray-700 mb-1">
-                    Валюта комиссии
-                </label>
-                <select
-                    name="commission_id"
-                    id="add_commission_id"
-                    class="block w-full bg-white border border-gray-300 rounded-md shadow-sm
-                           px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500
-                           hover:bg-gray-50 transition duration-150 ease-in-out"
-                >
-                    <option value="" selected>— Выберите валюту —</option>
-                    @foreach($currencies as $c)
-                        <option value="{{ $c->id }}">{{ $c->code }} — {{ $c->name }}</option>
-                    @endforeach
-                </select>
-                <p class="text-red-600 text-sm mt-1" id="err_add_commission_id"></p>
+                {{-- Валюта комиссии --}}
+                <div>
+                    <label for="add_commission_id" class="block text-sm font-medium text-gray-300 mb-1">
+                        Валюта комиссии
+                    </label>
+                    <div class="relative">
+                        <select
+                                name="commission_id"
+                                id="add_commission_id"
+                                class="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2 pr-8
+                               focus:outline-none focus:ring-2 focus:ring-cyan-500 transition"
+                        >
+                            <option value="" selected>— Выберите валюту —</option>
+                            @foreach($currencies as $c)
+                                <option value="{{ $c->id }}">{{ $c->code }} — {{ $c->name }}</option>
+                            @endforeach
+                        </select>
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
+                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                      d="M19 9l-7 7-7-7"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <p id="err_add_commission_id" class="mt-1 text-sm text-red-500"></p>
+                </div>
             </div>
-
-            <div class="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+            <div class="flex justify-end space-x-3 pt-4 border-t border-gray-700">
                 <button
-                    type="button"
-                    id="btnCloseAddTransfer"
-                    class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition"
-                >
-                    Отмена
+                        type="button"
+                        id="btnCloseAddTransfer"
+                        class="px-4 py-2 bg-gray-700 text-gray-300 rounded-lg hover:bg-gray-600 transition"
+                >Отмена
                 </button>
                 <button
-                    type="submit"
-                    class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
-                >
-                    Сохранить
+                        type="submit"
+                        class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-500 transition"
+                >Сохранить
                 </button>
             </div>
         </form>
     </div>
 </div>
-{{-- /END МОДАЛЬНОЕ ОКНО: добавить Transfer --}}
 
 
 {{-- ==============================================
      МОДАЛЬНОЕ ОКНО: создать новый SaleCrypt
-    ============================================== --}}
+   ============================================== --}}
 <div
-    id="modalAddSaleCryptBackdrop"
-    class="fixed inset-0 flex items-center justify-center bg-black/20 backdrop-blur-sm z-50 hidden"
+        id="modalAddSaleCryptBackdrop"
+        class="fixed inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm z-50 hidden mb-0"
 >
-    <div
-        class="absolute inset-0"
-        id="modalAddSaleCryptClose"
-    ></div>
+    <div id="modalAddSaleCryptClose" class="absolute inset-0"></div>
 
-    <div class="bg-white rounded-xl shadow-xl p-6 relative z-10 w-full max-w-lg animate-fadeIn">
-        <header class="mb-6 border-b border-gray-200 pb-3">
-            <h3 class="text-2xl font-semibold text-gray-800">Добавить продажу крипты</h3>
+    <div class="bg-[#1F1F1F] text-white rounded-xl shadow-2xl p-6 relative z-10 w-full max-w-lg animate-fadeIn">
+        <header class="mb-6 border-b border-gray-700 pb-3">
+            <h3 class="text-2xl font-semibold">Добавить продажу крипты</h3>
         </header>
         <form id="formAddSaleCrypt" class="space-y-5">
             @csrf
 
-            {{-- 1) Выбор платформы (exchanger) --}}
+            {{-- Платформа --}}
             <div>
-                <label for="add_sc_exchanger_id" class="block text-sm font-medium text-gray-700 mb-1">
+                <label for="add_sc_exchanger_id" class="block text-sm font-medium text-gray-300 mb-1">
                     Платформа
                 </label>
-                <select
-                    name="exchanger_id"
-                    id="add_sc_exchanger_id"
-                    class="block w-full bg-white border border-gray-300 rounded-md shadow-sm
-                           px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500
-                           hover:bg-gray-50 transition duration-150 ease-in-out"
-                >
-                    <option value="" selected>— Выберите платформу —</option>
-                    @foreach($exchangers as $e)
-                        <option value="{{ $e->id }}">{{ $e->title }}</option>
-                    @endforeach
-                </select>
-                <p class="text-red-600 text-sm mt-1" id="err_add_sc_exchanger_id"></p>
+                <div class="relative">
+                    <select
+                            name="exchanger_id"
+                            id="add_sc_exchanger_id"
+                            class="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2 pr-8
+                               focus:outline-none focus:ring-2 focus:ring-cyan-500 transition"
+                    >
+                        <option value="" selected>— Выберите платформу —</option>
+                        @foreach($exchangers as $e)
+                            <option value="{{ $e->id }}">{{ $e->title }}</option>
+                        @endforeach
+                    </select>
+                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
+                        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M19 9l-7 7-7-7"/>
+                        </svg>
+                    </div>
+                </div>
+                <p id="err_add_sc_exchanger_id" class="mt-1 text-sm text-red-500"></p>
             </div>
 
-            {{-- 2) «Продажа»: сумма + валюта --}}
+            {{-- Продажа --}}
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                    <label for="add_sc_sale_amount" class="block text-sm font-medium text-gray-700 mb-1">
+                    <label for="add_sc_sale_amount" class="block text-sm font-medium text-gray-300 mb-1">
                         Сумма продажи
                     </label>
                     <input
-                        type="number"
-                        step="0.00000001"
-                        name="sale_amount"
-                        id="add_sc_sale_amount"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="0.12345678"
+                            type="number"
+                            step="0.00000001"
+                            name="sale_amount"
+                            id="add_sc_sale_amount"
+                            class="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2
+                               focus:outline-none focus:ring-2 focus:ring-cyan-500 transition"
+                            placeholder="0.12345678"
                     >
-                    <p class="text-red-600 text-sm mt-1" id="err_add_sc_sale_amount"></p>
+                    <p id="err_add_sc_sale_amount" class="mt-1 text-sm text-red-500"></p>
                 </div>
                 <div>
-                    <label for="add_sc_sale_currency_id" class="block text-sm font-medium text-gray-700 mb-1">
+                    <label for="add_sc_sale_currency_id" class="block text-sm font-medium text-gray-300 mb-1">
                         Валюта продажи
                     </label>
-                    <select
-                        name="sale_currency_id"
-                        id="add_sc_sale_currency_id"
-                        class="block w-full bg-white border border-gray-300 rounded-md shadow-sm
-                               px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500
-                               hover:bg-gray-50 transition duration-150 ease-in-out"
-                    >
-                        <option value="" selected>— Выберите валюту —</option>
-                        @foreach($currencies as $c)
-                            <option value="{{ $c->id }}">{{ $c->code }} — {{ $c->name }}</option>
-                        @endforeach
-                    </select>
-                    <p class="text-red-600 text-sm mt-1" id="err_add_sc_sale_currency_id"></p>
+                    <div class="relative">
+                        <select
+                                name="sale_currency_id"
+                                id="add_sc_sale_currency_id"
+                                class="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2 pr-8
+                                   focus:outline-none focus:ring-2 focus:ring-cyan-500 transition"
+                        >
+                            <option value="" selected>— Выберите валюту —</option>
+                            @foreach($currencies as $c)
+                                <option value="{{ $c->id }}">{{ $c->code }} — {{ $c->name }}</option>
+                            @endforeach
+                        </select>
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
+                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                      d="M19 9l-7 7-7-7"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <p id="err_add_sc_sale_currency_id" class="mt-1 text-sm text-red-500"></p>
                 </div>
             </div>
 
-            {{-- 3) «Фикс»: сумма + валюта --}}
+            {{-- Фикс --}}
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                    <label for="add_sc_fixed_amount" class="block text-sm font-medium text-gray-700 mb-1">
+                    <label for="add_sc_fixed_amount" class="block text-sm font-medium text-gray-300 mb-1">
                         Сумма «Фикс»
                     </label>
                     <input
-                        type="number"
-                        step="0.00000001"
-                        name="fixed_amount"
-                        id="add_sc_fixed_amount"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="0.00123456"
+                            type="number"
+                            step="0.00000001"
+                            name="fixed_amount"
+                            id="add_sc_fixed_amount"
+                            class="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2
+                               focus:outline-none focus:ring-2 focus:ring-cyan-500 transition"
+                            placeholder="0.00123456"
                     >
-                    <p class="text-red-600 text-sm mt-1" id="err_add_sc_fixed_amount"></p>
+                    <p id="err_add_sc_fixed_amount" class="mt-1 text-sm text-red-500"></p>
                 </div>
                 <div>
-                    <label for="add_sc_fixed_currency_id" class="block text-sm font-medium text-gray-700 mb-1">
+                    <label for="add_sc_fixed_currency_id" class="block text-sm font-medium text-gray-300 mb-1">
                         Валюта «Фикс»
                     </label>
-                    <select
-                        name="fixed_currency_id"
-                        id="add_sc_fixed_currency_id"
-                        class="block w-full bg-white border border-gray-300 rounded-md shadow-sm
-                               px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500
-                               hover:bg-gray-50 transition duration-150 ease-in-out"
-                    >
-                        <option value="" selected>— Выберите валюту —</option>
-                        @foreach($currencies as $c)
-                            <option value="{{ $c->id }}">{{ $c->code }} — {{ $c->name }}</option>
-                        @endforeach
-                    </select>
-                    <p class="text-red-600 text-sm mt-1" id="err_add_sc_fixed_currency_id"></p>
+                    <div class="relative">
+                        <select
+                                name="fixed_currency_id"
+                                id="add_sc_fixed_currency_id"
+                                class="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2 pr-8
+                                   focus:outline-none focus:ring-2 focus:ring-cyan-500 transition"
+                        >
+                            <option value="" selected>— Выберите валюту —</option>
+                            @foreach($currencies as $c)
+                                <option value="{{ $c->id }}">{{ $c->code }} — {{ $c->name }}</option>
+                            @endforeach
+                        </select>
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
+                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                      d="M19 9l-7 7-7-7"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <p id="err_add_sc_fixed_currency_id" class="mt-1 text-sm text-red-500"></p>
                 </div>
             </div>
 
-            <div class="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+            <div class="flex justify-end space-x-3 pt-4 border-t border-gray-700">
                 <button
-                    type="button"
-                    id="btnCloseAddSaleCrypt"
-                    class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition"
-                >
-                    Отмена
+                        type="button"
+                        id="btnCloseAddSaleCrypt"
+                        class="px-4 py-2 bg-gray-700 text-gray-300 rounded-lg hover:bg-gray-600 transition"
+                >Отмена
                 </button>
                 <button
-                    type="submit"
-                    class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
-                >
-                    Сохранить
+                        type="submit"
+                        class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-500 transition"
+                >Сохранить
                 </button>
             </div>
         </form>
     </div>
 </div>
-{{-- /END МОДАЛЬНОЕ ОКНО: добавить SaleCrypt --}}
 
 
 {{-- ==============================================
      МОДАЛЬНОЕ ОКНО: создать новый Purchase
-============================================== --}}
+   ============================================== --}}
 <div
-    id="modalAddPurchaseBackdrop"
-    class="fixed inset-0 flex items-center justify-center bg-black/20 backdrop-blur-sm z-50 hidden"
+        id="modalAddPurchaseBackdrop"
+        class="fixed inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm z-50 hidden mb-0"
 >
-    <div
-        class="absolute inset-0"
-        id="modalAddPurchaseClose"
-    ></div>
+    <div id="modalAddPurchaseClose" class="absolute inset-0"></div>
 
-    <div class="bg-white rounded-xl shadow-xl p-6 relative z-10 w-full max-w-md animate-fadeIn">
-        <header class="mb-6 border-b border-gray-200 pb-3">
-            <h3 class="text-2xl font-semibold text-gray-800">Добавить покупку крипты</h3>
+    <div class="bg-[#1F1F1F] text-white rounded-xl shadow-2xl p-6 relative z-10 w-full max-w-md animate-fadeIn">
+        <header class="mb-6 border-b border-gray-700 pb-3">
+            <h3 class="text-2xl font-semibold">Добавить покупку крипты</h3>
         </header>
         <form id="formAddPurchase" class="space-y-5">
             @csrf
 
-            {{-- 1) Платформа (exchanger) --}}
+            {{-- Платформа --}}
             <div>
-                <label for="add_purchase_exchanger_id" class="block text-sm font-medium text-gray-700 mb-1">
-                    Платформа (откуда продают крипту)
+                <label for="add_purchase_exchanger_id" class="block text-sm font-medium text-gray-300 mb-1">
+                    Платформа
                 </label>
-                <select
-                    name="exchanger_id"
-                    id="add_purchase_exchanger_id"
-                    class="block w-full bg-white border border-gray-300 rounded-md shadow-sm
-                           px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500
-                           hover:bg-gray-50 transition duration-150 ease-in-out"
-                >
-                    <option value="" selected>— Выберите платформу —</option>
-                    @foreach($exchangers as $e)
-                        <option value="{{ $e->id }}">{{ $e->title }}</option>
-                    @endforeach
-                </select>
-                <p class="text-red-600 text-sm mt-1" id="err_add_purchase_exchanger_id"></p>
-            </div>
-
-            {{-- 2) «Продажа»: сумма + валюта --}}
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                    <label for="add_purchase_sale_amount" class="block text-sm font-medium text-gray-700 mb-1">
-                        Сумма потраченного usdt
-                    </label>
-                    <input
-                        type="number"
-                        step="0.00000001"
-                        name="sale_amount"
-                        id="add_purchase_sale_amount"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="0.12345678"
-                    >
-                    <p class="text-red-600 text-sm mt-1" id="err_add_purchase_sale_amount"></p>
-                </div>
-                <div>
-                    <label for="add_purchase_sale_currency_id" class="block text-sm font-medium text-gray-700 mb-1">
-                        Валюта потраченного usdt
-                    </label>
+                <div class="relative">
                     <select
-                        name="sale_currency_id"
-                        id="add_purchase_sale_currency_id"
-                        class="block w-full bg-white border border-gray-300 rounded-md shadow-sm
-                               px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500
-                               hover:bg-gray-50 transition duration-150 ease-in-out"
+                            name="exchanger_id"
+                            id="add_purchase_exchanger_id"
+                            class="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2 pr-8
+                               focus:outline-none focus:ring-2 focus:ring-cyan-500 transition"
                     >
-                        <option value="" selected>— Выберите валюту —</option>
-                        @foreach($currencies as $c)
-                            <option value="{{ $c->id }}">{{ $c->code }} — {{ $c->name }}</option>
+                        <option value="" selected>— Выберите платформу —</option>
+                        @foreach($exchangers as $e)
+                            <option value="{{ $e->id }}">{{ $e->title }}</option>
                         @endforeach
                     </select>
-                    <p class="text-red-600 text-sm mt-1" id="err_add_purchase_sale_currency_id"></p>
+                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
+                        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M19 9l-7 7-7-7"/>
+                        </svg>
+                    </div>
+                </div>
+                <p id="err_add_purchase_exchanger_id" class="mt-1 text-sm text-red-500"></p>
+            </div>
+
+            {{-- Продажа --}}
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label for="add_purchase_sale_amount" class="block text-sm font-medium text-gray-300 mb-1">
+                        Сумма потраченного USDT
+                    </label>
+                    <input
+                            type="number"
+                            step="0.00000001"
+                            name="sale_amount"
+                            id="add_purchase_sale_amount"
+                            class="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2
+                               focus:outline-none focus:ring-2 focus:ring-cyan-500 transition"
+                            placeholder="0.12345678"
+                    >
+                    <p id="err_add_purchase_sale_amount" class="mt-1 text-sm text-red-500"></p>
+                </div>
+                <div>
+                    <label for="add_purchase_sale_currency_id"
+                           class="block text-sm font-medium text-gray-300 mb-1 whitespace-nowrap">
+                        Валюта потраченного USDT
+                    </label>
+                    <div class="relative">
+                        <select
+                                name="sale_currency_id"
+                                id="add_purchase_sale_currency_id"
+                                class="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2 pr-8
+                                   focus:outline-none focus:ring-2 focus:ring-cyan-500 transition"
+                        >
+                            <option value="" selected>— Выберите валюту —</option>
+                            @foreach($currencies as $c)
+                                <option value="{{ $c->id }}">{{ $c->code }} — {{ $c->name }}</option>
+                            @endforeach
+                        </select>
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
+                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                      d="M19 9l-7 7-7-7"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <p id="err_add_purchase_sale_currency_id" class="mt-1 text-sm text-red-500"></p>
                 </div>
             </div>
 
-            {{-- 3) «Получено»: сумма + валюта --}}
+            {{-- Получено --}}
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                    <label for="add_purchase_received_amount" class="block text-sm font-medium text-gray-700 mb-1">
+                    <label for="add_purchase_received_amount" class="block text-sm font-medium text-gray-300 mb-1">
                         Сумма полученной крипты
                     </label>
                     <input
-                        type="number"
-                        step="0.00000001"
-                        name="received_amount"
-                        id="add_purchase_received_amount"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="0.00123456"
+                            type="number"
+                            step="0.00000001"
+                            name="received_amount"
+                            id="add_purchase_received_amount"
+                            class="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2
+                               focus:outline-none focus:ring-2 focus:ring-cyan-500 transition"
+                            placeholder="0.00123456"
                     >
-                    <p class="text-red-600 text-sm mt-1" id="err_add_purchase_received_amount"></p>
+                    <p id="err_add_purchase_received_amount" class="mt-1 text-sm text-red-500"></p>
                 </div>
                 <div>
-                    <label for="add_purchase_received_currency_id" class="block text-sm font-medium text-gray-700 mb-1">
+                    <label for="add_purchase_received_currency_id" class="block text-sm font-medium text-gray-300 mb-1">
                         Валюта полученной крипты
                     </label>
-                    <select
-                        name="received_currency_id"
-                        id="add_purchase_received_currency_id"
-                        class="block w-full bg-white border border-gray-300 rounded-md shadow-sm
-                               px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500
-                               hover:bg-gray-50 transition duration-150 ease-in-out"
-                    >
-                        <option value="" selected>— Выберите валюту —</option>
-                        @foreach($currencies as $c)
-                            <option value="{{ $c->id }}">{{ $c->code }} — {{ $c->name }}</option>
-                        @endforeach
-                    </select>
-                    <p class="text-red-600 text-sm mt-1" id="err_add_purchase_received_currency_id"></p>
+                    <div class="relative">
+                        <select
+                                name="received_currency_id"
+                                id="add_purchase_received_currency_id"
+                                class="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2 pr-8
+                                   focus:outline-none focus:ring-2 focus:ring-cyan-500 transition"
+                        >
+                            <option value="" selected>— Выберите валюту —</option>
+                            @foreach($currencies as $c)
+                                <option value="{{ $c->id }}">{{ $c->code }} — {{ $c->name }}</option>
+                            @endforeach
+                        </select>
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
+                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                      d="M19 9l-7 7-7-7"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <p id="err_add_purchase_received_currency_id" class="mt-1 text-sm text-red-500"></p>
                 </div>
             </div>
 
-            <div class="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+            <div class="flex justify-end space-x-3 pt-4 border-t border-gray-700">
                 <button
-                    type="button"
-                    id="btnCloseAddPurchase"
-                    class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition"
-                >
-                    Отмена
+                        type="button"
+                        id="btnCloseAddPurchase"
+                        class="px-4 py-2 bg-gray-700 text-gray-300 rounded-lg hover:bg-gray-600 transition"
+                >Отмена
                 </button>
                 <button
-                    type="submit"
-                    class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
-                >
-                    Сохранить
+                        type="submit"
+                        class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-500 transition"
+                >Сохранить
                 </button>
             </div>
         </form>
     </div>
 </div>
-{{-- /END МОДАЛЬНОЕ ОКНО: добавить Purchase --}}
 
-<div class="mb-6 flex flex-wrap gap-3">
+<div class="mb-6 flex flex-wrap gap-3 bg-[#1F1F1F] p-4 rounded-xl">
+    <!-- Оплата -->
     <button
-        id="btnShowAddPayment"
-        class="flex items-center px-4 py-2 bg-blue-600 text-white font-medium rounded-lg shadow-sm hover:bg-blue-700 transition"
+            id="btnShowAddPayment"
+            class="flex items-center px-4 py-2 bg-cyan-600 text-white font-medium rounded-lg shadow hover:bg-cyan-500 transition border border-cyan-700"
     >
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none"
              viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M12 4v16m8-8H4" />
+                  d="M12 4v16m8-8H4"/>
         </svg>
         Создать оплату
     </button>
 
+    <!-- Перевод -->
     <button
-        id="btnShowAddTransfer"
-        class="flex items-center px-4 py-2 bg-green-600 text-white font-medium rounded-lg shadow-sm hover:bg-green-700 transition"
+            id="btnShowAddTransfer"
+            class="flex items-center px-4 py-2 bg-emerald-600 text-white font-medium rounded-lg shadow hover:bg-emerald-500 transition border border-emerald-700"
     >
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none"
              viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M4 12h16m-8-8v16" />
+                  d="M4 12h16m-8-8v16"/>
         </svg>
         Создать перевод
     </button>
 
+    <!-- Продажа крипты -->
     <button
-        id="btnShowAddSaleCrypt"
-        class="flex items-center px-4 py-2 bg-purple-600 text-white font-medium rounded-lg shadow-sm hover:bg-purple-700 transition"
+            id="btnShowAddSaleCrypt"
+            class="flex items-center px-4 py-2 bg-violet-600 text-white font-medium rounded-lg shadow hover:bg-violet-500 transition border border-violet-700"
     >
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none"
              viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M11 11V5a2 2 0 114 0v6m-2 6v.01M12 16h.01M8 21h8a2 2 0 002-2v-1a2 2 0 00-2-2H8a2 2 0 00-2 2v1a2 2 0 002 2z" />
+                  d="M11 11V5a2 2 0 114 0v6m-2 6v.01M12 16h.01M8 21h8a2 2 0 002-2v-1a2 2 0 00-2-2H8a2 2 0 00-2 2v1a2 2 0 002 2z"/>
         </svg>
         Создать продажу крипты
     </button>
 
+    <!-- Покупка крипты -->
     <button
-        id="btnShowAddPurchase"
-        class="flex items-center px-4 py-2 bg-yellow-600 text-white font-medium rounded-lg shadow-sm hover:bg-yellow-700 transition"
+            id="btnShowAddPurchase"
+            class="flex items-center px-4 py-2 bg-amber-600 text-white font-medium rounded-lg shadow hover:bg-amber-500 transition border border-amber-700"
     >
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none"
              viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M9 14l6-6m0 0l6 6m-6-6v12" />
+                  d="M9 14l6-6m0 0l6 6m-6-6v12"/>
         </svg>
         Создать покупку крипты
     </button>

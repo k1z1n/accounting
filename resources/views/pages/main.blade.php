@@ -8,31 +8,35 @@
         @include('pages.other')
 
         {{-- ◆========== Первый блок: «История заявок» (Applications) ==========◆ --}}
-        <div class="bg-white rounded-xl shadow-md overflow-x-auto">
-            <div class="px-6 py-4">
-                <h2 class="text-2xl font-semibold text-gray-800">История заявок</h2>
+        <div class="bg-[#191919] rounded-xl shadow-md overflow-x-auto border border-[#2d2d2d]">
+            {{-- Заголовок блока --}}
+            <div class="px-6 py-4 border-b border-[#2d2d2d]">
+                <h2 class="text-2xl font-semibold text-white">История заявок</h2>
             </div>
 
             {{-- БЛОК МОДАЛЬНОГО ОКНА (не удаляйте эти ID!) --}}
             <div
                 id="editModalBackdrop"
-                class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden"
+                class="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 hidden"
             >
+                <!-- кликабельный бэкдроп -->
+                <div id="editModalBackdropClose" class="absolute inset-0"></div>
+
+                <!-- само окно -->
                 <div
-                    class="absolute inset-0"
-                    id="editModalBackdropClose"
-                ></div>
-                <div class="bg-white rounded-xl shadow-xl p-6 relative z-10 w-full max-w-lg animate-fadeIn">
+                    class="bg-[#1F1F1F] text-white rounded-xl shadow-2xl p-6 relative z-10 w-full max-w-lg animate-fadeIn">
                     <h3 class="text-2xl font-semibold mb-4">
-                        Редактировать заявку <span id="modalAppId" class="text-blue-600"></span>
+                        Редактировать заявку&nbsp;
+                        <span id="modalAppId" class="text-cyan-400"></span>
                     </h3>
+
                     <form id="editForm" class="space-y-6">
                         <input type="hidden" name="id" id="edit_app_id">
 
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            {{-- — Продажа — --}}
+                            <!-- Продажа -->
                             <div>
-                                <label for="edit_sell_amount" class="block text-sm font-medium text-gray-700 mb-1">
+                                <label for="edit_sell_amount" class="block text-sm font-medium text-gray-300 mb-1">
                                     Продажа (сумма)
                                 </label>
                                 <input
@@ -40,32 +44,39 @@
                                     step="0.00000001"
                                     name="sell_amount"
                                     id="edit_sell_amount"
-                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
+                                    class="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500"
                                 >
-                                <p class="text-red-600 text-sm mt-1" id="err_sell_amount"></p>
+                                <p id="err_sell_amount" class="mt-1 text-sm text-red-500"></p>
                             </div>
                             <div>
-                                <label for="edit_sell_currency" class="block text-sm font-medium text-gray-700 mb-1">
+                                <label for="edit_sell_currency" class="block text-sm font-medium text-gray-300 mb-1">
                                     Продажа (валюта)
                                 </label>
-                                <select
-                                    name="sell_currency"
-                                    id="edit_sell_currency"
-                                    class="block w-full bg-white border border-gray-300 rounded-md shadow-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 hover:bg-gray-50 transition duration-150 ease-in-out"
-                                >
-                                    <option value="" disabled selected>— Выберите валюту —</option>
-                                    @foreach($currencies as $c)
-                                        <option value="{{ $c->code }}">
-                                            {{ $c->code }} — {{ $c->name }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                                <p class="text-red-600 text-sm mt-1" id="err_sell_currency"></p>
+                                <div class="relative">
+                                    <select
+                                        name="sell_currency"
+                                        id="edit_sell_currency"
+                                        class="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2 pr-8 focus:outline-none focus:ring-2 focus:ring-cyan-500 appearance-none"
+                                    >
+                                        <option value="" disabled selected>— Выберите валюту —</option>
+                                        @foreach($currencies as $c)
+                                            <option value="{{ $c->code }}">{{ $c->code }} — {{ $c->name }}</option>
+                                        @endforeach
+                                    </select>
+                                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
+                                        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor"
+                                             viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                  d="M19 9l-7 7-7-7"/>
+                                        </svg>
+                                    </div>
+                                </div>
+                                <p id="err_sell_currency" class="mt-1 text-sm text-red-500"></p>
                             </div>
 
-                            {{-- — Купля — --}}
+                            <!-- Купля -->
                             <div>
-                                <label for="edit_buy_amount" class="block text-sm font-medium text-gray-700 mb-1">
+                                <label for="edit_buy_amount" class="block text-sm font-medium text-gray-300 mb-1">
                                     Купля (сумма)
                                 </label>
                                 <input
@@ -73,30 +84,39 @@
                                     step="0.00000001"
                                     name="buy_amount"
                                     id="edit_buy_amount"
-                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
+                                    class="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500"
                                 >
-                                <p class="text-red-600 text-sm mt-1" id="err_buy_amount"></p>
+                                <p id="err_buy_amount" class="mt-1 text-sm text-red-500"></p>
                             </div>
                             <div>
-                                <label for="edit_buy_currency" class="block text-sm font-medium text-gray-700 mb-1">
+                                <label for="edit_buy_currency" class="block text-sm font-medium text-gray-300 mb-1">
                                     Купля (валюта)
                                 </label>
-                                <select
-                                    name="buy_currency"
-                                    id="edit_buy_currency"
-                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 hover:bg-gray-50 transition duration-150 ease-in-out"
-                                >
-                                    <option value="" disabled selected>— Выберите валюту —</option>
-                                    @foreach($currencies as $c)
-                                        <option value="{{ $c->code }}">{{ $c->code }} — {{ $c->name }}</option>
-                                    @endforeach
-                                </select>
-                                <p class="text-red-600 text-sm mt-1" id="err_buy_currency"></p>
+                                <div class="relative">
+                                    <select
+                                        name="buy_currency"
+                                        id="edit_buy_currency"
+                                        class="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2 pr-8 focus:outline-none focus:ring-2 focus:ring-cyan-500 appearance-none"
+                                    >
+                                        <option value="" disabled selected>— Выберите валюту —</option>
+                                        @foreach($currencies as $c)
+                                            <option value="{{ $c->code }}">{{ $c->code }} — {{ $c->name }}</option>
+                                        @endforeach
+                                    </select>
+                                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
+                                        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor"
+                                             viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                  d="M19 9l-7 7-7-7"/>
+                                        </svg>
+                                    </div>
+                                </div>
+                                <p id="err_buy_currency" class="mt-1 text-sm text-red-500"></p>
                             </div>
 
-                            {{-- — Расход — --}}
+                            <!-- Расход -->
                             <div>
-                                <label for="edit_expense_amount" class="block text-sm font-medium text-gray-700 mb-1">
+                                <label for="edit_expense_amount" class="block text-sm font-medium text-gray-300 mb-1">
                                     Расход (сумма)
                                 </label>
                                 <input
@@ -104,53 +124,62 @@
                                     step="0.00000001"
                                     name="expense_amount"
                                     id="edit_expense_amount"
-                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
+                                    class="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500"
                                 >
-                                <p class="text-red-600 text-sm mt-1" id="err_expense_amount"></p>
+                                <p id="err_expense_amount" class="mt-1 text-sm text-red-500"></p>
                             </div>
                             <div>
-                                <label for="edit_expense_currency" class="block text-sm font-medium text-gray-700 mb-1">
+                                <label for="edit_expense_currency" class="block text-sm font-medium text-gray-300 mb-1">
                                     Расход (валюта)
                                 </label>
-                                <select
-                                    name="expense_currency"
-                                    id="edit_expense_currency"
-                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 hover:bg-gray-50 transition duration-150 ease-in-out"
-                                >
-                                    <option value="" disabled selected>— Выберите валюту —</option>
-                                    @foreach($currencies as $c)
-                                        <option value="{{ $c->code }}">{{ $c->code }} — {{ $c->name }}</option>
-                                    @endforeach
-                                </select>
-                                <p class="text-red-600 text-sm mt-1" id="err_expense_currency"></p>
+                                <div class="relative">
+                                    <select
+                                        name="expense_currency"
+                                        id="edit_expense_currency"
+                                        class="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2 pr-8 focus:outline-none focus:ring-2 focus:ring-cyan-500 appearance-none"
+                                    >
+                                        <option value="" disabled selected>— Выберите валюту —</option>
+                                        @foreach($currencies as $c)
+                                            <option value="{{ $c->code }}">{{ $c->code }} — {{ $c->name }}</option>
+                                        @endforeach
+                                    </select>
+                                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
+                                        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor"
+                                             viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                  d="M19 9l-7 7-7-7"/>
+                                        </svg>
+                                    </div>
+                                </div>
+                                <p id="err_expense_currency" class="mt-1 text-sm text-red-500"></p>
                             </div>
 
-                            {{-- — Мерчант — --}}
+                            <!-- Мерчант -->
                             <div class="sm:col-span-2">
-                                <label for="edit_merchant" class="block text-sm font-medium text-gray-700 mb-1">
+                                <label for="edit_merchant" class="block text-sm font-medium text-gray-300 mb-1">
                                     Мерчант
                                 </label>
                                 <input
                                     type="text"
                                     name="merchant"
                                     id="edit_merchant"
-                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
+                                    class="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500"
                                 >
-                                <p class="text-red-600 text-sm mt-1" id="err_merchant"></p>
+                                <p id="err_merchant" class="mt-1 text-sm text-red-500"></p>
                             </div>
 
-                            {{-- — ID ордера — --}}
+                            <!-- ID ордера -->
                             <div class="sm:col-span-2">
-                                <label for="edit_order_id" class="block text-sm font-medium text-gray-700 mb-1">
+                                <label for="edit_order_id" class="block text-sm font-medium text-gray-300 mb-1">
                                     ID ордера
                                 </label>
                                 <input
                                     type="text"
                                     name="order_id"
                                     id="edit_order_id"
-                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
+                                    class="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500"
                                 >
-                                <p class="text-red-600 text-sm mt-1" id="err_order_id"></p>
+                                <p id="err_order_id" class="mt-1 text-sm text-red-500"></p>
                             </div>
                         </div>
 
@@ -158,13 +187,13 @@
                             <button
                                 type="button"
                                 id="closeEditModalBtn"
-                                class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"
+                                class="px-4 py-2 bg-gray-700 text-gray-300 rounded-lg hover:bg-gray-600 transition"
                             >
                                 Отмена
                             </button>
                             <button
                                 type="submit"
-                                class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
+                                class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-500 transition"
                             >
                                 Сохранить
                             </button>
@@ -172,61 +201,46 @@
                     </form>
                 </div>
             </div>
-            {{-- /END модальное окно редактирования — не удаляйте этот блок! — --}}
 
-            <table id="applicationsTable" class="min-w-full divide-y divide-gray-200 table-auto">
-                <thead class="bg-gray-100">
+            {{-- Таблица --}}
+            <table id="applicationsTable" class="min-w-full table-auto border-collapse">
+                <thead class="bg-[#191919]">
                 <tr class="sticky top-0">
                     @if(auth()->user()->role === 'admin')
-                        <th class="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">
+                        <th class="px-5 py-3 text-xs font-semibold text-white uppercase whitespace-nowrap border-b border-[#2d2d2d]">
                             Действие
                         </th>
-                        <th class="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">
+                        <th class="px-5 py-3 text-xs font-semibold text-white uppercase whitespace-nowrap border-b border-[#2d2d2d]">
                             Кто изменил
                         </th>
                     @endif
-                    <th class="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">
-                        Номер заявки
-                    </th>
-                    <th class="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Дата
-                        создания
-                    </th>
-                    <th class="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">
-                        Обменник
-                    </th>
-                    <th class="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">
-                        Статус
-                    </th>
-                    <th class="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">
-                        Приход+
-                    </th>
-                    <th class="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">
-                        Продажа−
-                    </th>
-                    <th class="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">
-                        Купля+
-                    </th>
-                    <th class="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">
-                        Расход−
-                    </th>
-                    <th class="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">
-                        Мерчант
-                    </th>
-                    <th class="px-5 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">ID
-                        ордера
-                    </th>
+                    @foreach ([
+                        'Номер заявки',
+                        'Дата создания',
+                        'Обменник',
+                        'Статус',
+                        'Приход+',
+                        'Продажа−',
+                        'Купля+',
+                        'Расход−',
+                        'Мерчант',
+                        'ID ордера'
+                    ] as $col)
+                        <th class="px-5 py-3 text-xs font-semibold text-white uppercase whitespace-nowrap border-b border-[#2d2d2d]">
+                            {{ $col }}
+                        </th>
+                    @endforeach
                 </tr>
                 </thead>
-                <tbody id="appsTbody" class="bg-white divide-y divide-gray-200">
+                <tbody id="appsTbody" class="bg-gray-800 divide-y divide-[#2d2d2d]">
                 @foreach($apps as $d)
-                    <tr class="hover:bg-gray-50" data-app-row-id="{{ $d->id }}">
+                    <tr class="bg-[#191919] hover:bg-gray-700">
                         @if(auth()->user()->role === 'admin')
-                            {{-- Кнопка «Редактировать» --}}
-                            <td class="px-5 py-4 whitespace-nowrap text-sm text-gray-900">
+                            <td class="px-5 py-4 text-sm text-gray-200">
                                 <button
-                                    class="editBtn px-3 py-1 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition text-xs"
+                                    class="editBtn px-3 py-1 bg-cyan-600 text-white rounded-md hover:bg-cyan-700 transition text-xs"
                                     data-id="{{ $d->id }}"
-                                    data-app_id="{{ $d->app_id  }}"
+                                    data-app_id="{{ $d->app_id }}"
                                     data-sell_amount="{{ $d->sell_amount }}"
                                     data-sell_currency="{{ optional($d->sellCurrency)->code }}"
                                     data-buy_amount="{{ $d->buy_amount }}"
@@ -238,87 +252,109 @@
                                 >Редактировать
                                 </button>
                             </td>
-                            {{-- Кто изменил --}}
-                            <td class="px-5 py-4 whitespace-nowrap text-sm text-gray-900 text-center">
-                                @if($d->user)
-                                    {{ $d->user->login }}
-                                @else
-                                    -
-                                @endif
+                            <td class="px-5 py-4 text-sm text-gray-200 text-center">
+                                {{ $d->user->login ?? '-' }}
                             </td>
                         @endif
 
                         {{-- Номер заявки --}}
-                        <td class="px-5 py-4 whitespace-nowrap text-sm text-gray-900">{{ $d->app_id }}</td>
+                        <td class="px-5 py-4 text-sm text-gray-200 text-center whitespace-nowrap">{{ $d->app_id }}</td>
 
                         {{-- Дата создания --}}
-                        <td class="px-5 py-4 whitespace-nowrap text-sm text-gray-900">
+                        <td class="px-5 py-4 text-sm text-gray-200 text-center whitespace-nowrap">
                             {{ \Carbon\Carbon::parse($d->app_created_at)->format('d.m.Y H:i:s') }}
                         </td>
 
                         {{-- Обменник --}}
-                        <td class="px-5 py-4 whitespace-nowrap text-sm text-gray-900">{{ $d->exchanger }}</td>
+                        <td class="px-5 py-4 text-sm text-gray-200 text-center whitespace-nowrap">{{ $d->exchanger }}</td>
 
                         {{-- Статус --}}
-                        <td class="px-5 py-4 whitespace-nowrap text-sm text-gray-900">{{ $d->status }}</td>
+                        <td class="px-5 py-4 text-sm text-gray-200 text-center whitespace-nowrap">{{ $d->status }}</td>
 
-                        {{-- Приход+ (из sale_text) --}}
-                        <td class="px-5 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {{-- Приход+ --}}
+                        <td class="px-5 py-4 text-sm text-gray-200 whitespace-nowrap">
                             @if($d->sale_text)
                                 @php
-                                    $parts   = explode(' ', $d->sale_text, 2);
-                                    $amount  = $parts[0] ?? '';
-                                    $curCode = $parts[1] ?? '';
+                                    // сначала убираем крайние пробелы, затем разбиваем по первому пробелу
+                                    [$amount, $curCode] = explode(' ', trim($d->sale_text), 2);
+                                    // на всякий случай обрежем ещё раз
+                                    $curCode = trim($curCode);
                                 @endphp
-                                <span class="text-green-600">+{{ $amount }}</span>
-                                @if($curCode)
-                                    &nbsp;{{ $curCode }}
-                                @endif
+                                <div class="inline-flex items-center space-x-1">
+                                    <span class="text-green-400">+{{ $amount }}</span>
+                                    @if($curCode)
+                                        <img
+                                            src="{{ asset('images/coins/'.$curCode.'.svg') }}"
+                                            alt="{{ $curCode }}"
+                                            class="w-4 h-4"
+                                        >
+                                    @endif
+                                </div>
                             @else
                                 —
                             @endif
                         </td>
 
                         {{-- Продажа− --}}
-                        <td class="px-5 py-4 whitespace-nowrap text-sm">
-                            @if($d->sell_amount !== null && $d->sellCurrency)
-                                @php $sell = rtrim(rtrim((string)$d->sell_amount, '0'), '.'); @endphp
-                                <span class="text-red-600">-{{ ltrim($sell, '-') }}</span>
-                                {{ $d->sellCurrency->code }}
+                        <td class="px-5 py-4 text-sm text-gray-200 whitespace-nowrap">
+                            @if(!is_null($d->sell_amount) && $d->sellCurrency)
+                                <div class="inline-flex items-center space-x-1">
+                                    <span
+                                        class="text-red-400">-{{ rtrim(rtrim((string)$d->sell_amount,'0'),'.') }}</span>
+                                    <img
+                                        src="{{ asset('images/coins/'.$d->sellCurrency->code.'.svg') }}"
+                                        alt="{{ $d->sellCurrency->code }}"
+                                        class="w-4 h-4"
+                                    >
+
+                                </div>
                             @else
                                 —
                             @endif
                         </td>
 
                         {{-- Купля+ --}}
-                        <td class="px-5 py-4 whitespace-nowrap text-sm">
-                            @if($d->buy_amount !== null && $d->buyCurrency)
-                                @php $buy = rtrim(rtrim((string)$d->buy_amount, '0'), '.'); @endphp
-                                <span class="{{ $d->buy_amount > 0 ? 'text-green-600' : 'text-red-600' }}">
-                                        {{ $d->buy_amount > 0 ? '+' : '-' }}{{ ltrim($buy, '-') }}
-                                    </span>
-                                {{ $d->buyCurrency->code }}
+                        <td class="px-5 py-4 text-sm text-gray-200 whitespace-nowrap">
+                            @if(!is_null($d->buy_amount) && $d->buyCurrency)
+                                @php $b = rtrim(rtrim((string)$d->buy_amount,'0'),'.'); @endphp
+                                <div class="inline-flex items-center space-x-1">
+                                <span class="{{ $d->buy_amount>0?'text-green-400':'text-red-400' }}">
+                                {{ $d->buy_amount>0?'+':'' }}{{ $b }}
+                            </span>
+                                    <img
+                                        src="{{ asset('images/coins/'.$d->buyCurrency->code.'.svg') }}"
+                                        alt="{{ $d->buyCurrency->code }}"
+                                        class="w-4 h-4"
+                                    >
+                                </div>
                             @else
                                 —
                             @endif
                         </td>
 
                         {{-- Расход− --}}
-                        <td class="px-5 py-4 whitespace-nowrap text-sm">
-                            @if($d->expense_amount !== null && $d->expenseCurrency)
-                                @php $exp = rtrim(rtrim((string)$d->expense_amount, '0'), '.'); @endphp
-                                <span class="text-red-600">-{{ ltrim($exp, '-') }}</span>
-                                {{ $d->expenseCurrency->code }}
+                        <td class="px-5 py-4 text-sm text-gray-200 whitespace-nowrap">
+                            @if(!is_null($d->expense_amount) && $d->expenseCurrency)
+                                <div class="inline-flex items-center space-x-1">
+                                    <span
+                                        class="text-red-400">-{{ rtrim(rtrim((string)$d->expense_amount,'0'),'.') }}</span>
+                                    {{ $d->expenseCurrency->code }}
+                                    <img
+                                        src="{{ asset('images/coins/'.$d->expenseCurrency->code.'.svg') }}"
+                                        alt="{{ $d->expenseCurrency->code }}"
+                                        class="w-4 h-4"
+                                    >
+                                </div>
                             @else
                                 —
                             @endif
                         </td>
 
                         {{-- Мерчант --}}
-                        <td class="px-5 py-4 whitespace-nowrap text-sm text-gray-900">{{ $d->merchant ?? '—' }}</td>
+                        <td class="px-5 py-4 text-sm text-gray-200 text-center whitespace-nowrap">{{ $d->merchant ?? '—' }}</td>
 
                         {{-- ID ордера --}}
-                        <td class="px-5 py-4 whitespace-nowrap text-sm text-gray-900">{{ $d->order_id ?? '—' }}</td>
+                        <td class="px-5 py-4 text-sm text-gray-200 text-center whitespace-nowrap">{{ $d->order_id ?? '—' }}</td>
                     </tr>
                 @endforeach
                 </tbody>
@@ -662,18 +698,21 @@
         </script>
 
         {{-- ◆========== Второй блок: «История операций» (dynamic columns) ==========◆ --}}
-        <div class="bg-white rounded-xl shadow-md overflow-x-auto">
-            <div class="px-6 py-4">
-                <h2 class="text-2xl font-semibold text-gray-800">История операций по валютам</h2>
+        <div class="bg-[#191919] rounded-xl shadow-md overflow-x-auto border border-[#2d2d2d]">
+            <div class="px-6 py-4 border-b border-[#2d2d2d]">
+                <h2 class="text-2xl font-semibold text-white">История операций по валютам</h2>
             </div>
-            <table class="min-w-full table-auto divide-y divide-gray-200">
-                <thead class="bg-gray-100">
-                <tr>
+            <table class="min-w-full table-auto border-collapse divide-y divide-[#2d2d2d]">
+                <thead class="bg-[#191919]">
+                <tr class="sticky top-0">
                     @foreach($currencies as $currency)
                         <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">
                             @php
-                                // Предполагаем, что в БД хранится строка вида "#FF0000" или "FF0000"
+                                // цветной бэкграунд (если есть)
                                 $hex = ltrim($currency->color ?? '', '#');
+                                // путь к файлу и URL
+                                $iconPath = public_path("images/coins/{$currency->code}.svg");
+                                $iconUrl  = asset("images/coins/{$currency->code}.svg");
                             @endphp
 
                             @if($hex)
@@ -683,6 +722,11 @@
                                 >
                                     {{ $currency->code }}
                                 </div>
+                            @elseif(file_exists($iconPath))
+                                <div class="inline-flex items-center space-x-1">
+                                    <img src="{{ $iconUrl }}" alt="{{ $currency->code }}" class="w-6 h-6">
+                                    {{--                                    <span>{{ $currency->code }}</span>--}}
+                                </div>
                             @else
                                 {{ $currency->code }}
                             @endif
@@ -690,23 +734,29 @@
                     @endforeach
                 </tr>
                 </thead>
-                <tbody class="bg-white divide-y divide-gray-200">
+                <tbody class="bg-gray-800 divide-y divide-[#2d2d2d]">
                 @foreach($histories as $history)
-                    <tr class="hover:bg-gray-50">
+                    <tr class="bg-[#191919] hover:bg-gray-700">
                         @foreach($currencies as $currency)
                             @php
                                 $cell = '';
                                 if ($history->currency_id === $currency->id && $history->amount !== null) {
-                                    $val = rtrim(rtrim((string) abs($history->amount), '0'), '.');
+                                    // абсолютное значение
+                                    $abs = abs($history->amount);
+                                    // форматируем с 8 знаками после точки (подставьте своё количество)
+                                    $formatted = sprintf('%.8f', $abs);
+                                    // обрезаем лишние нули в конце, а затем — возможную точку
+                                    $trimmed = rtrim(rtrim($formatted, '0'), '.');
+                                    // знак
                                     $sign = $history->amount > 0 ? '+' : '-';
-                                    $cell = $sign . $val;
+                                    $cell = $sign . $trimmed;
                                 }
                             @endphp
-                            <td class="px-4 py-2 text-sm whitespace-nowrap">
+                            <td class="px-4 py-2 text-sm text-gray-200 whitespace-nowrap">
                                 @if($cell !== '')
                                     <span class="{{ $history->amount > 0 ? 'text-green-600' : 'text-red-600' }}">
-                                            {{ $cell }}
-                                        </span>
+            {{ $cell }}
+        </span>
                                 @else
                                     —
                                 @endif
@@ -716,7 +766,7 @@
                 @endforeach
                 </tbody>
                 <tfoot>
-                <tr class="bg-gray-100 font-semibold">
+                <tr class="bg-[#191919]">
                     @foreach($currencies as $currency)
                         @php
                             $sum = $totals[$currency->id] ?? 0;
@@ -742,10 +792,7 @@
             <!-- Стилизация контейнера итоговой суммы в USDT -->
             <div
                 id="usdtTotalContainer"
-                class="
-                    bg-gray-50
-                    border
-                    border-gray-200
+                class="bg-[#191919]
                     rounded-lg
                     px-4 py-3
                     flex items-center justify-between
@@ -764,59 +811,93 @@
             </div>
         </div>
 
+        {{-- Итого USDT по дням — Flowbite Chart --}}
+        <div class="bg-[#191919] rounded-xl shadow-md p-6 border border-[#2d2d2d] mb-6">
+            <h2 class="text-2xl font-semibold text-white mb-4">Итоги USDT по дням</h2>
+            <canvas
+                class="w-full h-64"
+                data-flowbite-chart="line"
+                data-chart-labels='@json($labels)'
+                data-chart-datasets='[{
+    "label": "USDT",
+    "data": @json($data),
+    "backgroundColor": "rgba(79, 70, 229, 0.4)",
+    "borderColor": "rgb(79, 70, 229)",
+    "tension": 0.4
+  }]'
+            ></canvas>
+        </div>
+
         {{-- ◆========== Третий блок: четыре мелких таблицы в две колонки ==========◆ --}}
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
-            {{-- 1) Transfers --}}
-            <div class="bg-white rounded-xl shadow-md overflow-x-auto">
-                <div class="px-6 py-4">
-                    <h2 class="text-xl font-semibold text-gray-800">Переводы</h2>
+            {{-- 1) Переводы --}}
+            <div class="bg-[#191919] rounded-xl shadow-md overflow-x-auto border border-[#2d2d2d]">
+                <div class="px-6 py-4 border-b border-[#2d2d2d]">
+                    <h2 class="text-2xl font-semibold text-white">Переводы</h2>
                 </div>
-                <table class="min-w-full divide-y divide-gray-200 table-auto">
-                    <thead class="bg-gray-100">
+                <table class="min-w-full table-auto border-collapse">
+                    <thead class="bg-[#191919]">
                     <tr class="sticky top-0">
-                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">
-                            Платформа «Откуда»
+                        <th class="px-5 py-3 text-xs font-semibold text-start text-white uppercase whitespace-nowrap border-b border-[#2d2d2d]">
+                            Откуда
                         </th>
-                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">
-                            Платформа «Куда»
+                        <th class="px-5 py-3 text-xs font-semibold text-start text-white uppercase whitespace-nowrap border-b border-[#2d2d2d]">
+                            Куда
                         </th>
-                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">
+                        <th class="px-5 py-3 text-xs font-semibold text-start text-white uppercase whitespace-nowrap border-b border-[#2d2d2d]">
                             Сумма
                         </th>
-                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">
-                            Комиссия –
+                        <th class="px-5 py-3 text-xs font-semibold text-start text-white uppercase whitespace-nowrap border-b border-[#2d2d2d]">
+                            Комиссия
                         </th>
                     </tr>
                     </thead>
-                    <tbody class="bg-white divide-y divide-gray-200">
+                    <tbody class="bg-gray-800 divide-y divide-[#2d2d2d]">
                     @foreach($transfers as $t)
-                        <tr class="hover:bg-gray-50">
-                            <td class="px-6 py-4 text-sm text-gray-900 whitespace-nowrap">
+                        <tr class="bg-[#191919] hover:bg-gray-700">
+                            <td class="px-5 py-4 text-sm text-gray-200 whitespace-nowrap">
                                 {{ optional($t->exchangerFrom)->title ?? '—' }}
                             </td>
-                            <td class="px-6 py-4 text-sm text-gray-900 whitespace-nowrap">
+                            <td class="px-5 py-4 text-sm text-gray-200 whitespace-nowrap">
                                 {{ optional($t->exchangerTo)->title ?? '—' }}
                             </td>
-                            <td class="px-6 py-4 text-sm whitespace-nowrap">
+                            <td class="px-5 py-4 text-sm whitespace-nowrap">
                                 @if($t->amount !== null)
-                                    @php $amt = rtrim(rtrim((string)$t->amount, '0'), '.'); @endphp
-                                    <span class="">
-                                            {{ ltrim($amt, '-') }}
-                                        </span>
-{{--                                <span class="{{ $t->ammountCurrency->color ?? 'bg-[#' . $t->ammountCurrency->color . ']'  }}"></span>--}}
-                                    {{ optional($t->amountCurrency)->code ?? '' }}
+                                    @php
+                                        $amt     = rtrim(rtrim((string)$t->amount, '0'), '.');
+                                        $codeAmt = optional($t->amountCurrency)->code;
+                                        $pathAmt = public_path("images/coins/{$codeAmt}.svg");
+                                        $urlAmt  = asset("images/coins/{$codeAmt}.svg");
+                                    @endphp
+                                    <div class="inline-flex items-center space-x-1">
+                                        <span class="text-white">{{ ltrim($amt, '-') }}</span>
+                                        @if($codeAmt && file_exists($pathAmt))
+                                            <img src="{{ $urlAmt }}" alt="{{ $codeAmt }}" class="w-4 h-4">
+                                        @else
+                                            <span class="text-white">{{ $codeAmt }}</span>
+                                        @endif
+                                    </div>
                                 @else
                                     —
                                 @endif
                             </td>
-                            <td class="px-6 py-4 text-sm whitespace-nowrap">
+                            <td class="px-5 py-4 text-sm whitespace-nowrap">
                                 @if($t->commission !== null)
-                                    @php $comm = rtrim(rtrim((string)$t->commission, '0'), '.'); @endphp
-                                    <span class="text-red-600">
-                                            -{{ ltrim($comm, '-') }}
-                                        </span>
-                                    {{ optional($t->commissionCurrency)->code ?? '' }}
+                                    @php
+                                        $comm      = rtrim(rtrim((string)$t->commission, '0'), '.');
+                                        $codeComm  = optional($t->commissionCurrency)->code;
+                                        $pathComm  = public_path("images/coins/{$codeComm}.svg");
+                                        $urlComm   = asset("images/coins/{$codeComm}.svg");
+                                    @endphp
+                                    <div class="inline-flex items-center space-x-1">
+                                        <span class="text-red-400">-{{ ltrim($comm, '-') }}</span>
+                                        @if($codeComm && file_exists($pathComm))
+                                            <img src="{{ $urlComm }}" alt="{{ $codeComm }}" class="w-4 h-4">
+                                        @else
+                                            <span class="text-white">{{ $codeComm }}</span>
+                                        @endif
+                                    </div>
                                 @else
                                     —
                                 @endif
@@ -831,42 +912,51 @@
             </div>
 
             {{-- 4) Payments --}}
-            <div class="bg-white rounded-xl shadow-md overflow-x-auto">
-                <div class="px-6 py-4">
-                    <h2 class="text-xl font-semibold text-gray-800">Оплата</h2>
+            <div class="bg-[#191919] rounded-xl shadow-md overflow-x-auto border border-[#2d2d2d]">
+                <div class="px-6 py-4 border-b border-[#2d2d2d]">
+                    <h2 class="text-2xl font-semibold text-white">Оплата</h2>
                 </div>
-                <table class="min-w-full divide-y divide-gray-200 table-auto">
-                    <thead class="bg-gray-100">
+                <table class="min-w-full table-auto border-collapse">
+                    <thead class="bg-[#191919]">
                     <tr class="sticky top-0">
-                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">
+                        <th class="px-5 py-3 text-xs font-semibold text-white uppercase text-start whitespace-nowrap border-b border-[#2d2d2d]">
                             Платформа
                         </th>
-                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">
-                            Сумма продажи –
+                        <th class="px-5 py-3 text-xs font-semibold text-white uppercase text-start whitespace-nowrap border-b border-[#2d2d2d]">
+                            Сумма
                         </th>
-                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">
+                        <th class="px-5 py-3 text-xs font-semibold text-white uppercase text-start whitespace-nowrap border-b border-[#2d2d2d]">
                             Комментарий
                         </th>
                     </tr>
                     </thead>
-                    <tbody class="bg-white divide-y divide-gray-200">
+                    <tbody class="bg-gray-800 divide-y divide-[#2d2d2d]">
                     @foreach($payments as $p)
-                        <tr class="hover:bg-gray-50">
-                            <td class="px-6 py-4 text-sm text-gray-900 whitespace-nowrap">
+                        <tr class="bg-[#191919] hover:bg-gray-700">
+                            <td class="px-5 py-4 text-sm text-white whitespace-nowrap">
                                 {{ optional($p->exchanger)->title ?? '—' }}
                             </td>
-                            <td class="px-6 py-4 text-sm whitespace-nowrap">
+                            <td class="px-5 py-4 text-sm whitespace-nowrap">
                                 @if($p->sell_amount !== null)
-                                    @php $amount = rtrim(rtrim((string)$p->sell_amount, '0'), '.'); @endphp
-                                    <span class="text-red-600">
-                                            -{{ ltrim($amount, '-') }}
-                                        </span>
-                                    {{ optional($p->sellCurrency)->code ?? '' }}
+                                    @php
+                                        $amount  = rtrim(rtrim((string)$p->sell_amount, '0'), '.');
+                                        $code    = optional($p->sellCurrency)->code;
+                                        $path    = public_path("images/coins/{$code}.svg");
+                                        $url     = asset("images/coins/{$code}.svg");
+                                    @endphp
+                                    <div class="inline-flex items-center space-x-1">
+                                        <span class="text-red-400">-{{ ltrim($amount, '-') }}</span>
+                                        @if($code && file_exists($path))
+                                            <img src="{{ $url }}" alt="{{ $code }}" class="w-4 h-4">
+                                        @else
+                                            <span class="text-white">{{ $code }}</span>
+                                        @endif
+                                    </div>
                                 @else
                                     —
                                 @endif
                             </td>
-                            <td class="px-6 py-4 text-sm text-gray-900">
+                            <td class="px-5 py-4 text-sm text-white">
                                 {{ $p->comment ?? '—' }}
                             </td>
                         </tr>
@@ -880,58 +970,77 @@
 
             {{-- … предыдущие блоки … --}}
 
-            {{-- 3) Покупки --}}
-            {{-- 3) Покупки --}}
-            <div class="bg-white rounded-xl shadow-md overflow-x-auto">
-                <div class="px-6 py-4 flex justify-between items-center">
-                    <h2 class="text-xl font-semibold text-gray-800">Покупка крипты</h2>
+            {{-- 2) Покупка крипты --}}
+            <div class="bg-[#191919] rounded-xl shadow-md overflow-x-auto border border-[#2d2d2d]">
+                <div class="px-6 py-4 border-b border-[#2d2d2d]">
+                    <h2 class="text-2xl font-semibold text-white">Покупка крипты</h2>
                 </div>
-                <table class="min-w-full divide-y divide-gray-200 table-auto">
-                    <thead class="bg-gray-100">
+                <table class="min-w-full table-auto border-collapse">
+                    <thead class="bg-[#191919]">
                     <tr class="sticky top-0">
                         @if(auth()->user()->role === 'admin')
-                            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Действие</th>
+                            <th class="px-5 py-3 text-xs font-semibold text-start text-white uppercase whitespace-nowrap border-b border-[#2d2d2d]">
+                                Действие
+                            </th>
                         @endif
-                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Платформа</th>
-                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Получено +</th>
-                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Продано −</th>
+                        <th class="px-5 py-3 text-xs font-semibold text-start text-white uppercase whitespace-nowrap border-b border-[#2d2d2d]">
+                            Платформа
+                        </th>
+                        <th class="px-5 py-3 text-xs font-semibold text-start text-white uppercase whitespace-nowrap border-b border-[#2d2d2d]">
+                            Получено +
+                        </th>
+                        <th class="px-5 py-3 text-xs font-semibold text-start text-white uppercase whitespace-nowrap border-b border-[#2d2d2d]">
+                            Продано −
+                        </th>
                     </tr>
                     </thead>
-                    <tbody class="bg-white divide-y divide-gray-200">
+                    <tbody class="bg-gray-800 divide-y divide-[#2d2d2d]">
                     @foreach($purchases as $pc)
-                        <tr class="hover:bg-gray-50" data-purchase-id="{{ $pc->id }}">
+                        <tr class="bg-[#191919] hover:bg-gray-700">
                             @if(auth()->user()->role === 'admin')
-                                <td class="px-6 py-4 whitespace-nowrap text-sm">
-                                    <button
-                                        class="edit-purchase-btn px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-xs"
-                                        data-id="{{ $pc->id }}"
-                                        data-exchanger-id="{{ $pc->exchanger_id }}"
-                                        data-received-amount="{{ $pc->received_amount }}"
-                                        data-received-currency-id="{{ $pc->received_currency_id }}"
-                                        data-sale-amount="{{ $pc->sale_amount }}"
-                                        data-sale-currency-id="{{ $pc->sale_currency_id }}"
-                                    >Редактировать</button>
-                                    <button
-                                        class="delete-purchase-btn ml-2 px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-xs"
-                                        data-id="{{ $pc->id }}"
-                                    >Удалить</button>
+                                <td class="px-5 py-4 text-gray-200 text-sm whitespace-nowrap">
+                                    {{-- кнопки редактирования --}}
                                 </td>
                             @endif
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            <td class="px-5 py-4 text-gray-200 text-sm whitespace-nowrap">
                                 {{ optional($pc->exchanger)->title ?? '—' }}
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm">
+                            <td class="px-5 py-4 text-sm whitespace-nowrap">
                                 @if(!is_null($pc->received_amount))
-                                    <span class="text-green-600">+{{ rtrim(rtrim((string)$pc->received_amount, '0'), '.') }}</span>
-                                    {{ optional($pc->receivedCurrency)->code }}
+                                    @php
+                                        $recAmt  = rtrim(rtrim((string)$pc->received_amount, '0'), '.');
+                                        $codeRec = optional($pc->receivedCurrency)->code;
+                                        $pathRec = public_path("images/coins/{$codeRec}.svg");
+                                        $urlRec  = asset("images/coins/{$codeRec}.svg");
+                                    @endphp
+                                    <div class="inline-flex items-center space-x-1">
+                                        <span class="text-green-400">+{{ $recAmt }}</span>
+                                        @if($codeRec && file_exists($pathRec))
+                                            <img src="{{ $urlRec }}" alt="{{ $codeRec }}" class="w-4 h-4">
+                                        @else
+                                            <span class="text-white">{{ $codeRec }}</span>
+                                        @endif
+                                    </div>
                                 @else
                                     —
                                 @endif
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm">
+                            <td class="px-5 py-4 text-sm whitespace-nowrap">
                                 @if(!is_null($pc->sale_amount))
-                                    <span class="text-red-600">-{{ rtrim(rtrim((string)$pc->sale_amount, '0'), '.') }}</span>
-                                    {{ optional($pc->saleCurrency)->code }}
+                                    @php
+                                        $saleAmt  = rtrim(rtrim((string)$pc->sale_amount, '0'), '.');
+                                        $codeSale = optional($pc->saleCurrency)->code;
+                                        $pathSale = public_path("images/coins/{$codeSale}.svg");
+                                        $urlSale  = asset("images/coins/{$codeSale}.svg");
+                                    @endphp
+                                    <div class="inline-flex items-center space-x-1">
+                                        <span class="text-red-400">-{{ $saleAmt }}</span>
+                                        @if($codeSale && file_exists($pathSale))
+                                            <img src="{{ $urlSale }}" alt="{{ $codeSale }}" class="w-4 h-4">
+                                        @else
+                                            <span class="text-white">{{ $codeSale }}</span>
+                                        @endif
+                                    </div>
                                 @else
                                     —
                                 @endif
@@ -997,7 +1106,8 @@
                                 <p class="text-red-600 text-sm mt-1" id="err_edit_received_amount"></p>
                             </div>
                             <div>
-                                <label for="edit_received_currency" class="block text-sm font-medium text-gray-700 mb-1">
+                                <label for="edit_received_currency"
+                                       class="block text-sm font-medium text-gray-700 mb-1">
                                     Валюта
                                 </label>
                                 <select
@@ -1102,7 +1212,7 @@
 
             <script>
                 document.addEventListener('DOMContentLoaded', () => {
-                    const editModal   = document.getElementById('modalEditPurchaseBackdrop');
+                    const editModal = document.getElementById('modalEditPurchaseBackdrop');
                     const deleteModal = document.getElementById('modalDeletePurchaseBackdrop');
 
                     // Закрытие
@@ -1119,20 +1229,20 @@
                     // Открытие редактирования
                     document.querySelectorAll('.edit-purchase-btn').forEach(btn => {
                         btn.addEventListener('click', () => {
-                            const id             = btn.dataset.id;
-                            const exchangerId    = btn.dataset.exchangerId;
+                            const id = btn.dataset.id;
+                            const exchangerId = btn.dataset.exchangerId;
                             const receivedAmount = btn.dataset.receivedAmount;
                             const receivedCurrId = btn.dataset.receivedCurrencyId;
-                            const saleAmount     = btn.dataset.saleAmount;
-                            const saleCurrId     = btn.dataset.saleCurrencyId;
+                            const saleAmount = btn.dataset.saleAmount;
+                            const saleCurrId = btn.dataset.saleCurrencyId;
 
-                            document.getElementById('edit_purchase_id').value            = id;
-                            document.getElementById('purchaseModalId').textContent       = `#${id}`;
-                            document.getElementById('edit_purchase_exchanger').value     = exchangerId;
-                            document.getElementById('edit_received_amount').value        = receivedAmount;
-                            document.getElementById('edit_received_currency').value      = receivedCurrId;
-                            document.getElementById('edit_sale_amount').value            = saleAmount;
-                            document.getElementById('edit_sale_currency').value          = saleCurrId;
+                            document.getElementById('edit_purchase_id').value = id;
+                            document.getElementById('purchaseModalId').textContent = `#${id}`;
+                            document.getElementById('edit_purchase_exchanger').value = exchangerId;
+                            document.getElementById('edit_received_amount').value = receivedAmount;
+                            document.getElementById('edit_received_currency').value = receivedCurrId;
+                            document.getElementById('edit_sale_amount').value = saleAmount;
+                            document.getElementById('edit_sale_currency').value = saleCurrId;
 
                             editModal.classList.remove('hidden');
                         });
@@ -1153,17 +1263,17 @@
                         e.preventDefault();
                         const id = document.getElementById('edit_purchase_id').value;
                         const data = {
-                            exchanger_id:         document.getElementById('edit_purchase_exchanger').value,
-                            received_amount:      document.getElementById('edit_received_amount').value,
+                            exchanger_id: document.getElementById('edit_purchase_exchanger').value,
+                            received_amount: document.getElementById('edit_received_amount').value,
                             received_currency_id: document.getElementById('edit_received_currency').value,
-                            sale_amount:          document.getElementById('edit_sale_amount').value,
-                            sale_currency_id:     document.getElementById('edit_sale_currency').value,
+                            sale_amount: document.getElementById('edit_sale_amount').value,
+                            sale_currency_id: document.getElementById('edit_sale_currency').value,
                         };
                         fetch(`/admin/purchases/${id}`, {
                             method: 'PUT',
                             headers: {
-                                'Content-Type':     'application/json',
-                                'X-CSRF-TOKEN':      document.querySelector('meta[name="csrf-token"]').content,
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
                                 'X-Requested-With': 'XMLHttpRequest'
                             },
                             body: JSON.stringify(data)
@@ -1182,7 +1292,7 @@
                         fetch(`/admin/purchases/${id}`, {
                             method: 'DELETE',
                             headers: {
-                                'X-CSRF-TOKEN':      document.querySelector('meta[name="csrf-token"]').content,
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
                                 'X-Requested-With': 'XMLHttpRequest'
                             }
                         })
@@ -1196,49 +1306,69 @@
                 });
             </script>
 
-            {{-- 2) SaleCrypts --}}
-            <div class="bg-white rounded-xl shadow-md overflow-x-auto">
-                <div class="px-6 py-4">
-                    <h2 class="text-xl font-semibold text-gray-800">Продажа крипты</h2>
+            {{-- 3) Продажа крипты --}}
+            <div class="bg-[#191919] rounded-xl shadow-md overflow-x-auto border border-[#2d2d2d]">
+                <div class="px-6 py-4 border-b border-[#2d2d2d]">
+                    <h2 class="text-2xl font-semibold text-white">Продажа крипты</h2>
                 </div>
-                <table class="min-w-full divide-y divide-gray-200 table-auto">
-                    <thead class="bg-gray-100">
+                <table class="min-w-full table-auto border-collapse">
+                    <thead class="bg-[#191919]">
                     <tr class="sticky top-0">
-                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">
+                        <th class="px-5 py-3 text-xs font-semibold text-start text-white uppercase whitespace-nowrap border-b border-[#2d2d2d]">
                             Платформа
                         </th>
-                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">
-                            Сумма продажи –
+                        <th class="px-5 py-3 text-xs font-semibold text-start text-white uppercase whitespace-nowrap border-b border-[#2d2d2d]">
+                            Продажа −
                         </th>
-                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">
-                            Сумма получена +
+                        <th class="px-5 py-3 text-xs font-semibold text-start text-white uppercase whitespace-nowrap border-b border-[#2d2d2d]">
+                            Получено +
                         </th>
                     </tr>
                     </thead>
-                    <tbody class="bg-white divide-y divide-gray-200">
+                    <tbody class="bg-gray-800 divide-y divide-[#2d2d2d]">
                     @foreach($saleCrypts as $sc)
-                        <tr class="hover:bg-gray-50">
-                            <td class="px-6 py-4 text-sm text-gray-900 whitespace-nowrap">
+                        <tr class="bg-[#191919] hover:bg-gray-700">
+                            <td class="px-5 py-4 text-gray-200 text-sm whitespace-nowrap">
                                 {{ optional($sc->exchanger)->title ?? '—' }}
                             </td>
-                            <td class="px-6 py-4 text-sm whitespace-nowrap">
+                            <td class="px-5 py-4 text-sm whitespace-nowrap">
                                 @if($sc->sale_amount !== null)
-                                    @php $sa = rtrim(rtrim((string)$sc->sale_amount, '0'), '.'); @endphp
-                                    <span class="text-red-600">
-                                            -{{ ltrim($sa, '-') }}
-                                        </span>
-                                    {{ optional($sc->saleCurrency)->code ?? '' }}
+                                    @php
+                                        $sa     = rtrim(rtrim((string)$sc->sale_amount, '0'), '.');
+                                        $codeSa = optional($sc->saleCurrency)->code;
+                                        $pathSa = public_path("images/coins/{$codeSa}.svg");
+                                        $urlSa  = asset("images/coins/{$codeSa}.svg");
+                                    @endphp
+                                    <div class="inline-flex items-center space-x-1">
+                                        <span class="text-red-400">-{{ ltrim($sa, '-') }}</span>
+                                        @if($codeSa && file_exists($pathSa))
+                                            <img src="{{ $urlSa }}" alt="{{ $codeSa }}" class="w-4 h-4">
+                                        @else
+                                            <span class="text-white">{{ $codeSa }}</span>
+                                        @endif
+                                    </div>
                                 @else
                                     —
                                 @endif
                             </td>
-                            <td class="px-6 py-4 text-sm whitespace-nowrap">
+                            <td class="px-5 py-4 text-sm whitespace-nowrap">
                                 @if($sc->fixed_amount !== null)
-                                    @php $fa = rtrim(rtrim((string)$sc->fixed_amount, '0'), '.'); @endphp
-                                    <span class="{{ $sc->fixed_amount > 0 ? 'text-green-600' : 'text-red-600' }}">
-                                            {{ $sc->fixed_amount > 0 ? '+' : '-' }}{{ ltrim($fa, '-') }}
-                                        </span>
-                                    {{ optional($sc->fixedCurrency)->code ?? '' }}
+                                    @php
+                                        $fa      = rtrim(rtrim((string)$sc->fixed_amount, '0'), '.');
+                                        $codeFa  = optional($sc->fixedCurrency)->code;
+                                        $pathFa  = public_path("images/coins/{$codeFa}.svg");
+                                        $urlFa   = asset("images/coins/{$codeFa}.svg");
+                                    @endphp
+                                    <div class="inline-flex items-center space-x-1">
+                  <span class="{{ $sc->fixed_amount > 0 ? 'text-green-400' : 'text-red-400' }}">
+                    {{ $sc->fixed_amount > 0 ? '+' : '-' }}{{ ltrim($fa, '-') }}
+                  </span>
+                                        @if($codeFa && file_exists($pathFa))
+                                            <img src="{{ $urlFa }}" alt="{{ $codeFa }}" class="w-4 h-4">
+                                        @else
+                                            <span class="text-white">{{ $codeFa }}</span>
+                                        @endif
+                                    </div>
                                 @else
                                     —
                                 @endif
@@ -1251,7 +1381,6 @@
                     <span class="text-sm text-gray-500">Ещё</span>
                 </div>
             </div>
-
         </div>
     </div>
 @endsection

@@ -1,10 +1,10 @@
-<header class="bg-white shadow-sm">
+<header class="bg-[#0a0a0a] shadow-sm">
     <div class="container mx-auto flex items-center justify-between h-16 px-4">
-        <a href="{{ route('view.main') }}" class="text-2xl font-semibold text-gray-800">
+        <a href="{{ route('view.main') }}" class="text-2xl font-semibold text-white">
             Бухгалтерия
         </a>
         <nav>
-            <ul class="flex space-x-8 text-gray-600 items-center">
+            <ul class="flex space-x-8 text-white items-center">
                 @guest
                     <li><a href="#" class="hover:text-gray-800">Войти</a></li>
                 @endguest

@@ -3,72 +3,62 @@
 @section('title','Вход')
 
 @section('content')
-    <div class="flex items-center justify-center min-h-screen py-6">
-        <div class="w-full max-w-md bg-white rounded-2xl shadow-lg p-8">
-            <h2 class="text-3xl font-extrabold text-gray-800 mb-8 text-center">Вход</h2>
+    <div class="flex items-center justify-center min-h-screen bg-gray-900 py-6">
+        <div class="w-full max-w-md bg-[#191919] rounded-xl shadow-md border border-[#2d2d2d] p-8">
+            <h2 class="text-2xl font-semibold text-white mb-6 text-center">Войти</h2>
 
             <form method="POST" action="{{ route('login.perform') }}" class="space-y-6">
                 @csrf
 
+                {{-- Логин --}}
                 <div>
-                    <label for="login" class="block text-sm font-medium text-gray-700">Логин</label>
+                    <label for="login" class="block text-sm font-medium text-gray-300 mb-1">Логин</label>
                     <input
                         id="login"
                         name="login"
                         type="text"
                         value="{{ old('login') }}"
-                        class="mt-1 block w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-2 text-gray-900
-           placeholder-gray-400 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-200
-           @error('login') border-red-500 focus:ring-red-200 @enderror"
                         placeholder="Введите логин"
+                        class="w-full bg-[#1F1F1F] border border-[#2d2d2d] text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500"
                     >
                     @error('login')
-                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                    <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
                     @enderror
                 </div>
 
-                {{-- Password --}}
+                {{-- Пароль --}}
                 <div>
-                    <label for="password" class="block text-sm font-medium text-gray-700">Пароль</label>
+                    <label for="password" class="block text-sm font-medium text-gray-300 mb-1">Пароль</label>
                     <input
                         id="password"
                         name="password"
                         type="password"
-                        class="mt-1 block w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-2 text-gray-900
-                           placeholder-gray-400 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-200
-                           @error('password') border-red-500 focus:ring-red-200 @enderror"
                         placeholder="●●●●●●●●"
+                        class="w-full bg-[#1F1F1F] border border-[#2d2d2d] text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500"
                     >
                     @error('password')
-                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                    <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
                     @enderror
                 </div>
 
-                {{-- Remember --}}
+                {{-- Запомнить --}}
                 <div class="flex items-center">
                     <input
                         id="remember"
                         name="remember"
                         type="checkbox"
-                        class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        class="h-4 w-4 rounded border-gray-600 bg-[#1F1F1F] text-cyan-500 focus:ring-cyan-400"
                     >
-                    <label for="remember" class="ml-2 block text-sm text-gray-700">Запомнить меня</label>
+                    <label for="remember" class="ml-2 text-sm text-gray-300">Запомнить меня</label>
                 </div>
 
-                {{-- Submit --}}
+                {{-- Кнопка --}}
                 <button
                     type="submit"
-                    class="w-full rounded-lg bg-green-600 py-3 text-lg font-semibold text-white shadow-md
-                       transition-colors duration-200 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-300"
+                    class="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-semibold py-3 rounded-lg transition focus:outline-none focus:ring-2 focus:ring-cyan-500"
                 >
                     Войти
                 </button>
-
-                {{-- Link to register --}}
-{{--                <p class="text-center text-sm text-gray-600">--}}
-{{--                    Нет аккаунта?--}}
-{{--                    <a href="{{ route('view.register') }}" class="font-medium text-blue-600 hover:underline">Зарегистрироваться</a>--}}
-{{--                </p>--}}
             </form>
         </div>
     </div>

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Application;
 use App\Models\Currency;
+use App\Models\DailyUsdtTotal;
 use App\Models\Exchanger;
 use App\Models\History;
 use App\Models\Payment;
@@ -151,7 +152,7 @@ class MainController extends Controller
             Application::upsert(
                 $toUpsert,
                 ['exchanger', 'app_id'],          // уникальный составной ключ
-                ['app_created_at', 'status', 'sale_text', 'updated_at']
+                ['app_created_at', 'status', 'updated_at']
             );
         } catch (\Exception $e) {
             Log::critical('fetchAndSyncRemote: ошибка при upsert в БД', [
@@ -192,21 +193,45 @@ class MainController extends Controller
         $payments = Payment::orderBy('created_at', 'desc')->get();
         $purchases = Purchase::orderBy('created_at', 'desc')->get();
 
-        // История операций (поле currency_id)
         $histories = History::with('currency')
-            ->orderBy('created_at', 'asc')
-            ->paginate(100, ['*'], 'page', $pageNum);
+            ->orderBy('created_at', 'desc')
+            ->take(10)
+            ->get()
+            // чтобы на странице они шли по возрастанию даты
+            ->sortBy('created_at');
 
-        // Итог по видимой странице истории (для второго блока таблицы)
+        // 2) Считаем итоги по всей базе, группируя по currency_id
+        $rawTotals = History::whereNotNull('currency_id')
+            ->groupBy('currency_id')
+            ->select('currency_id', DB::raw('SUM(amount) as total'))
+            ->pluck('total', 'currency_id');
+        // возвращает коллекцию вида [ currency_id => total, ... ]
+
+        // 3) Получим список валют из вашей модели (или из тех, что вообще есть в истории)
+        $currencies = Currency::whereIn('id', $rawTotals->keys())->get();
+
+        // 4) Сформируем массив итогов только для этих валют
         $totals = [];
         foreach ($currencies as $c) {
-            $totals[$c->id] = 0;
+            $totals[$c->code] = $rawTotals->get($c->id, 0);
         }
-        foreach ($histories->items() as $h) {
-            if ($h->currency_id) {
-                $totals[$h->currency_id] += $h->amount;
-            }
-        }
+
+
+        Log::debug('=== История заявок ===');
+        Log::debug(print_r($rawTotals, true));
+
+        Log::debug('=== Итоги по валютам на странице ===');
+        Log::debug(print_r($totals, true));
+
+        // достаём всё из daily_usdt_totals, отсортированное по дате
+        $daily = DailyUsdtTotal::orderBy('date')->get();
+
+        $labels = $daily
+            ->pluck('date')
+            ->map(fn($d) => Carbon::parse($d)->format('d.m'))
+            ->toArray();
+
+        $data = $daily->pluck('total')->toArray();
 
         return view('pages.main', compact(
             'apps',
@@ -217,7 +242,9 @@ class MainController extends Controller
             'payments',
             'purchases',
             'histories',
-            'totals'
+            'totals',
+            'labels',
+            'data'
         ));
     }
 
