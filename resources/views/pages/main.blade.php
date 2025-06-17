@@ -814,21 +814,40 @@
         {{-- Итого USDT по дням — Flowbite Chart --}}
         <div class="bg-[#191919] rounded-xl shadow-md p-6 border border-[#2d2d2d] mb-6">
             <h2 class="text-2xl font-semibold text-white mb-4">Итоги USDT по дням</h2>
-            <canvas
-                class="w-full h-64"
-                data-flowbite-chart="line"
-                data-chart-labels='@json($labels)'
-                data-chart-datasets='[{
-    "label": "USDT",
-    "data": @json($data),
-    "backgroundColor": "rgba(79, 70, 229, 0.4)",
-    "borderColor": "rgb(79, 70, 229)",
-    "tension": 0.4
-  }]'
-            ></canvas>
+            <div class="flex gap-4 mb-6">
+                <div>
+                    <label class="block text-sm text-gray-400 mb-1">От</label>
+                    <input type="date" id="start_date" class="bg-gray-800 text-white px-3 py-2 rounded-lg border border-gray-600" value="{{ now()->subDays(6)->format('Y-m-d') }}">
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-400 mb-1">До</label>
+                    <input type="date" id="end_date" class="bg-gray-800 text-white px-3 py-2 rounded-lg border border-gray-600" value="{{ now()->format('Y-m-d') }}">
+                </div>
+            </div>
+            @php
+                $datasets = [[
+                    'label' => 'USDT',
+                    'data' => $data,
+                    'backgroundColor' => 'rgba(79, 70, 229, 0.2)',
+                    'borderColor' => 'rgb(79, 70, 229)',
+                    'pointBackgroundColor' => $pointColors,
+                    'pointRadius' => 6,
+                    'pointHoverRadius' => 8,
+                    'tension' => 0.4,
+                    'fill' => true,
+                ]];
+            @endphp
+
+                <div class="relative h-[400px]">
+                    <canvas
+                        id="lineChart"
+                        class="w-full h-64"
+                        data-labels='@json($labels)'
+                        data-datasets='@json($datasets)'
+                    ></canvas>
+                </div>
         </div>
 
-        {{-- ◆========== Третий блок: четыре мелких таблицы в две колонки ==========◆ --}}
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
             {{-- 1) Переводы --}}

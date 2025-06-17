@@ -11,3 +11,7 @@
 #usdt-total-cell.negative {
     @apply text-red-800;
 }
+
+canvas {
+    max-height: 100% !important;
+}

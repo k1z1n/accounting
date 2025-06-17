@@ -216,13 +216,6 @@ class MainController extends Controller
             $totals[$c->code] = $rawTotals->get($c->id, 0);
         }
 
-
-        Log::debug('=== История заявок ===');
-        Log::debug(print_r($rawTotals, true));
-
-        Log::debug('=== Итоги по валютам на странице ===');
-        Log::debug(print_r($totals, true));
-
         // достаём всё из daily_usdt_totals, отсортированное по дате
         $daily = DailyUsdtTotal::orderBy('date')->get();
 
@@ -232,6 +225,11 @@ class MainController extends Controller
             ->toArray();
 
         $data = $daily->pluck('total')->toArray();
+
+        // Цвет точки: зелёный если delta > 0, красный — если < 0
+        $pointColors = $daily->map(fn($row) =>
+        $row->delta >= 0 ? '#22c55e' : '#ef4444'
+        )->toArray();
 
         return view('pages.main', compact(
             'apps',
@@ -244,8 +242,41 @@ class MainController extends Controller
             'histories',
             'totals',
             'labels',
-            'data'
+            'data',
+            'pointColors'
         ));
+    }
+
+    public function usdtChart(Request $request)
+    {
+        $start = $request->query('start')
+            ? Carbon::parse($request->query('start'))->startOfDay()
+            : now()->subDays(6)->startOfDay();
+
+        $end = $request->query('end')
+            ? Carbon::parse($request->query('end'))->endOfDay()
+            : now()->endOfDay();
+
+        $daily = DailyUsdtTotal::whereBetween('date', [$start, $end])->orderBy('date')->get();
+
+        $labels = $daily->pluck('date')->map(fn($d) => Carbon::parse($d)->format('d.m'))->toArray();
+        $data = $daily->pluck('total')->toArray();
+        $pointColors = $daily->map(fn($row) => $row->delta >= 0 ? '#22c55e' : '#ef4444')->toArray();
+
+        return response()->json([
+            'labels' => $labels,
+            'datasets' => [[
+                'label' => 'USDT',
+                'data' => $data,
+                'backgroundColor' => 'rgba(79, 70, 229, 0.2)',
+                'borderColor' => 'rgb(79, 70, 229)',
+                'pointBackgroundColor' => $pointColors,
+                'pointRadius' => 6,
+                'pointHoverRadius' => 8,
+                'tension' => 0.4,
+                'fill' => true,
+            ]]
+        ]);
     }
 
 
