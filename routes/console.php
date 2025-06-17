@@ -10,5 +10,5 @@ Artisan::command('inspire', function () {
 
 
 Schedule::command('app:calculate-daily-usdt-summary')
-    ->everyMinute()
-    ->timezone('Europe/Moscow')        ->appendOutputTo(storage_path('logs/daily-summary.log'));
+    ->dailyAt('23:55')
+    ->timezone('Europe/Moscow')->appendOutputTo(storage_path('logs/daily-summary.log'));;
