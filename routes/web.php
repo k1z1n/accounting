@@ -27,6 +27,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'dashboard'])->name('view.profile');
     Route::get('/api/wallets/balances', [ProfileController::class, 'balances'])->name('api.wallets.balances');
     Route::get('/api/wallets/history', [ProfileController::class, 'history'])->name('api.wallets.history');
+    Route::get('/chart/usdt', [MainController::class, 'usdtChart']);
 });
 
 Route::middleware('admin')->prefix('admin')->group(function () {
