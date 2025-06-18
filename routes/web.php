@@ -4,9 +4,12 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CurrencyController;
 use App\Http\Controllers\MainController;
+use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PlatformController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PurchaseController;
+use App\Http\Controllers\SaleCryptController;
+use App\Http\Controllers\TransferController;
 use Illuminate\Support\Facades\Route;
 
 
@@ -35,7 +38,10 @@ Route::middleware('admin')->prefix('admin')->group(function () {
     Route::resource('currencies', CurrencyController::class)->except(['show', 'index', 'create']);
     Route::resource('platforms', PlatformController::class)->except(['show', 'index', 'create', 'store']);
 
-    Route::resource('purchases', PurchaseController::class)->only(['update','destroy']);
+    Route::resource('purchases', PurchaseController::class)->only(['index','update','destroy']);
+    Route::resource('transfers', TransferController::class)->only(['index','update','destroy']);
+    Route::resource('payments', PaymentController::class)->only(['index','update','destroy']);
+    Route::resource('sale-crypts', SaleCryptController::class)->only(['index','update','destroy']);
 
     Route::get('/user/updates', [AdminController::class, 'viewUpdateLogs'])->name('view.update.logs');
     Route::get('/list/exchangers', [AdminController::class, 'viewExchangers'])->name('view.exchangers');

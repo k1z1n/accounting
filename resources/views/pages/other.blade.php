@@ -72,7 +72,7 @@
                                focus:outline-none focus:ring-2 focus:ring-cyan-500 transition"
                         >
                             <option value="" selected>— Выберите валюту —</option>
-                            @foreach($currencies as $c)
+                            @foreach($currenciesForEdit as $c)
                                 <option value="{{ $c->id }}">{{ $c->code }} — {{ $c->name }}</option>
                             @endforeach
                         </select>
@@ -222,7 +222,7 @@
                                focus:outline-none focus:ring-2 focus:ring-cyan-500 transition"
                         >
                             <option value="" selected>— Выберите валюту —</option>
-                            @foreach($currencies as $c)
+                            @foreach($currenciesForEdit as $c)
                                 <option value="{{ $c->id }}">{{ $c->code }} — {{ $c->name }}</option>
                             @endforeach
                         </select>
@@ -268,7 +268,7 @@
                                focus:outline-none focus:ring-2 focus:ring-cyan-500 transition"
                         >
                             <option value="" selected>— Выберите валюту —</option>
-                            @foreach($currencies as $c)
+                            @foreach($currenciesForEdit as $c)
                                 <option value="{{ $c->id }}">{{ $c->code }} — {{ $c->name }}</option>
                             @endforeach
                         </select>
@@ -372,7 +372,7 @@
                                    focus:outline-none focus:ring-2 focus:ring-cyan-500 transition"
                         >
                             <option value="" selected>— Выберите валюту —</option>
-                            @foreach($currencies as $c)
+                            @foreach($currenciesForEdit as $c)
                                 <option value="{{ $c->id }}">{{ $c->code }} — {{ $c->name }}</option>
                             @endforeach
                         </select>
@@ -416,7 +416,7 @@
                                    focus:outline-none focus:ring-2 focus:ring-cyan-500 transition"
                         >
                             <option value="" selected>— Выберите валюту —</option>
-                            @foreach($currencies as $c)
+                            @foreach($currenciesForEdit as $c)
                                 <option value="{{ $c->id }}">{{ $c->code }} — {{ $c->name }}</option>
                             @endforeach
                         </select>
@@ -522,7 +522,7 @@
                                    focus:outline-none focus:ring-2 focus:ring-cyan-500 transition"
                         >
                             <option value="" selected>— Выберите валюту —</option>
-                            @foreach($currencies as $c)
+                            @foreach($currenciesForEdit as $c)
                                 <option value="{{ $c->id }}">{{ $c->code }} — {{ $c->name }}</option>
                             @endforeach
                         </select>
@@ -566,7 +566,7 @@
                                    focus:outline-none focus:ring-2 focus:ring-cyan-500 transition"
                         >
                             <option value="" selected>— Выберите валюту —</option>
-                            @foreach($currencies as $c)
+                            @foreach($currenciesForEdit as $c)
                                 <option value="{{ $c->id }}">{{ $c->code }} — {{ $c->name }}</option>
                             @endforeach
                         </select>

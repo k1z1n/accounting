@@ -59,7 +59,7 @@
                                         class="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2 pr-8 focus:outline-none focus:ring-2 focus:ring-cyan-500 appearance-none"
                                     >
                                         <option value="" disabled selected>— Выберите валюту —</option>
-                                        @foreach($currencies as $c)
+                                        @foreach($currenciesForEdit as $c)
                                             <option value="{{ $c->code }}">{{ $c->code }} — {{ $c->name }}</option>
                                         @endforeach
                                     </select>
@@ -99,7 +99,7 @@
                                         class="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2 pr-8 focus:outline-none focus:ring-2 focus:ring-cyan-500 appearance-none"
                                     >
                                         <option value="" disabled selected>— Выберите валюту —</option>
-                                        @foreach($currencies as $c)
+                                        @foreach($currenciesForEdit as $c)
                                             <option value="{{ $c->code }}">{{ $c->code }} — {{ $c->name }}</option>
                                         @endforeach
                                     </select>
@@ -139,7 +139,7 @@
                                         class="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2 pr-8 focus:outline-none focus:ring-2 focus:ring-cyan-500 appearance-none"
                                     >
                                         <option value="" disabled selected>— Выберите валюту —</option>
-                                        @foreach($currencies as $c)
+                                        @foreach($currenciesForEdit as $c)
                                             <option value="{{ $c->code }}">{{ $c->code }} — {{ $c->name }}</option>
                                         @endforeach
                                     </select>
@@ -558,129 +558,145 @@
                             'X-Requested-With': 'XMLHttpRequest'
                         }
                     })
-                        .then(response => {
-                            if (!response.ok) throw new Error("HTTP status " + response.status);
-                            return response.json();
-                        })
+                        .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
                         .then(json => {
                             const tbody = document.getElementById('appsTbody');
 
                             json.data.forEach(d => {
-                                let rowHtml = '';
+                                // старт строки
+                                let rowHtml = `<tr class="bg-[#191919] hover:bg-gray-700">`;
 
                                 if (window.isAdmin) {
-                                    // 1) Кнопка «Редактировать»
+                                    // Действие (Редактировать)
                                     rowHtml += `
-                                    <td class="px-5 py-4 whitespace-nowrap text-sm text-gray-900">
-                                        <button
-                                            class="editBtn px-3 py-1 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition text-xs"
-                                            data-id="${d.id}"
-                                            data-sell_amount="${d.sell_amount ?? ''}"
-                                            data-sell_currency="${d.sell_currency?.code ?? ''}"
-                                            data-buy_amount="${d.buy_amount ?? ''}"
-                                            data-buy_currency="${d.buy_currency?.code ?? ''}"
-                                            data-expense_amount="${d.expense_amount ?? ''}"
-                                            data-expense_currency="${d.expense_currency?.code ?? ''}"
-                                            data-merchant="${d.merchant ?? ''}"
-                                            data-order_id="${d.order_id ?? ''}"
-                                        >Редактировать</button>
-                                    </td>`;
+                <td class="px-5 py-4 text-sm text-gray-200 whitespace-nowrap">
+                    <button
+                        class="editBtn px-3 py-1 bg-cyan-600 text-white rounded-md hover:bg-cyan-700 transition text-xs"
+                        data-id="${d.id}"
+                        data-app_id="${d.app_id}"
+                        data-sell_amount="${d.sell_amount ?? ''}"
+                        data-sell_currency="${d.sell_currency?.code ?? ''}"
+                        data-buy_amount="${d.buy_amount ?? ''}"
+                        data-buy_currency="${d.buy_currency?.code ?? ''}"
+                        data-expense_amount="${d.expense_amount ?? ''}"
+                        data-expense_currency="${d.expense_currency?.code ?? ''}"
+                        data-merchant="${d.merchant ?? ''}"
+                        data-order_id="${d.order_id ?? ''}"
+                    >Редактировать</button>
+                </td>`;
 
-                                    // 2) «Кто изменил»
-                                    const whoEdited = (d.user && d.user.login) ? d.user.login : '-';
-                                    rowHtml += `<td class="px-5 py-4 whitespace-nowrap text-sm text-gray-900 text-center">
-                                                ${whoEdited}
-                                            </td>`;
+                                    // Кто изменил
+                                    const who = d.user?.login ?? '-';
+                                    rowHtml += `
+                <td class="px-5 py-4 text-sm text-gray-200 text-center whitespace-nowrap">
+                    ${who}
+                </td>`;
                                 }
 
-                                // 3) Номер заявки
-                                rowHtml += `<td class="px-5 py-4 whitespace-nowrap text-sm text-gray-900">${d.app_id}</td>`;
+                                // Номер заявки
+                                rowHtml += `
+            <td class="px-5 py-4 text-sm text-gray-200 text-center whitespace-nowrap">
+                ${d.app_id}
+            </td>`;
 
-                                // 4) Дата создания (формат «dd.mm.YYYY hh:mm:ss»)
-                                const created = new Date(d.app_created_at);
-                                const dd = String(created.getDate()).padStart(2, '0');
-                                const mm = String(created.getMonth() + 1).padStart(2, '0');
-                                const yyyy = created.getFullYear();
-                                const hh = String(created.getHours()).padStart(2, '0');
-                                const min = String(created.getMinutes()).padStart(2, '0');
-                                const ss = String(created.getSeconds()).padStart(2, '0');
-                                rowHtml += `<td class="px-5 py-4 whitespace-nowrap text-sm text-gray-900">
-                                            ${dd}.${mm}.${yyyy} ${hh}:${min}:${ss}
-                                        </td>`;
+                                // Дата создания
+                                const dt = new Date(d.app_created_at);
+                                const fmt = `${String(dt.getDate()).padStart(2,'0')}.${String(dt.getMonth()+1).padStart(2,'0')}.${dt.getFullYear()} ${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}:${String(dt.getSeconds()).padStart(2,'0')}`;
+                                rowHtml += `
+            <td class="px-5 py-4 text-sm text-gray-200 text-center whitespace-nowrap">
+                ${fmt}
+            </td>`;
 
-                                // 5) Обменник
-                                rowHtml += `<td class="px-5 py-4 whitespace-nowrap text-sm text-gray-900">${d.exchanger}</td>`;
+                                // Обменник
+                                rowHtml += `
+            <td class="px-5 py-4 text-sm text-gray-200 text-center whitespace-nowrap">
+                ${d.exchanger}
+            </td>`;
 
-                                // 6) Статус
-                                rowHtml += `<td class="px-5 py-4 whitespace-nowrap text-sm text-gray-900">${d.status}</td>`;
+                                // Статус
+                                rowHtml += `
+            <td class="px-5 py-4 text-sm text-gray-200 text-center whitespace-nowrap">
+                ${d.status}
+            </td>`;
 
-                                // 7) Приход+ (sale_text)
+                                // Приход+
                                 if (d.sale_text) {
-                                    const parts = d.sale_text.split(' ');
-                                    const amount = parts[0] || '';
-                                    const cur = parts[1] || '';
-                                    rowHtml += `<td class="px-5 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                <span class="text-green-600">+${amount}</span>${cur ? '&nbsp;' + cur : ''}
-                                            </td>`;
+                                    const [amt, cur] = d.sale_text.trim().split(' ');
+                                    rowHtml += `
+                <td class="px-5 py-4 text-sm text-gray-200 whitespace-nowrap">
+                    <div class="inline-flex items-center space-x-1">
+                        <span class="text-green-400">+${amt}</span>
+                        ${cur ? `<img src="/images/coins/${cur}.svg" alt="${cur}" class="w-4 h-4">` : ''}
+                    </div>
+                </td>`;
                                 } else {
-                                    rowHtml += `<td class="px-5 py-4 whitespace-nowrap text-sm text-gray-900">—</td>`;
+                                    rowHtml += `<td class="px-5 py-4 text-sm text-gray-200 whitespace-nowrap">—</td>`;
                                 }
 
-                                // 8) Продажа− (d.sell_currency вместо d.sellCurrency)
+                                // Продажа−
                                 if (d.sell_amount !== null && d.sell_currency) {
-                                    let sell = String(d.sell_amount).replace(/\.?0+$/, '');
-                                    sell = sell.replace(/^-/, '');
-                                    rowHtml += `<td class="px-5 py-4 whitespace-nowrap text-sm">
-                                                <span class="text-red-600">-${sell}</span>&nbsp;${d.sell_currency.code}
-                                            </td>`;
+                                    const sell = String(d.sell_amount).replace(/\.?0+$/, '').replace(/^-/, '');
+                                    rowHtml += `
+                <td class="px-5 py-4 text-sm text-gray-200 whitespace-nowrap">
+                    <div class="inline-flex items-center space-x-1">
+                        <span class="text-red-400">-${sell}</span>
+                        <img src="/images/coins/${d.sell_currency.code}.svg" alt="${d.sell_currency.code}" class="w-4 h-4">
+                    </div>
+                </td>`;
                                 } else {
-                                    rowHtml += `<td class="px-5 py-4 whitespace-nowrap text-sm">—</td>`;
+                                    rowHtml += `<td class="px-5 py-4 text-sm text-gray-200 whitespace-nowrap">—</td>`;
                                 }
 
-                                // 9) Купля+ (d.buy_currency вместо d.buyCurrency)
+                                // Купля+
                                 if (d.buy_amount !== null && d.buy_currency) {
-                                    let buy = String(d.buy_amount).replace(/\.?0+$/, '');
+                                    const buy = String(d.buy_amount).replace(/\.?0+$/, '').replace(/^-/, '');
                                     const sign = d.buy_amount > 0 ? '+' : '-';
-                                    const cls = d.buy_amount > 0 ? 'text-green-600' : 'text-red-600';
-                                    buy = buy.replace(/^-/, '');
-                                    rowHtml += `<td class="px-5 py-4 whitespace-nowrap text-sm">
-                                                <span class="${cls}">${sign}${buy}</span>&nbsp;${d.buy_currency.code}
-                                            </td>`;
+                                    const cls  = d.buy_amount > 0 ? 'text-green-400' : 'text-red-400';
+                                    rowHtml += `
+                <td class="px-5 py-4 text-sm text-gray-200 whitespace-nowrap">
+                    <div class="inline-flex items-center space-x-1">
+                        <span class="${cls}">${sign}${buy}</span>
+                        <img src="/images/coins/${d.buy_currency.code}.svg" alt="${d.buy_currency.code}" class="w-4 h-4">
+                    </div>
+                </td>`;
                                 } else {
-                                    rowHtml += `<td class="px-5 py-4 whitespace-nowrap text-sm">—</td>`;
+                                    rowHtml += `<td class="px-5 py-4 text-sm text-gray-200 whitespace-nowrap">—</td>`;
                                 }
 
-                                // 10) Расход− (d.expense_currency вместо d.expenseCurrency)
+                                // Расход−
                                 if (d.expense_amount !== null && d.expense_currency) {
-                                    let exp = String(d.expense_amount).replace(/\.?0+$/, '');
-                                    exp = exp.replace(/^-/, '');
-                                    rowHtml += `<td class="px-5 py-4 whitespace-nowrap text-sm">
-                                                <span class="text-red-600">-${exp}</span>&nbsp;${d.expense_currency.code}
-                                            </td>`;
+                                    const exp = String(d.expense_amount).replace(/\.?0+$/, '').replace(/^-/, '');
+                                    rowHtml += `
+                <td class="px-5 py-4 text-sm text-gray-200 whitespace-nowrap">
+                    <div class="inline-flex items-center space-x-1">
+                        <span class="text-red-400">-${exp}</span>
+                        <img src="/images/coins/${d.expense_currency.code}.svg" alt="${d.expense_currency.code}" class="w-4 h-4">
+                    </div>
+                </td>`;
                                 } else {
-                                    rowHtml += `<td class="px-5 py-4 whitespace-nowrap text-sm">—</td>`;
+                                    rowHtml += `<td class="px-5 py-4 text-sm text-gray-200 whitespace-nowrap">—</td>`;
                                 }
 
-                                // 11) Мерчант
-                                rowHtml += `<td class="px-5 py-4 whitespace-nowrap text-sm text-gray-900">
-                                            ${d.merchant ?? '—'}
-                                        </td>`;
+                                // Мерчант
+                                rowHtml += `
+            <td class="px-5 py-4 text-sm text-gray-200 text-center whitespace-nowrap">
+                ${d.merchant ?? '—'}
+            </td>`;
 
-                                // 12) ID ордера
-                                rowHtml += `<td class="px-5 py-4 whitespace-nowrap text-sm text-gray-900">
-                                            ${d.order_id ?? '—'}
-                                        </td>`;
+                                // ID ордера
+                                rowHtml += `
+            <td class="px-5 py-4 text-sm text-gray-200 text-center whitespace-nowrap">
+                ${d.order_id ?? '—'}
+            </td>`;
 
-                                // Вставляем в <tbody>
-                                const tr = document.createElement('tr');
-                                tr.classList.add('hover:bg-gray-50');
-                                tr.setAttribute('data-app-row-id', d.id);
-                                tr.innerHTML = rowHtml;
-                                tbody.appendChild(tr);
+                                // закрываем строку
+                                rowHtml += `</tr>`;
+
+                                tbody.insertAdjacentHTML('beforeend', rowHtml);
                             });
 
                             btn.dataset.nextPage = parseInt(nextPage) + 1;
-                            btn.dataset.hasMore = json.has_more ? 'true' : 'false';
+                            btn.dataset.hasMore  = json.has_more ? 'true' : 'false';
                             btn.disabled = false;
                             btn.textContent = json.has_more ? 'Загрузить ещё' : 'Больше заявок нет';
 
@@ -705,7 +721,7 @@
             <table class="min-w-full table-auto border-collapse divide-y divide-[#2d2d2d]">
                 <thead class="bg-[#191919]">
                 <tr class="sticky top-0">
-                    @foreach($currencies as $currency)
+                    @foreach($currenciesForEdit as $currency)
                         <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">
                             @php
                                 // цветной бэкграунд (если есть)
@@ -737,7 +753,7 @@
                 <tbody class="bg-gray-800 divide-y divide-[#2d2d2d]">
                 @foreach($histories as $history)
                     <tr class="bg-[#191919] hover:bg-gray-700">
-                        @foreach($currencies as $currency)
+                        @foreach($currenciesForEdit as $currency)
                             @php
                                 $cell = '';
                                 if ($history->currency_id === $currency->id && $history->amount !== null) {
@@ -767,7 +783,7 @@
                 </tbody>
                 <tfoot>
                 <tr class="bg-[#191919]">
-                    @foreach($currencies as $currency)
+                    @foreach($currenciesForEdit as $currency)
                         @php
                             $sum = $totals[$currency->id] ?? 0;
                             if ($sum > 0) {
@@ -817,11 +833,15 @@
             <div class="flex gap-4 mb-6">
                 <div>
                     <label class="block text-sm text-gray-400 mb-1">От</label>
-                    <input type="date" id="start_date" class="bg-gray-800 text-white px-3 py-2 rounded-lg border border-gray-600" value="{{ now()->subDays(6)->format('Y-m-d') }}">
+                    <input type="date" id="start_date"
+                           class="bg-gray-800 text-white px-3 py-2 rounded-lg border border-gray-600"
+                           value="{{ now()->subDays(6)->format('Y-m-d') }}">
                 </div>
                 <div>
                     <label class="block text-sm text-gray-400 mb-1">До</label>
-                    <input type="date" id="end_date" class="bg-gray-800 text-white px-3 py-2 rounded-lg border border-gray-600" value="{{ now()->format('Y-m-d') }}">
+                    <input type="date" id="end_date"
+                           class="bg-gray-800 text-white px-3 py-2 rounded-lg border border-gray-600"
+                           value="{{ now()->format('Y-m-d') }}">
                 </div>
             </div>
             @php
@@ -838,14 +858,14 @@
                 ]];
             @endphp
 
-                <div class="relative h-[400px]">
-                    <canvas
-                        id="lineChart"
-                        class="w-full h-64"
-                        data-labels='@json($labels)'
-                        data-datasets='@json($datasets)'
-                    ></canvas>
-                </div>
+            <div class="relative h-[400px]">
+                <canvas
+                    id="lineChart"
+                    class="w-full h-64"
+                    data-labels='@json($labels)'
+                    data-datasets='@json($datasets)'
+                ></canvas>
+            </div>
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -855,34 +875,43 @@
                 <div class="px-6 py-4 border-b border-[#2d2d2d]">
                     <h2 class="text-2xl font-semibold text-white">Переводы</h2>
                 </div>
-                <table class="min-w-full table-auto border-collapse">
+                <table id="transfersTable" class="min-w-full table-auto border-collapse">
                     <thead class="bg-[#191919]">
                     <tr class="sticky top-0">
-                        <th class="px-5 py-3 text-xs font-semibold text-start text-white uppercase whitespace-nowrap border-b border-[#2d2d2d]">
-                            Откуда
-                        </th>
-                        <th class="px-5 py-3 text-xs font-semibold text-start text-white uppercase whitespace-nowrap border-b border-[#2d2d2d]">
-                            Куда
-                        </th>
-                        <th class="px-5 py-3 text-xs font-semibold text-start text-white uppercase whitespace-nowrap border-b border-[#2d2d2d]">
-                            Сумма
-                        </th>
-                        <th class="px-5 py-3 text-xs font-semibold text-start text-white uppercase whitespace-nowrap border-b border-[#2d2d2d]">
-                            Комиссия
-                        </th>
+                        @if(auth()->user()->role === 'admin')
+                            <th class="px-5 py-3 text-xs font-semibold text-white uppercase border-b border-[#2d2d2d]">Действие</th>
+                        @endif
+                        <th class="px-5 py-3 text-xs font-semibold text-white uppercase border-b border-[#2d2d2d]">Откуда</th>
+                        <th class="px-5 py-3 text-xs font-semibold text-white uppercase border-b border-[#2d2d2d]">Куда</th>
+                        <th class="px-5 py-3 text-xs font-semibold text-white uppercase border-b border-[#2d2d2d]">Сумма</th>
+                        <th class="px-5 py-3 text-xs font-semibold text-white uppercase border-b border-[#2d2d2d]">Комиссия</th>
                     </tr>
                     </thead>
-                    <tbody class="bg-gray-800 divide-y divide-[#2d2d2d]">
+                    <tbody id="transfersTbody" class="bg-gray-800 divide-y divide-[#2d2d2d]">
                     @foreach($transfers as $t)
                         <tr class="bg-[#191919] hover:bg-gray-700">
-                            <td class="px-5 py-4 text-sm text-gray-200 whitespace-nowrap">
-                                {{ optional($t->exchangerFrom)->title ?? '—' }}
-                            </td>
-                            <td class="px-5 py-4 text-sm text-gray-200 whitespace-nowrap">
-                                {{ optional($t->exchangerTo)->title ?? '—' }}
-                            </td>
+                            @if(auth()->user()->role === 'admin')
+                                <td class="px-5 py-4 whitespace-nowrap space-x-2">
+                                    <button
+                                        class="edit-transfer-btn px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs"
+                                        data-id="{{ $t->id }}"
+                                        data-from-id="{{ $t->exchanger_from_id }}"
+                                        data-to-id="{{ $t->exchanger_to_id }}"
+                                        data-amount="{{ $t->amount }}"
+                                        data-amount-currency-id="{{ $t->amount_currency_id }}"
+                                        data-commission="{{ $t->commission }}"
+                                        data-commission-currency-id="{{ $t->commission_currency_id }}"
+                                    >✏️</button>
+                                    <button
+                                        class="delete-transfer-btn px-2 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-xs"
+                                        data-id="{{ $t->id }}"
+                                    >🗑️</button>
+                                </td>
+                            @endif
+                            <td class="px-5 py-4 text-gray-200 whitespace-nowrap">{{ optional($t->exchangerFrom)->title ?? '—' }}</td>
+                            <td class="px-5 py-4 text-gray-200 whitespace-nowrap">{{ optional($t->exchangerTo)->title ?? '—' }}</td>
                             <td class="px-5 py-4 text-sm whitespace-nowrap">
-                                @if($t->amount !== null)
+                                @if(!is_null($t->amount))
                                     @php
                                         $amt     = rtrim(rtrim((string)$t->amount, '0'), '.');
                                         $codeAmt = optional($t->amountCurrency)->code;
@@ -890,9 +919,9 @@
                                         $urlAmt  = asset("images/coins/{$codeAmt}.svg");
                                     @endphp
                                     <div class="inline-flex items-center space-x-1">
-                                        <span class="text-white">{{ ltrim($amt, '-') }}</span>
+                                        <span class="text-white">{{ ltrim($amt,'-') }}</span>
                                         @if($codeAmt && file_exists($pathAmt))
-                                            <img src="{{ $urlAmt }}" alt="{{ $codeAmt }}" class="w-4 h-4">
+                                            <img src="{{ $urlAmt }}" class="w-4 h-4" alt="{{ $codeAmt }}">
                                         @else
                                             <span class="text-white">{{ $codeAmt }}</span>
                                         @endif
@@ -902,17 +931,17 @@
                                 @endif
                             </td>
                             <td class="px-5 py-4 text-sm whitespace-nowrap">
-                                @if($t->commission !== null)
+                                @if(!is_null($t->commission))
                                     @php
-                                        $comm      = rtrim(rtrim((string)$t->commission, '0'), '.');
-                                        $codeComm  = optional($t->commissionCurrency)->code;
-                                        $pathComm  = public_path("images/coins/{$codeComm}.svg");
-                                        $urlComm   = asset("images/coins/{$codeComm}.svg");
+                                        $comm     = rtrim(rtrim((string)$t->commission, '0'), '.');
+                                        $codeComm = optional($t->commissionCurrency)->code;
+                                        $pathComm = public_path("images/coins/{$codeComm}.svg");
+                                        $urlComm  = asset("images/coins/{$codeComm}.svg");
                                     @endphp
                                     <div class="inline-flex items-center space-x-1">
-                                        <span class="text-red-400">-{{ ltrim($comm, '-') }}</span>
+                                        <span class="text-red-400">-{{ ltrim($comm,'-') }}</span>
                                         @if($codeComm && file_exists($pathComm))
-                                            <img src="{{ $urlComm }}" alt="{{ $codeComm }}" class="w-4 h-4">
+                                            <img src="{{ $urlComm }}" class="w-4 h-4" alt="{{ $codeComm }}">
                                         @else
                                             <span class="text-white">{{ $codeComm }}</span>
                                         @endif
@@ -925,46 +954,62 @@
                     @endforeach
                     </tbody>
                 </table>
-                <div class="px-6 py-2">
-                    <span class="text-sm text-gray-500">Ещё</span>
+                <div class="px-6 py-2 text-center">
+                    <button
+                        id="loadMoreTransfers"
+                        class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                        data-next-page="{{ $transfers->currentPage()+1 }}"
+                        data-has-more="{{ $transfers->hasMorePages() ? 'true' : 'false' }}"
+                    >Загрузить ещё</button>
                 </div>
             </div>
 
-            {{-- 4) Payments --}}
+            {{-- 2) Оплата --}}
             <div class="bg-[#191919] rounded-xl shadow-md overflow-x-auto border border-[#2d2d2d]">
                 <div class="px-6 py-4 border-b border-[#2d2d2d]">
                     <h2 class="text-2xl font-semibold text-white">Оплата</h2>
                 </div>
-                <table class="min-w-full table-auto border-collapse">
+                <table id="paymentsTable" class="min-w-full table-auto border-collapse">
                     <thead class="bg-[#191919]">
                     <tr class="sticky top-0">
-                        <th class="px-5 py-3 text-xs font-semibold text-white uppercase text-start whitespace-nowrap border-b border-[#2d2d2d]">
-                            Платформа
-                        </th>
-                        <th class="px-5 py-3 text-xs font-semibold text-white uppercase text-start whitespace-nowrap border-b border-[#2d2d2d]">
-                            Сумма
-                        </th>
-                        <th class="px-5 py-3 text-xs font-semibold text-white uppercase text-start whitespace-nowrap border-b border-[#2d2d2d]">
-                            Комментарий
-                        </th>
+                        @if(auth()->user()->role === 'admin')
+                            <th class="px-5 py-3 text-xs font-semibold text-white uppercase border-b border-[#2d2d2d]">Действие</th>
+                        @endif
+                        <th class="px-5 py-3 text-xs font-semibold text-white uppercase border-b border-[#2d2d2d]">Платформа</th>
+                        <th class="px-5 py-3 text-xs font-semibold text-white uppercase border-b border-[#2d2d2d]">Сумма</th>
+                        <th class="px-5 py-3 text-xs font-semibold text-white uppercase border-b border-[#2d2d2d]">Комментарий</th>
                     </tr>
                     </thead>
-                    <tbody class="bg-gray-800 divide-y divide-[#2d2d2d]">
+                    <tbody id="paymentsTbody" class="bg-gray-800 divide-y divide-[#2d2d2d]">
                     @foreach($payments as $p)
                         <tr class="bg-[#191919] hover:bg-gray-700">
-                            <td class="px-5 py-4 text-sm text-white whitespace-nowrap">
-                                {{ optional($p->exchanger)->title ?? '—' }}
-                            </td>
+                            @if(auth()->user()->role === 'admin')
+                                <td class="px-5 py-4 whitespace-nowrap space-x-2">
+                                    <button
+                                        class="edit-payment-btn px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs"
+                                        data-id="{{ $p->id }}"
+                                        data-exchanger-id="{{ $p->exchanger_id }}"
+                                        data-sell-amount="{{ $p->sell_amount }}"
+                                        data-sell-currency-id="{{ $p->sell_currency_id }}"
+                                        data-comment="{{ $p->comment }}"
+                                    >✏️</button>
+                                    <button
+                                        class="delete-payment-btn px-2 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-xs"
+                                        data-id="{{ $p->id }}"
+                                    >🗑️</button>
+                                </td>
+                            @endif
+                            <td class="px-5 py-4 text-white whitespace-nowrap">{{ optional($p->exchanger)->title ?? '—' }}</td>
                             <td class="px-5 py-4 text-sm whitespace-nowrap">
-                                @if($p->sell_amount !== null)
+                                @if(!is_null($p->sell_amount))
                                     @php
-                                        $amount  = rtrim(rtrim((string)$p->sell_amount, '0'), '.');
-                                        $code    = optional($p->sellCurrency)->code;
-                                        $path    = public_path("images/coins/{$code}.svg");
-                                        $url     = asset("images/coins/{$code}.svg");
+                                        $amt  = rtrim(rtrim((string)$p->sell_amount, '0'), '.');
+                                        $code = optional($p->sellCurrency)->code;
+                                        $path = public_path("images/coins/{$code}.svg");
+                                        $url  = asset("images/coins/{$code}.svg");
                                     @endphp
                                     <div class="inline-flex items-center space-x-1">
-                                        <span class="text-red-400">-{{ ltrim($amount, '-') }}</span>
+                                        <span class="text-red-400">-{{ ltrim($amt, '-') }}</span>
                                         @if($code && file_exists($path))
                                             <img src="{{ $url }}" alt="{{ $code }}" class="w-4 h-4">
                                         @else
@@ -975,55 +1020,58 @@
                                     —
                                 @endif
                             </td>
-                            <td class="px-5 py-4 text-sm text-white">
-                                {{ $p->comment ?? '—' }}
-                            </td>
+                            <td class="px-5 py-4 text-white">{{ $p->comment ?? '—' }}</td>
                         </tr>
                     @endforeach
                     </tbody>
                 </table>
-                <div class="px-6 py-2">
-                    <span class="text-sm text-gray-500">Ещё</span>
+                <div class="px-6 py-2 text-center">
+                    <button
+                        id="loadMorePayments"
+                        class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                        data-next-page="{{ $payments->currentPage()+1 }}"
+                        data-has-more="{{ $payments->hasMorePages() ? 'true' : 'false' }}"
+                    >Загрузить ещё</button>
                 </div>
             </div>
 
-            {{-- … предыдущие блоки … --}}
-
-            {{-- 2) Покупка крипты --}}
+            {{-- 3) Покупка крипты --}}
             <div class="bg-[#191919] rounded-xl shadow-md overflow-x-auto border border-[#2d2d2d]">
                 <div class="px-6 py-4 border-b border-[#2d2d2d]">
                     <h2 class="text-2xl font-semibold text-white">Покупка крипты</h2>
                 </div>
-                <table class="min-w-full table-auto border-collapse">
+                <table id="purchasesTable" class="min-w-full table-auto border-collapse">
                     <thead class="bg-[#191919]">
                     <tr class="sticky top-0">
                         @if(auth()->user()->role === 'admin')
-                            <th class="px-5 py-3 text-xs font-semibold text-start text-white uppercase whitespace-nowrap border-b border-[#2d2d2d]">
-                                Действие
-                            </th>
+                            <th class="px-5 py-3 text-xs font-semibold text-white uppercase border-b border-[#2d2d2d]">Действие</th>
                         @endif
-                        <th class="px-5 py-3 text-xs font-semibold text-start text-white uppercase whitespace-nowrap border-b border-[#2d2d2d]">
-                            Платформа
-                        </th>
-                        <th class="px-5 py-3 text-xs font-semibold text-start text-white uppercase whitespace-nowrap border-b border-[#2d2d2d]">
-                            Получено +
-                        </th>
-                        <th class="px-5 py-3 text-xs font-semibold text-start text-white uppercase whitespace-nowrap border-b border-[#2d2d2d]">
-                            Продано −
-                        </th>
+                        <th class="px-5 py-3 text-xs font-semibold text-white uppercase border-b border-[#2d2d2d]">Платформа</th>
+                        <th class="px-5 py-3 text-xs font-semibold text-white uppercase border-b border-[#2d2d2d]">Получено +</th>
+                        <th class="px-5 py-3 text-xs font-semibold text-white uppercase border-b border-[#2d2d2d]">Продано −</th>
                     </tr>
                     </thead>
-                    <tbody class="bg-gray-800 divide-y divide-[#2d2d2d]">
+                    <tbody id="purchasesTbody" class="bg-gray-800 divide-y divide-[#2d2d2d]">
                     @foreach($purchases as $pc)
                         <tr class="bg-[#191919] hover:bg-gray-700">
                             @if(auth()->user()->role === 'admin')
-                                <td class="px-5 py-4 text-gray-200 text-sm whitespace-nowrap">
-                                    {{-- кнопки редактирования --}}
+                                <td class="px-5 py-4 whitespace-nowrap space-x-2">
+                                    <button
+                                        class="edit-purchase-btn px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs"
+                                        data-id="{{ $pc->id }}"
+                                        data-exchanger-id="{{ $pc->exchanger_id }}"
+                                        data-received-amount="{{ $pc->received_amount }}"
+                                        data-received-currency-id="{{ $pc->received_currency_id }}"
+                                        data-sale-amount="{{ $pc->sale_amount }}"
+                                        data-sale-currency-id="{{ $pc->sale_currency_id }}"
+                                    >✏️</button>
+                                    <button
+                                        class="delete-purchase-btn px-2 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-xs"
+                                        data-id="{{ $pc->id }}"
+                                    >🗑️</button>
                                 </td>
                             @endif
-                            <td class="px-5 py-4 text-gray-200 text-sm whitespace-nowrap">
-                                {{ optional($pc->exchanger)->title ?? '—' }}
-                            </td>
+                            <td class="px-5 py-4 text-gray-200 whitespace-nowrap">{{ optional($pc->exchanger)->title ?? '—' }}</td>
                             <td class="px-5 py-4 text-sm whitespace-nowrap">
                                 @if(!is_null($pc->received_amount))
                                     @php
@@ -1068,290 +1116,55 @@
                     @endforeach
                     </tbody>
                 </table>
-                <div class="px-6 py-2">
-                    <span class="text-sm text-gray-500">Ещё</span>
+                <div class="px-6 py-2 text-center">
+                    <button
+                        id="loadMorePurchases"
+                        class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                        data-next-page="{{ $purchases->currentPage()+1 }}"
+                        data-has-more="{{ $purchases->hasMorePages() ? 'true' : 'false' }}"
+                    >Загрузить ещё</button>
                 </div>
             </div>
 
-            {{-- Модальное окно редактирования покупки (стиль «Добавить») --}}
-            <div
-                id="modalEditPurchaseBackdrop"
-                class="fixed inset-0 flex items-center justify-center bg-black/20 backdrop-blur-sm z-50 hidden"
-            >
-                <div id="modalEditPurchaseClose" class="absolute inset-0"></div>
-
-                <div class="bg-white rounded-xl shadow-xl p-6 relative z-10 w-full max-w-md animate-fadeIn">
-                    <header class="mb-6 border-b border-gray-200 pb-3">
-                        <h3 class="text-2xl font-semibold text-gray-800">
-                            Редактировать покупку <span id="purchaseModalId" class="text-blue-600"></span>
-                        </h3>
-                    </header>
-                    <form id="editPurchaseForm" class="space-y-5">
-                        @csrf
-                        <input type="hidden" id="edit_purchase_id">
-
-                        {{-- 1) Платформа --}}
-                        <div>
-                            <label for="edit_purchase_exchanger" class="block text-sm font-medium text-gray-700 mb-1">
-                                Платформа
-                            </label>
-                            <select
-                                id="edit_purchase_exchanger"
-                                class="block w-full bg-white border border-gray-300 rounded-md shadow-sm
-                           px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500
-                           hover:bg-gray-50 transition duration-150 ease-in-out"
-                            >
-                                <option value="" disabled>— Выберите платформу —</option>
-                                @foreach($exchangers as $e)
-                                    <option value="{{ $e->id }}">{{ $e->title }}</option>
-                                @endforeach
-                            </select>
-                            <p class="text-red-600 text-sm mt-1" id="err_edit_purchase_exchanger"></p>
-                        </div>
-
-                        {{-- 2) «Получено»: сумма + валюта --}}
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div>
-                                <label for="edit_received_amount" class="block text-sm font-medium text-gray-700 mb-1">
-                                    Получено +
-                                </label>
-                                <input
-                                    type="number"
-                                    step="0.00000001"
-                                    id="edit_received_amount"
-                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    placeholder="0.00123456"
-                                >
-                                <p class="text-red-600 text-sm mt-1" id="err_edit_received_amount"></p>
-                            </div>
-                            <div>
-                                <label for="edit_received_currency"
-                                       class="block text-sm font-medium text-gray-700 mb-1">
-                                    Валюта
-                                </label>
-                                <select
-                                    id="edit_received_currency"
-                                    class="block w-full bg-white border border-gray-300 rounded-md shadow-sm
-                               px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500
-                               hover:bg-gray-50 transition duration-150 ease-in-out"
-                                >
-                                    <option value="" disabled>— Выберите валюту —</option>
-                                    @foreach($currencies as $c)
-                                        <option value="{{ $c->id }}">{{ $c->code }} — {{ $c->name }}</option>
-                                    @endforeach
-                                </select>
-                                <p class="text-red-600 text-sm mt-1" id="err_edit_received_currency"></p>
-                            </div>
-                        </div>
-
-                        {{-- 3) «Продано»: сумма + валюта --}}
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div>
-                                <label for="edit_sale_amount" class="block text-sm font-medium text-gray-700 mb-1">
-                                    Продано −
-                                </label>
-                                <input
-                                    type="number"
-                                    step="0.00000001"
-                                    id="edit_sale_amount"
-                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    placeholder="0.00012345"
-                                >
-                                <p class="text-red-600 text-sm mt-1" id="err_edit_sale_amount"></p>
-                            </div>
-                            <div>
-                                <label for="edit_sale_currency" class="block text-sm font-medium text-gray-700 mb-1">
-                                    Валюта
-                                </label>
-                                <select
-                                    id="edit_sale_currency"
-                                    class="block w-full bg-white border border-gray-300 rounded-md shadow-sm
-                               px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500
-                               hover:bg-gray-50 transition duration-150 ease-in-out"
-                                >
-                                    <option value="" disabled>— Выберите валюту —</option>
-                                    @foreach($currencies as $c)
-                                        <option value="{{ $c->id }}">{{ $c->code }} — {{ $c->name }}</option>
-                                    @endforeach
-                                </select>
-                                <p class="text-red-600 text-sm mt-1" id="err_edit_sale_currency"></p>
-                            </div>
-                        </div>
-
-                        {{-- Кнопки --}}
-                        <div class="flex justify-end space-x-3 pt-4 border-t border-gray-200">
-                            <button
-                                type="button"
-                                id="cancelEditPurchase"
-                                class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition"
-                            >
-                                Отмена
-                            </button>
-                            <button
-                                type="submit"
-                                class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
-                            >
-                                Сохранить
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-
-            {{-- Модальное окно подтверждения удаления покупки --}}
-            <div
-                id="modalDeletePurchaseBackdrop"
-                class="fixed inset-0 flex items-center justify-center bg-black/20 backdrop-blur-sm z-50 hidden"
-            >
-                <div id="modalDeletePurchaseClose" class="absolute inset-0"></div>
-                <div class="bg-white rounded-xl shadow-xl p-6 relative z-10 w-full max-w-sm animate-fadeIn">
-                    <header class="mb-4">
-                        <h3 class="text-xl font-semibold text-gray-800">
-                            Удалить покупку <span id="deletePurchaseId" class="text-blue-600"></span>?
-                        </h3>
-                    </header>
-                    <p class="mb-6 text-gray-700">Все связанные записи в истории будут удалены.</p>
-                    <div class="flex justify-end space-x-3 pt-4 border-t border-gray-200">
-                        <button
-                            type="button"
-                            id="cancelDeletePurchase"
-                            class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition"
-                        >
-                            Отмена
-                        </button>
-                        <button
-                            id="confirmDeletePurchase"
-                            class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
-                        >
-                            Удалить
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <script>
-                document.addEventListener('DOMContentLoaded', () => {
-                    const editModal = document.getElementById('modalEditPurchaseBackdrop');
-                    const deleteModal = document.getElementById('modalDeletePurchaseBackdrop');
-
-                    // Закрытие
-                    document.getElementById('modalEditPurchaseClose')
-                        ?.addEventListener('click', () => editModal.classList.add('hidden'));
-                    document.getElementById('cancelEditPurchase')
-                        ?.addEventListener('click', () => editModal.classList.add('hidden'));
-
-                    document.getElementById('modalDeletePurchaseClose')
-                        ?.addEventListener('click', () => deleteModal.classList.add('hidden'));
-                    document.getElementById('cancelDeletePurchase')
-                        ?.addEventListener('click', () => deleteModal.classList.add('hidden'));
-
-                    // Открытие редактирования
-                    document.querySelectorAll('.edit-purchase-btn').forEach(btn => {
-                        btn.addEventListener('click', () => {
-                            const id = btn.dataset.id;
-                            const exchangerId = btn.dataset.exchangerId;
-                            const receivedAmount = btn.dataset.receivedAmount;
-                            const receivedCurrId = btn.dataset.receivedCurrencyId;
-                            const saleAmount = btn.dataset.saleAmount;
-                            const saleCurrId = btn.dataset.saleCurrencyId;
-
-                            document.getElementById('edit_purchase_id').value = id;
-                            document.getElementById('purchaseModalId').textContent = `#${id}`;
-                            document.getElementById('edit_purchase_exchanger').value = exchangerId;
-                            document.getElementById('edit_received_amount').value = receivedAmount;
-                            document.getElementById('edit_received_currency').value = receivedCurrId;
-                            document.getElementById('edit_sale_amount').value = saleAmount;
-                            document.getElementById('edit_sale_currency').value = saleCurrId;
-
-                            editModal.classList.remove('hidden');
-                        });
-                    });
-
-                    // Открытие удаления
-                    document.querySelectorAll('.delete-purchase-btn').forEach(btn => {
-                        btn.addEventListener('click', () => {
-                            const id = btn.dataset.id;
-                            document.getElementById('deletePurchaseId').textContent = `#${id}`;
-                            document.getElementById('confirmDeletePurchase').dataset.id = id;
-                            deleteModal.classList.remove('hidden');
-                        });
-                    });
-
-                    // Сохранить изменения
-                    document.getElementById('editPurchaseForm').addEventListener('submit', e => {
-                        e.preventDefault();
-                        const id = document.getElementById('edit_purchase_id').value;
-                        const data = {
-                            exchanger_id: document.getElementById('edit_purchase_exchanger').value,
-                            received_amount: document.getElementById('edit_received_amount').value,
-                            received_currency_id: document.getElementById('edit_received_currency').value,
-                            sale_amount: document.getElementById('edit_sale_amount').value,
-                            sale_currency_id: document.getElementById('edit_sale_currency').value,
-                        };
-                        fetch(`/admin/purchases/${id}`, {
-                            method: 'PUT',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                                'X-Requested-With': 'XMLHttpRequest'
-                            },
-                            body: JSON.stringify(data)
-                        })
-                            .then(r => {
-                                if (!r.ok) throw new Error(r.status);
-                                return r.json();
-                            })
-                            .then(() => location.reload())
-                            .catch(() => alert('Не удалось сохранить изменения'));
-                    });
-
-                    // Удалить
-                    document.getElementById('confirmDeletePurchase').addEventListener('click', () => {
-                        const id = document.getElementById('confirmDeletePurchase').dataset.id;
-                        fetch(`/admin/purchases/${id}`, {
-                            method: 'DELETE',
-                            headers: {
-                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                                'X-Requested-With': 'XMLHttpRequest'
-                            }
-                        })
-                            .then(r => {
-                                if (!r.ok) throw new Error(r.status);
-                                return r.json();
-                            })
-                            .then(() => location.reload())
-                            .catch(() => alert('Не удалось удалить запись'));
-                    });
-                });
-            </script>
-
-            {{-- 3) Продажа крипты --}}
+            {{-- 4) Продажа крипты --}}
             <div class="bg-[#191919] rounded-xl shadow-md overflow-x-auto border border-[#2d2d2d]">
                 <div class="px-6 py-4 border-b border-[#2d2d2d]">
                     <h2 class="text-2xl font-semibold text-white">Продажа крипты</h2>
                 </div>
-                <table class="min-w-full table-auto border-collapse">
+                <table id="saleCryptsTable" class="min-w-full table-auto border-collapse">
                     <thead class="bg-[#191919]">
                     <tr class="sticky top-0">
-                        <th class="px-5 py-3 text-xs font-semibold text-start text-white uppercase whitespace-nowrap border-b border-[#2d2d2d]">
-                            Платформа
-                        </th>
-                        <th class="px-5 py-3 text-xs font-semibold text-start text-white uppercase whitespace-nowrap border-b border-[#2d2d2d]">
-                            Продажа −
-                        </th>
-                        <th class="px-5 py-3 text-xs font-semibold text-start text-white uppercase whitespace-nowrap border-b border-[#2d2d2d]">
-                            Получено +
-                        </th>
+                        @if(auth()->user()->role === 'admin')
+                            <th class="px-5 py-3 text-xs font-semibold text-white uppercase border-b border-[#2d2d2d]">Действие</th>
+                        @endif
+                        <th class="px-5 py-3 text-xs font-semibold text-white uppercase border-b border-[#2d2d2d]">Платформа</th>
+                        <th class="px-5 py-3 text-xs font-semibold text-white uppercase border-b border-[#2d2d2d]">Продажа −</th>
+                        <th class="px-5 py-3 text-xs font-semibold text-white uppercase border-b border-[#2d2d2d]">Получено +</th>
                     </tr>
                     </thead>
-                    <tbody class="bg-gray-800 divide-y divide-[#2d2d2d]">
+                    <tbody id="saleCryptsTbody" class="bg-gray-800 divide-y divide-[#2d2d2d]">
                     @foreach($saleCrypts as $sc)
                         <tr class="bg-[#191919] hover:bg-gray-700">
-                            <td class="px-5 py-4 text-gray-200 text-sm whitespace-nowrap">
-                                {{ optional($sc->exchanger)->title ?? '—' }}
-                            </td>
+                            @if(auth()->user()->role === 'admin')
+                                <td class="px-5 py-4 whitespace-nowrap space-x-2">
+                                    <button
+                                        class="edit-salecrypt-btn px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs"
+                                        data-id="{{ $sc->id }}"
+                                        data-exchanger-id="{{ $sc->exchanger_id }}"
+                                        data-sale-amount="{{ $sc->sale_amount }}"
+                                        data-sale-currency-id="{{ $sc->sale_currency_id }}"
+                                        data-fixed-amount="{{ $sc->fixed_amount }}"
+                                        data-fixed-currency-id="{{ $sc->fixed_currency_id }}"
+                                    >✏️</button>
+                                    <button
+                                        class="delete-salecrypt-btn px-2 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-xs"
+                                        data-id="{{ $sc->id }}"
+                                    >🗑️</button>
+                                </td>
+                            @endif
+                            <td class="px-5 py-4 text-gray-200 whitespace-nowrap">{{ optional($sc->exchanger)->title ?? '—' }}</td>
                             <td class="px-5 py-4 text-sm whitespace-nowrap">
-                                @if($sc->sale_amount !== null)
+                                @if(!is_null($sc->sale_amount))
                                     @php
                                         $sa     = rtrim(rtrim((string)$sc->sale_amount, '0'), '.');
                                         $codeSa = optional($sc->saleCurrency)->code;
@@ -1359,7 +1172,7 @@
                                         $urlSa  = asset("images/coins/{$codeSa}.svg");
                                     @endphp
                                     <div class="inline-flex items-center space-x-1">
-                                        <span class="text-red-400">-{{ ltrim($sa, '-') }}</span>
+                                        <span class="text-red-400">-{{ ltrim($sa,'-') }}</span>
                                         @if($codeSa && file_exists($pathSa))
                                             <img src="{{ $urlSa }}" alt="{{ $codeSa }}" class="w-4 h-4">
                                         @else
@@ -1371,17 +1184,17 @@
                                 @endif
                             </td>
                             <td class="px-5 py-4 text-sm whitespace-nowrap">
-                                @if($sc->fixed_amount !== null)
+                                @if(!is_null($sc->fixed_amount))
                                     @php
-                                        $fa      = rtrim(rtrim((string)$sc->fixed_amount, '0'), '.');
-                                        $codeFa  = optional($sc->fixedCurrency)->code;
-                                        $pathFa  = public_path("images/coins/{$codeFa}.svg");
-                                        $urlFa   = asset("images/coins/{$codeFa}.svg");
+                                        $fa     = rtrim(rtrim((string)$sc->fixed_amount, '0'), '.');
+                                        $codeFa = optional($sc->fixedCurrency)->code;
+                                        $pathFa = public_path("images/coins/{$codeFa}.svg");
+                                        $urlFa  = asset("images/coins/{$codeFa}.svg");
                                     @endphp
                                     <div class="inline-flex items-center space-x-1">
-                  <span class="{{ $sc->fixed_amount > 0 ? 'text-green-400' : 'text-red-400' }}">
-                    {{ $sc->fixed_amount > 0 ? '+' : '-' }}{{ ltrim($fa, '-') }}
-                  </span>
+                <span class="{{ $sc->fixed_amount>0 ? 'text-green-400':'text-red-400' }}">
+                  {{ $sc->fixed_amount>0?'+':'' }}{{ ltrim($fa,'-') }}
+                </span>
                                         @if($codeFa && file_exists($pathFa))
                                             <img src="{{ $urlFa }}" alt="{{ $codeFa }}" class="w-4 h-4">
                                         @else
@@ -1396,10 +1209,20 @@
                     @endforeach
                     </tbody>
                 </table>
-                <div class="px-6 py-2">
-                    <span class="text-sm text-gray-500">Ещё</span>
+                <div class="px-6 py-2 text-center">
+                    <button
+                        id="loadMoreSaleCrypts"
+                        class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                        data-next-page="{{ $saleCrypts->currentPage()+1 }}"
+                        data-has-more="{{ $saleCrypts->hasMorePages() ? 'true' : 'false' }}"
+                    >Загрузить ещё</button>
                 </div>
             </div>
         </div>
     </div>
+    @include('modal.edit-payment')
+    @include('modal.edit-purchase')
+    @include('modal.edit-salecrypt')
+    @include('modal.edit-transfer')
+    @vite('resources/js/crud.js')
 @endsection

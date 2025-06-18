@@ -9,6 +9,20 @@ use Illuminate\Http\Request;
 
 class PurchaseController extends Controller
 {
+    public function index(Request $request)
+    {
+        $perPage = 20;
+        $page    = $request->get('page', 1);
+        $data    = Purchase::with(['exchangerFrom','exchangerTo','amountCurrency','commissionCurrency'])
+            ->orderByDesc('created_at')
+            ->paginate($perPage, ['*'], 'page', $page);
+
+        return response()->json([
+            'data'     => $data->items(),
+            'has_more' => $data->hasMorePages(),
+        ]);
+    }
+
     public function update(Request $req, Purchase $purchase)
     {
         $data = $req->validate([

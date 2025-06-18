@@ -7,6 +7,7 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     @vite('resources/css/app.css')
     @vite('resources/js/app.js')
+    @vite('resources/js/applications.js')
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <script src="/node_modules/flowbite/dist/flowbite.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/apexcharts@3.46.0/dist/apexcharts.min.js"></script>
