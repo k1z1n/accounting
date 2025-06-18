@@ -31,6 +31,10 @@ Route::middleware('auth')->group(function () {
     Route::get('/api/wallets/balances', [ProfileController::class, 'balances'])->name('api.wallets.balances');
     Route::get('/api/wallets/history', [ProfileController::class, 'history'])->name('api.wallets.history');
     Route::get('/chart/usdt', [MainController::class, 'usdtChart']);
+    Route::resource('purchases', PurchaseController::class)->only(['index']);
+    Route::resource('transfers', TransferController::class)->only(['index']);
+    Route::resource('payments', PaymentController::class)->only(['index']);
+    Route::resource('sale-crypts', SaleCryptController::class)->only(['index']);
 });
 
 Route::middleware('admin')->prefix('admin')->group(function () {

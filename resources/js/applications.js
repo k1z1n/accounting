@@ -34,7 +34,7 @@ function attachLoadMore(tbodyId, btnId, apiUrl, render) {
 attachLoadMore(
     'transfersTbody',
     'loadMoreTransfers',
-    '{{ route('api.transfers') }}',
+    '/transfers',
     item => `
       <tr class="bg-[#191919] hover:bg-gray-700">
         ${ window.isAdmin ? `
@@ -63,7 +63,7 @@ attachLoadMore(
 attachLoadMore(
     'paymentsTbody',
     'loadMorePayments',
-    '{{ route('api.payments') }}',
+    '/payments',
     item => `
       <tr class="bg-[#191919] hover:bg-gray-700">
         ${ window.isAdmin ? `
@@ -84,7 +84,7 @@ attachLoadMore(
 attachLoadMore(
     'purchasesTbody',
     'loadMorePurchases',
-    '{{ route('api.purchases') }}',
+    '/purchases',
     item => `
       <tr class="bg-[#191919] hover:bg-gray-700">
         ${ window.isAdmin ? `…` : '' }
@@ -104,7 +104,7 @@ attachLoadMore(
 attachLoadMore(
     'saleCryptsTbody',
     'loadMoreSaleCrypts',
-    '{{ route('api.sale-crypts') }}',
+    '/sale-crypts',
     item => `
       <tr class="bg-[#191919] hover:bg-gray-700">
         ${ window.isAdmin ? `…` : '' }
