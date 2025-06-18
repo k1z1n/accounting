@@ -11,7 +11,7 @@ class TransferController extends Controller
 {
     public function index(Request $request)
     {
-        $perPage = 20;
+        $perPage = 10;
         $page    = $request->get('page', 1);
         $data    = Transfer::with(['exchangerFrom','exchangerTo','amountCurrency','commissionCurrency'])
             ->orderByDesc('created_at')

@@ -186,23 +186,24 @@ class MainController extends Controller
         // Все валюты (для селектов модалки)
         $currenciesForEdit = Currency::orderBy('code')->get();
 
+        $perPageFour = 10;
         // Остальные блоки (Transfers, Payments, Purchase, SaleCrypt, History)
         $exchangers = Exchanger::orderBy('title')->get();
         // 2) Переводы — ПАГИНАЦИЯ
         $transfers = Transfer::orderByDesc('created_at')
-            ->paginate($perPage, ['*'], 'transfers_page', $request->get('transfers_page', 1));
+            ->paginate($perPageFour, ['*'], 'transfers_page', $request->get('transfers_page', 1));
 
         // 3) Оплаты — ПАГИНАЦИЯ
         $payments = Payment::orderByDesc('created_at')
-            ->paginate($perPage, ['*'], 'payments_page', $request->get('payments_page', 1));
+            ->paginate($perPageFour, ['*'], 'payments_page', $request->get('payments_page', 1));
 
         // 4) Покупка крипты — ПАГИНАЦИЯ
         $purchases = Purchase::orderByDesc('created_at')
-            ->paginate($perPage, ['*'], 'purchases_page', $request->get('purchases_page', 1));
+            ->paginate($perPageFour, ['*'], 'purchases_page', $request->get('purchases_page', 1));
 
         // 5) Продажа крипты — ПАГИНАЦИЯ
         $saleCrypts = SaleCrypt::orderByDesc('created_at')
-            ->paginate($perPage, ['*'], 'salecrypts_page', $request->get('salecrypts_page', 1));
+            ->paginate($perPageFour, ['*'], 'salecrypts_page', $request->get('salecrypts_page', 1));
 
         $histories = History::with('currency')
             ->orderBy('created_at', 'desc')
