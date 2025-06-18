@@ -901,11 +901,21 @@
                                         data-amount-currency-id="{{ $t->amount_currency_id }}"
                                         data-commission="{{ $t->commission }}"
                                         data-commission-currency-id="{{ $t->commission_currency_id }}"
-                                    >✏️</button>
+                                    ><svg xmlns="http://www.w3.org/2000/svg"
+                                          class="w-4 h-4 text-white transition-colors"
+                                          fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                            <path d="M17 3a2.828 2.828 0 014 4L7 21H3v-4L17 3z"></path>
+                                        </svg></button>
                                     <button
                                         class="delete-transfer-btn px-2 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-xs"
                                         data-id="{{ $t->id }}"
-                                    >🗑️</button>
+                                    ><svg xmlns="http://www.w3.org/2000/svg"
+                                          class="w-4 h-4 text-white transition-colors"
+                                          fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                            <circle cx="9" cy="21" r="1"></circle>
+                                            <circle cx="20" cy="21" r="1"></circle>
+                                            <path d="M1 1h4l2.68 13.39a2 2 0 001.99 1.61h9.72a2 2 0 001.97-1.64L23 6H6"></path>
+                                        </svg></button>
                                 </td>
                             @endif
                             <td class="px-5 py-4 text-gray-200 whitespace-nowrap">{{ optional($t->exchangerFrom)->title ?? '—' }}</td>
@@ -992,11 +1002,21 @@
                                         data-sell-amount="{{ $p->sell_amount }}"
                                         data-sell-currency-id="{{ $p->sell_currency_id }}"
                                         data-comment="{{ $p->comment }}"
-                                    >✏️</button>
+                                    ><svg xmlns="http://www.w3.org/2000/svg"
+                                          class="w-4 h-4 text-white transition-colors"
+                                          fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                            <path d="M17 3a2.828 2.828 0 014 4L7 21H3v-4L17 3z"></path>
+                                        </svg></button>
                                     <button
                                         class="delete-payment-btn px-2 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-xs"
                                         data-id="{{ $p->id }}"
-                                    >🗑️</button>
+                                    ><svg xmlns="http://www.w3.org/2000/svg"
+                                          class="w-4 h-4 text-white transition-colors"
+                                          fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                            <circle cx="9" cy="21" r="1"></circle>
+                                            <circle cx="20" cy="21" r="1"></circle>
+                                            <path d="M1 1h4l2.68 13.39a2 2 0 001.99 1.61h9.72a2 2 0 001.97-1.64L23 6H6"></path>
+                                        </svg></button>
                                 </td>
                             @endif
                             <td class="px-5 py-4 text-white whitespace-nowrap">{{ optional($p->exchanger)->title ?? '—' }}</td>
@@ -1064,11 +1084,21 @@
                                         data-received-currency-id="{{ $pc->received_currency_id }}"
                                         data-sale-amount="{{ $pc->sale_amount }}"
                                         data-sale-currency-id="{{ $pc->sale_currency_id }}"
-                                    >✏️</button>
+                                    ><svg xmlns="http://www.w3.org/2000/svg"
+                                          class="w-4 h-4 text-white transition-colors"
+                                          fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                            <path d="M17 3a2.828 2.828 0 014 4L7 21H3v-4L17 3z"></path>
+                                        </svg></button>
                                     <button
                                         class="delete-purchase-btn px-2 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-xs"
                                         data-id="{{ $pc->id }}"
-                                    >🗑️</button>
+                                    ><svg xmlns="http://www.w3.org/2000/svg"
+                                          class="w-4 h-4 text-white transition-colors"
+                                          fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                            <circle cx="9" cy="21" r="1"></circle>
+                                            <circle cx="20" cy="21" r="1"></circle>
+                                            <path d="M1 1h4l2.68 13.39a2 2 0 001.99 1.61h9.72a2 2 0 001.97-1.64L23 6H6"></path>
+                                        </svg></button>
                                 </td>
                             @endif
                             <td class="px-5 py-4 text-gray-200 whitespace-nowrap">{{ optional($pc->exchanger)->title ?? '—' }}</td>
@@ -1155,11 +1185,21 @@
                                         data-sale-currency-id="{{ $sc->sale_currency_id }}"
                                         data-fixed-amount="{{ $sc->fixed_amount }}"
                                         data-fixed-currency-id="{{ $sc->fixed_currency_id }}"
-                                    >✏️</button>
+                                    ><svg xmlns="http://www.w3.org/2000/svg"
+                                          class="w-4 h-4 text-white transition-colors"
+                                          fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                            <path d="M17 3a2.828 2.828 0 014 4L7 21H3v-4L17 3z"></path>
+                                        </svg></button>
                                     <button
                                         class="delete-salecrypt-btn px-2 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-xs"
                                         data-id="{{ $sc->id }}"
-                                    >🗑️</button>
+                                    ><svg xmlns="http://www.w3.org/2000/svg"
+                                          class="w-4 h-4 text-white transition-colors"
+                                          fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                            <circle cx="9" cy="21" r="1"></circle>
+                                            <circle cx="20" cy="21" r="1"></circle>
+                                            <path d="M1 1h4l2.68 13.39a2 2 0 001.99 1.61h9.72a2 2 0 001.97-1.64L23 6H6"></path>
+                                        </svg></button>
                                 </td>
                             @endif
                             <td class="px-5 py-4 text-gray-200 whitespace-nowrap">{{ optional($sc->exchanger)->title ?? '—' }}</td>
