@@ -15,8 +15,6 @@ use Illuminate\Support\Facades\Route;
 
 Route::middleware('guest')->group(function () {
 //    Route::get('register', [AuthController::class, 'viewRegister'])->name('view.register');
-    Route::post('register', [AuthController::class, 'register'])->name('register.perform');
-
     Route::get('login', [AuthController::class, 'viewLogin'])->name('view.login');
     Route::post('login', [AuthController::class, 'login'])->name('login.perform');
 
@@ -63,6 +61,7 @@ Route::middleware('admin')->prefix('admin')->group(function () {
     Route::post('/user/{id:int}/update/role', [AdminController::class, 'updateStatus'])->name('user.update.role');
     Route::post('/user/{id:int}/update/blocked', [AdminController::class, 'updateBlocked'])->name('user.update.blocked');
     Route::get('/user/register', [AdminController::class, 'viewRegisterUser'])->name('view.register.user');
+    Route::post('register', [AuthController::class, 'register'])->name('register.perform');
 
     Route::post('/applications', [MainController::class, 'storeApplication'])->name('applications.store');
     Route::put('/applications/{id}', [MainController::class, 'updateApplication'])->name('applications.update');
