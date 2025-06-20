@@ -41,7 +41,7 @@ class MainController extends Controller
      */
     private function fetchAndSyncRemote(int $pageNum): void
     {
-        $allowedStatuses = ['выполненная заявка', 'оплаченная заявка'];
+        $allowedStatuses = ['выполненная заявка', 'оплаченная заявка', 'возврат'];
 
         $exchangers = [
             'obama' => [
@@ -179,7 +179,7 @@ class MainController extends Controller
 
         // Берём «выполненные» и «оплаченные» заявки, вместе с отношениями sellCurrency, buyCurrency, expenseCurrency, user
         $apps = $this->baseQuery()
-            ->whereIn('status', ['выполненная заявка', 'оплаченная заявка'])
+            ->whereIn('status', ['выполненная заявка', 'оплаченная заявка', 'возврат'])
             ->orderByDesc('app_created_at')
             ->paginate($perPage, ['*'], 'page', $pageNum);
 
