@@ -517,82 +517,66 @@ class MainController extends Controller
      */
     public function usdtTotal(Request $request)
     {
-        // 1) Сначала собираем из истории суммы по каждой валюте
-        //    Получим коллекцию вида [{currency_id: 1, total_amount: 123.45}, ...]
         $totalsByCurrency = History::whereNotNull('currency_id')
             ->select('currency_id', DB::raw('SUM(amount) as total_amount'))
             ->groupBy('currency_id')
             ->get();
 
-        // 2) Чтобы проще находить код валюты по её ID, вытянем плук [id => code]
-        $currencyCodes = Currency::pluck('code', 'id');
-        // Т. е. $currencyCodes[5] == 'BTC', $currencyCodes[3] == 'RUB' и т.д.
+        $currencyCodes = Currency::pluck('code', 'id'); // [id => "BTC", "USDT", ...]
 
         $usdtTotal = 0.0;
 
-        foreach ($totalsByCurrency as $row) {
-            $currencyId = $row->currency_id;
-            $sumInCurrency = (float)$row->total_amount; // сумма (положительная или отрицательная) в этой валюте
+        // 1. Получаем актуальные курсы с Bybit
+        try {
+            $response = Http::timeout(10)->get('https://api.bybit.com/v5/market/tickers?category=spot');
 
-            // Код валюты, например "BTC", "RUB", "USDT"
-            if (!isset($currencyCodes[$currencyId])) {
-                // Если вдруг нет такого кода – пропускаем
-                Log::warning("usdtTotal: нет записи о валюте с ID={$currencyId} в таблице currencies");
-                continue;
-            }
-            $code = strtoupper($currencyCodes[$currencyId]);
-
-            // 2.1) Если валюта уже USDT, просто добавляем сумму напрямую
-            if ($code === 'USDT') {
-                $usdtTotal += $sumInCurrency;
-                continue;
+            if (!$response->successful()) {
+                Log::error('usdtTotal: ошибка загрузки курсов с Bybit: HTTP ' . $response->status());
+                return response()->json(['error' => 'Курсы временно недоступны'], 500);
             }
 
-            // 2.2) Иначе — делаем запрос на Heleket, чтобы узнать курс из $code в USDT
-            try {
-                // Крайне важно: здесь мы используем именно эндпоинт /v1/exchange-rate/{currency}/list
-                $response = Http::timeout(5)->get("https://api.heleket.com/v1/exchange-rate/{$code}/list");
+            $tickers = $response->json()['result']['list'] ?? [];
+            $rates = [];
 
-                if (!$response->successful()) {
-                    Log::error("usdtTotal: HTTP {$response->status()} при запросе курса {$code}_USDT");
-                    continue;
+            foreach ($tickers as $ticker) {
+                $symbol = $ticker['symbol'] ?? '';
+                if (str_ends_with($symbol, 'USDT')) {
+                    $code = str_replace('USDT', '', strtoupper($symbol));
+                    $rates[$code] = (float)$ticker['lastPrice'];
                 }
-
-                $json = $response->json();
-                if (!isset($json['result']) || !is_array($json['result'])) {
-                    Log::error("usdtTotal: неожиданный формат ответа для {$code}: " . $response->body());
-                    continue;
-                }
-
-                // Ищем внутри массива "result" объект с полем "to" == "USDT"
-                $foundRate = null;
-                foreach ($json['result'] as $entry) {
-                    // entry выглядит как ["from"=>"RUB", "to"=>"USDT", "course"=>"0.01320000"], например
-                    if (isset($entry['to']) && strtoupper($entry['to']) === 'USDT') {
-                        $foundRate = (float)$entry['course'];
-                        break;
-                    }
-                }
-
-                if ($foundRate === null) {
-                    Log::error("usdtTotal: в списке курсов для {$code} не найден пункт → USDT");
-                    continue;
-                }
-
-                // Пересчитываем сумму в USDT:
-                // если сумма negative (расход) — тогда сумма * rate будет тоже negative
-                $usdtTotal += $sumInCurrency * $foundRate;
-            } catch (\Throwable $e) {
-                Log::error("usdtTotal: ошибка при запросе курса {$code}_USDT: " . $e->getMessage());
-                continue;
             }
+        } catch (\Throwable $e) {
+            Log::error('usdtTotal: ошибка при загрузке курсов с Bybit: ' . $e->getMessage());
+            return response()->json(['error' => 'Ошибка получения курсов'], 500);
         }
 
-        // Округлим итог до, скажем, 8 знаков
-        $usdtTotal = round($usdtTotal, 8);
+        // 2. Пересчёт в USDT
+        foreach ($totalsByCurrency as $row) {
+            $currencyId = $row->currency_id;
+            $sum = (float)$row->total_amount;
+
+            if (!isset($currencyCodes[$currencyId])) {
+                Log::warning("usdtTotal: нет кода валюты для ID={$currencyId}");
+                continue;
+            }
+
+            $code = strtoupper($currencyCodes[$currencyId]);
+
+            if ($code === 'USDT') {
+                $usdtTotal += $sum;
+                continue;
+            }
+
+            if (!isset($rates[$code])) {
+                Log::warning("usdtTotal: нет курса для {$code} к USDT");
+                continue;
+            }
+
+            $usdtTotal += $sum * $rates[$code];
+        }
 
         return response()->json([
-            'usdt_total' => $usdtTotal,
+            'usdt_total' => round($usdtTotal, 8),
         ]);
     }
 
