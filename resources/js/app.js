@@ -36,7 +36,7 @@ function renderChart(labels, datasets) {
                             const delta = deltas[ctx.dataIndex];
                             if (delta == null) return;
                             const sign = delta >= 0 ? '+' : '';
-                            return `Vjh;f: ${sign}${stripZeros(delta)} USDT`;
+                            return `Моржа: ${sign}${stripZeros(delta)} USDT`;
                         }
                     }
                 },
