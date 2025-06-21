@@ -343,11 +343,32 @@
                 <p id="err_add_sc_exchanger_id" class="mt-1 text-sm text-red-500"></p>
             </div>
 
+            {{-- В начало формы Add SaleCrypt (после Платформа) --}}
+            <div>
+                <label for="add_sc_application_id" class="block text-sm font-medium text-gray-300 mb-1">
+                    Заявка (optional)
+                </label>
+                <div class="relative">
+                    <select
+                        name="application_id"
+                        id="add_sc_application_id"
+                        class="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2 pr-8
+                   focus:outline-none focus:ring-2 focus:ring-cyan-500 transition"
+                    >
+                        <option value="" selected>— Не привязывать —</option>
+                        @foreach($apps as $app)
+                            <option value="{{ $app->id }}">{{ $app->app_id }} ({{ $app->exchanger }})</option>
+                        @endforeach
+                    </select>
+                </div>
+                <p id="err_add_sc_application_id" class="mt-1 text-sm text-red-500"></p>
+            </div>
+
             {{-- Продажа --}}
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                     <label for="add_sc_sale_amount" class="block text-sm font-medium text-gray-300 mb-1">
-                        Сумма продажи
+                        Сумма проданной валюты
                     </label>
                     <input
                             type="number"
@@ -362,7 +383,7 @@
                 </div>
                 <div>
                     <label for="add_sc_sale_currency_id" class="block text-sm font-medium text-gray-300 mb-1">
-                        Валюта продажи
+                        Проданная валюты
                     </label>
                     <div class="relative">
                         <select
@@ -391,7 +412,7 @@
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                     <label for="add_sc_fixed_amount" class="block text-sm font-medium text-gray-300 mb-1">
-                        Сумма «Фикс»
+                        Сумма полученной валюты
                     </label>
                     <input
                             type="number"
@@ -406,7 +427,7 @@
                 </div>
                 <div>
                     <label for="add_sc_fixed_currency_id" class="block text-sm font-medium text-gray-300 mb-1">
-                        Валюта «Фикс»
+                        Полученная валюта
                     </label>
                     <div class="relative">
                         <select
@@ -490,6 +511,26 @@
                     </div>
                 </div>
                 <p id="err_add_purchase_exchanger_id" class="mt-1 text-sm text-red-500"></p>
+            </div>
+
+            <div>
+                <label for="add_purchase_application_id" class="block text-sm font-medium text-gray-300 mb-1">
+                    Заявка (optional)
+                </label>
+                <div class="relative">
+                    <select
+                        name="application_id"
+                        id="add_purchase_application_id"
+                        class="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2 pr-8
+                   focus:outline-none focus:ring-2 focus:ring-cyan-500 transition"
+                    >
+                        <option value="" selected>— Не привязывать —</option>
+                        @foreach($apps as $app)
+                            <option value="{{ $app->id }}">{{ $app->app_id }} ({{ $app->exchanger }})</option>
+                        @endforeach
+                    </select>
+                </div>
+                <p id="err_add_purchase_application_id" class="mt-1 text-sm text-red-500"></p>
             </div>
 
             {{-- Продажа --}}
@@ -819,6 +860,7 @@
                 });
 
             const data = {
+                application_id: document.getElementById('add_sc_application_id').value || null,
                 exchanger_id: document.getElementById('add_sc_exchanger_id').value,
                 sale_amount: document.getElementById('add_sc_sale_amount').value.trim(),
                 sale_currency_id: document.getElementById('add_sc_sale_currency_id').value,
@@ -882,6 +924,7 @@
                 });
 
             const data = {
+                application_id: document.getElementById('add_purchase_application_id').value || null,
                 exchanger_id: document.getElementById('add_purchase_exchanger_id').value,
                 sale_amount: document.getElementById('add_purchase_sale_amount').value.trim(),
                 sale_currency_id: document.getElementById('add_purchase_sale_currency_id').value,

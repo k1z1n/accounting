@@ -1,4 +1,4 @@
-<header class="bg-[#0a0a0a] shadow-sm">
+<header class="bg-[#0a0a0a] shadow-sm px-4">
     <div class="container mx-auto flex items-center justify-between h-16 px-4">
         <a href="{{ route('view.main') }}" class="text-2xl font-semibold text-white">
             Бухгалтерия

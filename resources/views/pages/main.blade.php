@@ -5,6 +5,73 @@
 
 @section('content')
     <div class="container mx-auto px-4 py-6 space-y-8">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            <!-- Левая панель: дата и день недели -->
+            <div class="bg-[#1F1F1F] border border-[#2d2d2d] rounded-xl p-4 flex items-center space-x-3">
+                <!-- Иконка календаря -->
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <div>
+                    <div class="text-lg font-semibold text-white">{{ now()->format('d.m.Y') }}</div>
+                    <div class="text-gray-400 capitalize">{{ now()->locale('ru')->dayName }}</div>
+                </div>
+            </div>
+
+            <!-- Правая панель: прибыль -->
+            <div class="bg-[#1F1F1F] border border-[#2d2d2d] rounded-xl p-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <!-- Сегодня -->
+                <div class="flex flex-col">
+                    <span class="text-gray-400">Прибыль за сегодня</span>
+                    <div id="profit-today" class="mt-1 text-xl font-semibold text-gray-200 animate-pulse">...</div>
+                </div>
+                <!-- С начала месяца -->
+                <div class="flex flex-col">
+                    <span class="text-gray-400">Прибыль с начала месяца</span>
+                    <div id="profit-month" class="mt-1 text-xl font-semibold text-gray-200 animate-pulse">...</div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            // Форматируем число: до 4 знаков после точки, без лишних нулей
+            function formatNum(value) {
+                const num = parseFloat(value);
+                if (isNaN(num)) return '0';
+                const fixed = num.toFixed(4);
+                return fixed.replace(/\.?0+$/, '');
+            }
+
+            document.addEventListener('DOMContentLoaded', () => {
+                const todayEl = document.getElementById('profit-today');
+                const monthEl = document.getElementById('profit-month');
+
+                const today = new Date();
+                const startMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+                const fmt = d => d.toISOString().slice(0,10);
+
+                fetch(`/chart/usdt?start=${fmt(startMonth)}&end=${fmt(today)}`)
+                    .then(res => res.json())
+                    .then(({ datasets }) => {
+                        const deltas = datasets[0].deltas || [];
+                        const todayDelta = deltas.length ? deltas[deltas.length - 1] : 0;
+                        const monthDelta = deltas.reduce((sum, d) => sum + d, 0);
+
+                        const update = (el, val) => {
+                            const formatted = formatNum(val);
+                            const num = parseFloat(formatted);
+                            el.classList.remove('text-gray-200', 'text-cyan-400', 'text-red-400', 'animate-pulse');
+                            if (num > 0) el.classList.add('text-cyan-400');
+                            else if (num < 0) el.classList.add('text-red-400');
+                            el.textContent = formatted;
+                        };
+
+                        update(todayEl, todayDelta);
+                        update(monthEl, monthDelta);
+                    })
+                    .catch(err => console.error('Ошибка загрузки прибыли:', err));
+            });
+        </script>
         @include('pages.other')
 
         {{-- ◆========== Первый блок: «История заявок» (Applications) ==========◆ --}}
@@ -100,7 +167,7 @@
                                     >
                                         <option value="" disabled selected>— Выберите валюту —</option>
                                         @foreach($currenciesForEdit as $c)
-                                            <option value="{{ $c->code }}">{{ $c->code }} — {{ $c->name }}</option>
+                                            <option value="{{ $c->code }}">{{ $c->code }}</option>
                                         @endforeach
                                     </select>
                                     <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
@@ -558,7 +625,10 @@
                             'X-Requested-With': 'XMLHttpRequest'
                         }
                     })
-                        .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
+                        .then(r => {
+                            if (!r.ok) throw new Error(r.status);
+                            return r.json();
+                        })
                         .then(json => {
                             const tbody = document.getElementById('appsTbody');
 
@@ -601,7 +671,7 @@
 
                                 // Дата создания
                                 const dt = new Date(d.app_created_at);
-                                const fmt = `${String(dt.getDate()).padStart(2,'0')}.${String(dt.getMonth()+1).padStart(2,'0')}.${dt.getFullYear()} ${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}:${String(dt.getSeconds()).padStart(2,'0')}`;
+                                const fmt = `${String(dt.getDate()).padStart(2, '0')}.${String(dt.getMonth() + 1).padStart(2, '0')}.${dt.getFullYear()} ${String(dt.getHours()).padStart(2, '0')}:${String(dt.getMinutes()).padStart(2, '0')}:${String(dt.getSeconds()).padStart(2, '0')}`;
                                 rowHtml += `
             <td class="px-5 py-4 text-sm text-gray-200 text-center whitespace-nowrap">
                 ${fmt}
@@ -651,7 +721,7 @@
                                 if (d.buy_amount !== null && d.buy_currency) {
                                     const buy = String(d.buy_amount).replace(/\.?0+$/, '').replace(/^-/, '');
                                     const sign = d.buy_amount > 0 ? '+' : '-';
-                                    const cls  = d.buy_amount > 0 ? 'text-green-400' : 'text-red-400';
+                                    const cls = d.buy_amount > 0 ? 'text-green-400' : 'text-red-400';
                                     rowHtml += `
                 <td class="px-5 py-4 text-sm text-gray-200 whitespace-nowrap">
                     <div class="inline-flex items-center space-x-1">
@@ -696,7 +766,7 @@
                             });
 
                             btn.dataset.nextPage = parseInt(nextPage) + 1;
-                            btn.dataset.hasMore  = json.has_more ? 'true' : 'false';
+                            btn.dataset.hasMore = json.has_more ? 'true' : 'false';
                             btn.disabled = false;
                             btn.textContent = json.has_more ? 'Загрузить ещё' : 'Больше заявок нет';
 
@@ -879,12 +949,22 @@
                     <thead class="bg-[#191919]">
                     <tr class="sticky top-0">
                         @if(auth()->user()->role === 'admin')
-                            <th class="px-5 py-3 text-xs font-semibold text-white uppercase border-b border-[#2d2d2d]">Действие</th>
+                            <th class="px-5 py-3 text-xs font-semibold text-white uppercase border-b border-[#2d2d2d]">
+                                Действие
+                            </th>
                         @endif
-                        <th class="px-5 py-3 text-xs font-semibold text-white uppercase border-b border-[#2d2d2d]">Откуда</th>
-                        <th class="px-5 py-3 text-xs font-semibold text-white uppercase border-b border-[#2d2d2d]">Куда</th>
-                        <th class="px-5 py-3 text-xs font-semibold text-white uppercase border-b border-[#2d2d2d]">Сумма</th>
-                        <th class="px-5 py-3 text-xs font-semibold text-white uppercase border-b border-[#2d2d2d]">Комиссия</th>
+                        <th class="px-5 py-3 text-xs font-semibold text-white uppercase border-b border-[#2d2d2d]">
+                            Откуда
+                        </th>
+                        <th class="px-5 py-3 text-xs font-semibold text-white uppercase border-b border-[#2d2d2d]">
+                            Куда
+                        </th>
+                        <th class="px-5 py-3 text-xs font-semibold text-white uppercase border-b border-[#2d2d2d]">
+                            Сумма
+                        </th>
+                        <th class="px-5 py-3 text-xs font-semibold text-white uppercase border-b border-[#2d2d2d]">
+                            Комиссия
+                        </th>
                     </tr>
                     </thead>
                     <tbody id="transfersTbody" class="bg-gray-800 divide-y divide-[#2d2d2d]">
@@ -901,21 +981,26 @@
                                         data-amount-currency-id="{{ $t->amount_currency_id }}"
                                         data-commission="{{ $t->commission }}"
                                         data-commission-currency-id="{{ $t->commission_currency_id }}"
-                                    ><svg xmlns="http://www.w3.org/2000/svg"
-                                          class="w-4 h-4 text-white transition-colors"
-                                          fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg"
+                                             class="w-4 h-4 text-white transition-colors"
+                                             fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                             <path d="M17 3a2.828 2.828 0 014 4L7 21H3v-4L17 3z"></path>
-                                        </svg></button>
+                                        </svg>
+                                    </button>
                                     <button
                                         class="delete-transfer-btn px-2 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-xs"
                                         data-id="{{ $t->id }}"
-                                    ><svg xmlns="http://www.w3.org/2000/svg"
-                                          class="w-4 h-4 text-white transition-colors"
-                                          fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg"
+                                             class="w-4 h-4 text-white transition-colors"
+                                             fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                             <circle cx="9" cy="21" r="1"></circle>
                                             <circle cx="20" cy="21" r="1"></circle>
-                                            <path d="M1 1h4l2.68 13.39a2 2 0 001.99 1.61h9.72a2 2 0 001.97-1.64L23 6H6"></path>
-                                        </svg></button>
+                                            <path
+                                                d="M1 1h4l2.68 13.39a2 2 0 001.99 1.61h9.72a2 2 0 001.97-1.64L23 6H6"></path>
+                                        </svg>
+                                    </button>
                                 </td>
                             @endif
                             <td class="px-5 py-4 text-gray-200 whitespace-nowrap">{{ optional($t->exchangerFrom)->title ?? '—' }}</td>
@@ -970,7 +1055,8 @@
                         class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
                         data-next-page="{{ $transfers->currentPage()+1 }}"
                         data-has-more="{{ $transfers->hasMorePages() ? 'true' : 'false' }}"
-                    >Загрузить ещё</button>
+                    >Загрузить ещё
+                    </button>
                 </div>
             </div>
 
@@ -983,11 +1069,19 @@
                     <thead class="bg-[#191919]">
                     <tr class="sticky top-0">
                         @if(auth()->user()->role === 'admin')
-                            <th class="px-5 py-3 text-xs font-semibold text-white uppercase border-b border-[#2d2d2d]">Действие</th>
+                            <th class="px-5 py-3 text-xs font-semibold text-white uppercase border-b border-[#2d2d2d]">
+                                Действие
+                            </th>
                         @endif
-                        <th class="px-5 py-3 text-xs font-semibold text-white uppercase border-b border-[#2d2d2d]">Платформа</th>
-                        <th class="px-5 py-3 text-xs font-semibold text-white uppercase border-b border-[#2d2d2d]">Сумма</th>
-                        <th class="px-5 py-3 text-xs font-semibold text-white uppercase border-b border-[#2d2d2d]">Комментарий</th>
+                        <th class="px-5 py-3 text-xs font-semibold text-white uppercase border-b border-[#2d2d2d]">
+                            Платформа
+                        </th>
+                        <th class="px-5 py-3 text-xs font-semibold text-white uppercase border-b border-[#2d2d2d]">
+                            Сумма
+                        </th>
+                        <th class="px-5 py-3 text-xs font-semibold text-white uppercase border-b border-[#2d2d2d]">
+                            Комментарий
+                        </th>
                     </tr>
                     </thead>
                     <tbody id="paymentsTbody" class="bg-gray-800 divide-y divide-[#2d2d2d]">
@@ -1002,21 +1096,26 @@
                                         data-sell-amount="{{ $p->sell_amount }}"
                                         data-sell-currency-id="{{ $p->sell_currency_id }}"
                                         data-comment="{{ $p->comment }}"
-                                    ><svg xmlns="http://www.w3.org/2000/svg"
-                                          class="w-4 h-4 text-white transition-colors"
-                                          fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg"
+                                             class="w-4 h-4 text-white transition-colors"
+                                             fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                             <path d="M17 3a2.828 2.828 0 014 4L7 21H3v-4L17 3z"></path>
-                                        </svg></button>
+                                        </svg>
+                                    </button>
                                     <button
                                         class="delete-payment-btn px-2 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-xs"
                                         data-id="{{ $p->id }}"
-                                    ><svg xmlns="http://www.w3.org/2000/svg"
-                                          class="w-4 h-4 text-white transition-colors"
-                                          fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg"
+                                             class="w-4 h-4 text-white transition-colors"
+                                             fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                             <circle cx="9" cy="21" r="1"></circle>
                                             <circle cx="20" cy="21" r="1"></circle>
-                                            <path d="M1 1h4l2.68 13.39a2 2 0 001.99 1.61h9.72a2 2 0 001.97-1.64L23 6H6"></path>
-                                        </svg></button>
+                                            <path
+                                                d="M1 1h4l2.68 13.39a2 2 0 001.99 1.61h9.72a2 2 0 001.97-1.64L23 6H6"></path>
+                                        </svg>
+                                    </button>
                                 </td>
                             @endif
                             <td class="px-5 py-4 text-white whitespace-nowrap">{{ optional($p->exchanger)->title ?? '—' }}</td>
@@ -1051,7 +1150,8 @@
                         class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
                         data-next-page="{{ $payments->currentPage()+1 }}"
                         data-has-more="{{ $payments->hasMorePages() ? 'true' : 'false' }}"
-                    >Загрузить ещё</button>
+                    >Загрузить ещё
+                    </button>
                 </div>
             </div>
 
@@ -1064,11 +1164,22 @@
                     <thead class="bg-[#191919]">
                     <tr class="sticky top-0">
                         @if(auth()->user()->role === 'admin')
-                            <th class="px-5 py-3 text-xs font-semibold text-white uppercase border-b border-[#2d2d2d]">Действие</th>
+                            <th class="px-5 py-3 text-xs font-semibold text-white uppercase border-b border-[#2d2d2d]">
+                                Действие
+                            </th>
                         @endif
-                        <th class="px-5 py-3 text-xs font-semibold text-white uppercase border-b border-[#2d2d2d]">Платформа</th>
-                        <th class="px-5 py-3 text-xs font-semibold text-white uppercase border-b border-[#2d2d2d]">Получено +</th>
-                        <th class="px-5 py-3 text-xs font-semibold text-white uppercase border-b border-[#2d2d2d]">Продано −</th>
+                        <th class="px-5 py-3 text-xs font-semibold text-white uppercase border-b border-[#2d2d2d]">
+                            Платформа
+                        </th>
+                        <th class="px-5 py-3 text-xs font-semibold text-white uppercase border-b border-[#2d2d2d]">
+                            Получено +
+                        </th>
+                        <th class="px-5 py-3 text-xs font-semibold text-white uppercase border-b border-[#2d2d2d]">
+                            Продано −
+                        </th>
+                        <th class="px-5 py-3 text-xs font-semibold text-white uppercase border-b border-[#2d2d2d]">
+                            Заявка
+                        </th>
                     </tr>
                     </thead>
                     <tbody id="purchasesTbody" class="bg-gray-800 divide-y divide-[#2d2d2d]">
@@ -1084,21 +1195,26 @@
                                         data-received-currency-id="{{ $pc->received_currency_id }}"
                                         data-sale-amount="{{ $pc->sale_amount }}"
                                         data-sale-currency-id="{{ $pc->sale_currency_id }}"
-                                    ><svg xmlns="http://www.w3.org/2000/svg"
-                                          class="w-4 h-4 text-white transition-colors"
-                                          fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg"
+                                             class="w-4 h-4 text-white transition-colors"
+                                             fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                             <path d="M17 3a2.828 2.828 0 014 4L7 21H3v-4L17 3z"></path>
-                                        </svg></button>
+                                        </svg>
+                                    </button>
                                     <button
                                         class="delete-purchase-btn px-2 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-xs"
                                         data-id="{{ $pc->id }}"
-                                    ><svg xmlns="http://www.w3.org/2000/svg"
-                                          class="w-4 h-4 text-white transition-colors"
-                                          fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg"
+                                             class="w-4 h-4 text-white transition-colors"
+                                             fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                             <circle cx="9" cy="21" r="1"></circle>
                                             <circle cx="20" cy="21" r="1"></circle>
-                                            <path d="M1 1h4l2.68 13.39a2 2 0 001.99 1.61h9.72a2 2 0 001.97-1.64L23 6H6"></path>
-                                        </svg></button>
+                                            <path
+                                                d="M1 1h4l2.68 13.39a2 2 0 001.99 1.61h9.72a2 2 0 001.97-1.64L23 6H6"></path>
+                                        </svg>
+                                    </button>
                                 </td>
                             @endif
                             <td class="px-5 py-4 text-gray-200 whitespace-nowrap">{{ optional($pc->exchanger)->title ?? '—' }}</td>
@@ -1142,6 +1258,12 @@
                                     —
                                 @endif
                             </td>
+                            {{-- Заменяем в <tbody> ячейку ID ордера --}}
+                            <td class="px-5 py-4 text-sm text-gray-200 text-center whitespace-nowrap">
+                                <button class="details-btn text-cyan-400 hover:underline" data-id="{{ $pc->application_id }}">
+                                    #{{ $pc->application_id }}
+                                </button>
+                            </td>
                         </tr>
                     @endforeach
                     </tbody>
@@ -1152,7 +1274,8 @@
                         class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
                         data-next-page="{{ $purchases->currentPage()+1 }}"
                         data-has-more="{{ $purchases->hasMorePages() ? 'true' : 'false' }}"
-                    >Загрузить ещё</button>
+                    >Загрузить ещё
+                    </button>
                 </div>
             </div>
 
@@ -1165,11 +1288,22 @@
                     <thead class="bg-[#191919]">
                     <tr class="sticky top-0">
                         @if(auth()->user()->role === 'admin')
-                            <th class="px-5 py-3 text-xs font-semibold text-white uppercase border-b border-[#2d2d2d]">Действие</th>
+                            <th class="px-5 py-3 text-xs font-semibold text-white uppercase border-b border-[#2d2d2d]">
+                                Действие
+                            </th>
                         @endif
-                        <th class="px-5 py-3 text-xs font-semibold text-white uppercase border-b border-[#2d2d2d]">Платформа</th>
-                        <th class="px-5 py-3 text-xs font-semibold text-white uppercase border-b border-[#2d2d2d]">Продажа −</th>
-                        <th class="px-5 py-3 text-xs font-semibold text-white uppercase border-b border-[#2d2d2d]">Получено +</th>
+                        <th class="px-5 py-3 text-xs font-semibold text-white uppercase border-b border-[#2d2d2d]">
+                            Платформа
+                        </th>
+                        <th class="px-5 py-3 text-xs font-semibold text-white uppercase border-b border-[#2d2d2d]">
+                            Продажа −
+                        </th>
+                        <th class="px-5 py-3 text-xs font-semibold text-white uppercase border-b border-[#2d2d2d]">
+                            Получено +
+                        </th>
+                        <th class="px-5 py-3 text-xs font-semibold text-white uppercase border-b border-[#2d2d2d]">
+                            Заявка
+                        </th>
                     </tr>
                     </thead>
                     <tbody id="saleCryptsTbody" class="bg-gray-800 divide-y divide-[#2d2d2d]">
@@ -1185,21 +1319,26 @@
                                         data-sale-currency-id="{{ $sc->sale_currency_id }}"
                                         data-fixed-amount="{{ $sc->fixed_amount }}"
                                         data-fixed-currency-id="{{ $sc->fixed_currency_id }}"
-                                    ><svg xmlns="http://www.w3.org/2000/svg"
-                                          class="w-4 h-4 text-white transition-colors"
-                                          fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg"
+                                             class="w-4 h-4 text-white transition-colors"
+                                             fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                             <path d="M17 3a2.828 2.828 0 014 4L7 21H3v-4L17 3z"></path>
-                                        </svg></button>
+                                        </svg>
+                                    </button>
                                     <button
                                         class="delete-salecrypt-btn px-2 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-xs"
                                         data-id="{{ $sc->id }}"
-                                    ><svg xmlns="http://www.w3.org/2000/svg"
-                                          class="w-4 h-4 text-white transition-colors"
-                                          fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg"
+                                             class="w-4 h-4 text-white transition-colors"
+                                             fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                             <circle cx="9" cy="21" r="1"></circle>
                                             <circle cx="20" cy="21" r="1"></circle>
-                                            <path d="M1 1h4l2.68 13.39a2 2 0 001.99 1.61h9.72a2 2 0 001.97-1.64L23 6H6"></path>
-                                        </svg></button>
+                                            <path
+                                                d="M1 1h4l2.68 13.39a2 2 0 001.99 1.61h9.72a2 2 0 001.97-1.64L23 6H6"></path>
+                                        </svg>
+                                    </button>
                                 </td>
                             @endif
                             <td class="px-5 py-4 text-gray-200 whitespace-nowrap">{{ optional($sc->exchanger)->title ?? '—' }}</td>
@@ -1245,6 +1384,12 @@
                                     —
                                 @endif
                             </td>
+                            {{-- Заменяем в <tbody> ячейку ID ордера --}}
+                            <td class="px-5 py-4 text-sm text-gray-200 text-center whitespace-nowrap">
+                                <button class="details-btn text-cyan-400 hover:underline" data-id="{{ $sc->application_id }}">
+                                    #{{ $sc->application_id }}
+                                </button>
+                            </td>
                         </tr>
                     @endforeach
                     </tbody>
@@ -1255,7 +1400,8 @@
                         class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
                         data-next-page="{{ $saleCrypts->currentPage()+1 }}"
                         data-has-more="{{ $saleCrypts->hasMorePages() ? 'true' : 'false' }}"
-                    >Загрузить ещё</button>
+                    >Загрузить ещё
+                    </button>
                 </div>
             </div>
         </div>
@@ -1264,5 +1410,6 @@
     @include('modal.edit-purchase')
     @include('modal.edit-salecrypt')
     @include('modal.edit-transfer')
+    @include('modal.show-application')
     @vite('resources/js/crud.js')
 @endsection

@@ -239,8 +239,7 @@ class MainController extends Controller
         $data = $daily->pluck('total')->toArray();
 
         // Цвет точки: зелёный если delta > 0, красный — если < 0
-        $pointColors = $daily->map(fn($row) =>
-        $row->delta >= 0 ? '#22c55e' : '#ef4444'
+        $pointColors = $daily->map(fn($row) => $row->delta >= 0 ? '#22c55e' : '#ef4444'
         )->toArray();
 
         return view('pages.main', compact(
@@ -269,24 +268,33 @@ class MainController extends Controller
             ? Carbon::parse($request->query('end'))->endOfDay()
             : now()->endOfDay();
 
-        $daily = DailyUsdtTotal::whereBetween('date', [$start, $end])->orderBy('date')->get();
+        $daily = DailyUsdtTotal::whereBetween('date', [$start, $end])
+            ->orderBy('date')
+            ->get();
 
-        $labels = $daily->pluck('date')->map(fn($d) => Carbon::parse($d)->format('d.m'))->toArray();
-        $data = $daily->pluck('total')->toArray();
-        $pointColors = $daily->map(fn($row) => $row->delta >= 0 ? '#22c55e' : '#ef4444')->toArray();
+        $labels      = $daily->pluck('date')
+            ->map(fn($d) => Carbon::parse($d)->format('d.m'))
+            ->toArray();
+        $data        = $daily->pluck('total')->toArray();
+        $deltas      = $daily->pluck('delta')->toArray();             // <-- вот он
+        $pointColors = $daily->map(fn($row) => $row->delta >= 0
+            ? '#22c55e'
+            : '#ef4444')
+            ->toArray();
 
         return response()->json([
-            'labels' => $labels,
+            'labels'   => $labels,
             'datasets' => [[
-                'label' => 'USDT',
-                'data' => $data,
-                'backgroundColor' => 'rgba(79, 70, 229, 0.2)',
-                'borderColor' => 'rgb(79, 70, 229)',
+                'label'                => 'USDT',
+                'data'                 => $data,
+                'deltas'               => $deltas,            // <-- передаём
+                'backgroundColor'      => 'rgba(79, 70, 229, 0.2)',
+                'borderColor'          => 'rgb(79, 70, 229)',
                 'pointBackgroundColor' => $pointColors,
-                'pointRadius' => 6,
-                'pointHoverRadius' => 8,
-                'tension' => 0.4,
-                'fill' => true,
+                'pointRadius'          => 6,
+                'pointHoverRadius'     => 8,
+                'tension'              => 0.4,
+                'fill'                 => true,
             ]]
         ]);
     }
@@ -511,7 +519,8 @@ class MainController extends Controller
     {
         // 1) Сначала собираем из истории суммы по каждой валюте
         //    Получим коллекцию вида [{currency_id: 1, total_amount: 123.45}, ...]
-        $totalsByCurrency = History::select('currency_id', DB::raw('SUM(amount) as total_amount'))
+        $totalsByCurrency = History::whereNotNull('currency_id')
+            ->select('currency_id', DB::raw('SUM(amount) as total_amount'))
             ->groupBy('currency_id')
             ->get();
 
@@ -647,5 +656,63 @@ class MainController extends Controller
             'wallets',
             'transactions'
         ));
+    }
+
+    public function apiShowApplication($id)
+    {
+        $app = Application::with([
+            'sellCurrency', 'buyCurrency', 'expenseCurrency',
+            'purchases.receivedCurrency', 'purchases.saleCurrency',
+            'saleCrypts.fixedCurrency', 'saleCrypts.saleCurrency',
+        ])->findOrFail($id);
+
+        // Если sale_text задан и содержит пробел, разбиваем на число и код
+        if ($app->sale_text && str_contains($app->sale_text, ' ')) {
+            [$incoming_amount, $incoming_currency] = explode(' ', $app->sale_text, 2);
+        } else {
+            $incoming_amount   = null;
+            $incoming_currency = null;
+        }
+
+        return response()->json([
+            'app_id'                => $app->app_id,
+            'app_created_at'        => Carbon::parse($app->app_created_at)->format('d.m.Y H:i:s'),
+            'exchanger'             => $app->exchanger,
+            'status'                => $app->status,
+
+            // Вместо sale_text — два поля
+            'incoming_amount'       => $incoming_amount,
+            'incoming_currency_code'=> $incoming_currency,
+
+            // Продажа
+            'sell_amount'           => $app->sell_amount,
+            'sell_currency_code'    => $app->sellCurrency?->code,
+
+            // Купля
+            'buy_amount'            => $app->buy_amount,
+            'buy_currency_code'     => $app->buyCurrency?->code,
+
+            // Расход
+            'expense_amount'        => $app->expense_amount,
+            'expense_currency_code' => $app->expenseCurrency?->code,
+
+            'merchant'              => $app->merchant,
+
+            // Сопутствующие покупки
+            'related_purchases'     => $app->purchases->map(fn($p) => [
+                'received_amount'        => $p->received_amount,
+                'received_currency_code' => $p->receivedCurrency?->code,
+                'sale_amount'            => $p->sale_amount,
+                'sale_currency_code'     => $p->saleCurrency?->code,
+            ]),
+
+            // Продажи крипты
+            'related_sale_crypts'   => $app->saleCrypts->map(fn($s) => [
+                'fixed_amount'           => $s->fixed_amount,
+                'fixed_currency_code'    => $s->fixedCurrency?->code,
+                'sale_amount'            => $s->sale_amount,
+                'sale_currency_code'     => $s->saleCurrency?->code,
+            ]),
+        ]);
     }
 }

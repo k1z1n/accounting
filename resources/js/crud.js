@@ -4,28 +4,28 @@ function wireModal(openBtns, modal, closeSelectors) {
 }
 
 // 1) TRANSFERS
-(function(){
-    const modalEdit   = document.getElementById('modalEditTransferBackdrop');
+(function () {
+    const modalEdit = document.getElementById('modalEditTransferBackdrop');
     const modalDelete = document.getElementById('modalDeleteTransferBackdrop');
 
     document.querySelectorAll('.edit-transfer-btn').forEach(btn => {
         btn.addEventListener('click', () => {
             const d = btn.dataset;
-            document.getElementById('edit_transfer_id').value                   = d.id;
-            document.getElementById('transferModalId').textContent             = `#${d.id}`;
-            document.getElementById('edit_transfer_from').value                = d.fromId;
-            document.getElementById('edit_transfer_to').value                  = d.toId;
-            document.getElementById('edit_transfer_amount').value              = d.amount;
-            document.getElementById('edit_transfer_amount_currency').value     = d.amountCurrencyId;
-            document.getElementById('edit_transfer_commission').value          = d.commission;
+            document.getElementById('edit_transfer_id').value = d.id;
+            document.getElementById('transferModalId').textContent = `#${d.id}`;
+            document.getElementById('edit_transfer_from').value = d.fromId;
+            document.getElementById('edit_transfer_to').value = d.toId;
+            document.getElementById('edit_transfer_amount').value = d.amount;
+            document.getElementById('edit_transfer_amount_currency').value = d.amountCurrencyId;
+            document.getElementById('edit_transfer_commission').value = d.commission;
             document.getElementById('edit_transfer_commission_currency').value = d.commissionCurrencyId;
             modalEdit.classList.remove('hidden');
         });
     });
 
     // закрытие
-    ['cancelEditTransfer','modalEditTransferClose'].forEach(id=>{
-        document.getElementById(id)?.addEventListener('click',()=>modalEdit.classList.add('hidden'));
+    ['cancelEditTransfer', 'modalEditTransferClose'].forEach(id => {
+        document.getElementById(id)?.addEventListener('click', () => modalEdit.classList.add('hidden'));
     });
 
     // submit
@@ -34,45 +34,45 @@ function wireModal(openBtns, modal, closeSelectors) {
             e.preventDefault();
             const id = document.getElementById('edit_transfer_id').value;
             const payload = {
-                exchanger_from_id:      document.getElementById('edit_transfer_from').value,
-                exchanger_to_id:        document.getElementById('edit_transfer_to').value,
-                amount:                 document.getElementById('edit_transfer_amount').value,
-                amount_currency_id:     document.getElementById('edit_transfer_amount_currency').value,
-                commission:             document.getElementById('edit_transfer_commission').value,
+                exchanger_from_id: document.getElementById('edit_transfer_from').value,
+                exchanger_to_id: document.getElementById('edit_transfer_to').value,
+                amount: document.getElementById('edit_transfer_amount').value,
+                amount_currency_id: document.getElementById('edit_transfer_amount_currency').value,
+                commission: document.getElementById('edit_transfer_commission').value,
                 commission_currency_id: document.getElementById('edit_transfer_commission_currency').value,
             };
             fetch(`/admin/transfers/${id}`, {
                 method: 'PUT',
                 headers: {
-                    'Content-Type':     'application/json',
-                    'X-CSRF-TOKEN':      document.querySelector('meta[name="csrf-token"]').content,
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
                     'X-Requested-With': 'XMLHttpRequest'
                 },
                 body: JSON.stringify(payload)
-            }).then(r=>r.json()).then(()=>location.reload());
+            }).then(r => r.json()).then(() => location.reload());
         });
 
     // удалить
-    document.querySelectorAll('.delete-transfer-btn').forEach(btn=>{
-        btn.addEventListener('click', ()=>{
-            document.getElementById('deleteTransferId').textContent           = `#${btn.dataset.id}`;
-            document.getElementById('confirmDeleteTransfer').dataset.id      = btn.dataset.id;
+    document.querySelectorAll('.delete-transfer-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.getElementById('deleteTransferId').textContent = `#${btn.dataset.id}`;
+            document.getElementById('confirmDeleteTransfer').dataset.id = btn.dataset.id;
             modalDelete.classList.remove('hidden');
         });
     });
-    ['cancelDeleteTransfer','modalDeleteTransferClose'].forEach(id=>{
-        document.getElementById(id)?.addEventListener('click',()=>modalDelete.classList.add('hidden'));
+    ['cancelDeleteTransfer', 'modalDeleteTransferClose'].forEach(id => {
+        document.getElementById(id)?.addEventListener('click', () => modalDelete.classList.add('hidden'));
     });
     document.getElementById('confirmDeleteTransfer')
-        .addEventListener('click', ()=>{
+        .addEventListener('click', () => {
             const id = document.getElementById('confirmDeleteTransfer').dataset.id;
             fetch(`/admin/transfers/${id}`, {
                 method: 'DELETE',
                 headers: {
-                    'X-CSRF-TOKEN':     document.querySelector('meta[name="csrf-token"]').content,
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
                     'X-Requested-With': 'XMLHttpRequest'
                 }
-            }).then(r=>r.json()).then(()=>location.reload());
+            }).then(r => r.json()).then(() => location.reload());
         });
 })();
 
@@ -257,5 +257,152 @@ function wireModal(openBtns, modal, closeSelectors) {
                 'X-Requested-With': 'XMLHttpRequest'
             }
         }).then(r => r.json()).then(() => location.reload());
+    });
+
+
+    /**
+     * Убирает все лишние нули в конце дробной части.
+     * Примеры:
+     *  "123.00000000"  → "123"
+     *  "123.00004000"  → "123.00004"
+     *  "42.500000"     → "42.5"
+     */
+    function stripZeros(value) {
+        const s = String(value);
+        if (!s.includes('.')) return s;
+        return s.replace(/\.?0+$/, '');
+    }
+
+    // Хелпер для вставки иконки валюты по коду
+    function getCurrencyImg(code, size = 'w-6 h-6') {
+        const url = '/images/coins/' + code + '.svg';
+        if (!url) {
+            // если иконки нет — показываем текстовый код
+            return `<span class="${size} inline-block align-text-bottom text-xs mr-1">${code}</span>`;
+        }
+        return `<img src="${url}" alt="${code}" class="${size} inline-block align-text-bottom mr-1">`;
+    }
+
+// Показать модалку
+    function showDetailsModal() {
+        document.getElementById('modalAppDetailsBackdrop').classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+    }
+
+// Скрыть модалку
+    function hideDetailsModal() {
+        document.getElementById('modalAppDetailsBackdrop').classList.add('hidden');
+        document.body.style.overflow = '';
+    }
+
+// Кнопки закрытия
+    document.getElementById('btnCloseAppDetails').addEventListener('click', hideDetailsModal);
+    document.getElementById('modalAppDetailsClose').addEventListener('click', hideDetailsModal);
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape') hideDetailsModal();
+    });
+
+// Вешаем на каждую кнопку .details-btn
+    document.querySelectorAll('.details-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const appId = btn.dataset.id;
+            fetch(`/api/applications/${appId}`, {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            })
+                .then(res => res.json())
+                .then(data => {
+                    // Основные поля
+                    document.getElementById('detailsAppId').textContent     = `#${data.app_id}`;
+                    document.getElementById('detailsAppNumber').textContent = data.app_id;
+                    document.getElementById('detailsCreatedAt').textContent = data.app_created_at;
+                    document.getElementById('detailsExchanger').textContent = data.exchanger;
+                    document.getElementById('detailsStatus').textContent    = data.status;
+                    document.getElementById('detailsMerchant').textContent  = data.merchant || '—';
+
+                    // Приход+
+                    const incEl = document.getElementById('detailsIncoming');
+                    if (data.incoming_amount != null && data.incoming_currency_code) {
+                        incEl.innerHTML =
+                            getCurrencyImg(data.incoming_currency_code) +
+                            stripZeros(data.incoming_amount);
+                    } else {
+                        incEl.textContent = '—';
+                    }
+
+                    // Продажа−
+                    const sellEl = document.getElementById('detailsSell');
+                    if (data.sell_amount != null && data.sell_currency_code) {
+                        sellEl.innerHTML =
+                            getCurrencyImg(data.sell_currency_code) +
+                            stripZeros(data.sell_amount);
+                    } else {
+                        sellEl.textContent = '—';
+                    }
+
+                    // Купля+
+                    const buyEl = document.getElementById('detailsBuy');
+                    if (data.buy_amount != null && data.buy_currency_code) {
+                        buyEl.innerHTML =
+                            getCurrencyImg(data.buy_currency_code) +
+                            stripZeros(data.buy_amount);
+                    } else {
+                        buyEl.textContent = '—';
+                    }
+
+                    // Расход−
+                    const expEl = document.getElementById('detailsExpense');
+                    if (data.expense_amount != null && data.expense_currency_code) {
+                        expEl.innerHTML =
+                            getCurrencyImg(data.expense_currency_code) +
+                            stripZeros(data.expense_amount);
+                    } else {
+                        expEl.textContent = '—';
+                    }
+
+                    // Списки покупок и продаж крипты
+                    const ulBuy  = document.getElementById('detailsPurchaseList');
+                    const ulSell = document.getElementById('detailsSaleList');
+                    ulBuy.innerHTML  = '';
+                    ulSell.innerHTML = '';
+
+                    (data.related_purchases || []).forEach(p => {
+                        ulBuy.insertAdjacentHTML('beforeend', `
+          <li class="flex items-center space-x-2">
+            <span class="flex items-center">
+              ${getCurrencyImg(p.received_currency_code)}
+              <span>${stripZeros(p.received_amount)}</span>
+            </span>
+            <span>←</span>
+            <span class="flex items-center">
+              ${getCurrencyImg(p.sale_currency_code)}
+              <span>${stripZeros(p.sale_amount)}</span>
+            </span>
+          </li>
+        `);
+                    });
+
+                    (data.related_sale_crypts || []).forEach(s => {
+                        ulSell.insertAdjacentHTML('beforeend', `
+          <li class="flex items-center space-x-2">
+            <span class="flex items-center">
+              ${getCurrencyImg(s.fixed_currency_code)}
+              <span>${stripZeros(s.fixed_amount)}</span>
+            </span>
+            <span>←</span>
+            <span class="flex items-center">
+              ${getCurrencyImg(s.sale_currency_code)}
+              <span>${stripZeros(s.sale_amount)}</span>
+            </span>
+          </li>
+        `);
+                    });
+
+                    showDetailsModal();
+                })
+                .catch(err => {
+                    console.error('Ошибка при загрузке деталей заявки:', err);
+                    alert('Не удалось получить детали заявки');
+                });
+        });
     });
 })();

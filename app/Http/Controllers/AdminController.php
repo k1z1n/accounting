@@ -169,7 +169,10 @@ class AdminController extends Controller
             'sale_currency_id'  => 'required|integer|exists:currencies,id',
             'fixed_amount'      => 'required|numeric|min:0',
             'fixed_currency_id' => 'required|integer|exists:currencies,id',
+            'application_id'       => 'nullable|integer|exists:applications,id',
         ]);
+
+//        dd($validated);
 
         $saleCrypt = SaleCrypt::create(array_merge($validated, [
             'user_id' => auth()->id(),
@@ -219,6 +222,7 @@ class AdminController extends Controller
             'sale_currency_id'     => 'nullable|exists:currencies,id',
             'received_amount'      => 'nullable|numeric|min:0',
             'received_currency_id' => 'nullable|exists:currencies,id',
+            'application_id'       => 'nullable|integer|exists:applications,id',
         ]);
 
         // 1) Создаём Purchase

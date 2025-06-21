@@ -13,6 +13,7 @@ class SaleCrypt extends Model
         'sale_currency_id',
         'fixed_amount',
         'fixed_currency_id',
+        'application_id',
     ];
 
     // Связь с платформой (exchanger)
@@ -31,5 +32,11 @@ class SaleCrypt extends Model
     public function fixedCurrency(): BelongsTo
     {
         return $this->belongsTo(Currency::class, 'fixed_currency_id');
+    }
+
+
+    public function application()
+    {
+        return $this->belongsTo(Application::class, 'application_id');
     }
 }

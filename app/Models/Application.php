@@ -48,5 +48,19 @@ class Application extends Model
     {
         return $this->hasMany(History::class);
     }
+    public function purchases()
+    {
+        return $this->hasMany(Purchase::class, 'application_id');
+    }
+
+    public function saleCrypts()
+    {
+        return $this->hasMany(SaleCrypt::class, 'application_id');
+    }
+
+    protected $casts = [
+        'app_created_at' => 'datetime',
+        // …
+    ];
 
 }

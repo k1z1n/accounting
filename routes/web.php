@@ -33,6 +33,7 @@ Route::middleware('auth')->group(function () {
     Route::resource('transfers', TransferController::class)->only(['index']);
     Route::resource('payments', PaymentController::class)->only(['index']);
     Route::resource('sale-crypts', SaleCryptController::class)->only(['index']);
+    Route::get('/api/applications/{id}', [MainController::class, 'apiShowApplication']);
 });
 
 Route::middleware('admin')->prefix('admin')->group(function () {
