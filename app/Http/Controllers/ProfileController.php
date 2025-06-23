@@ -2,9 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
 
 class ProfileController extends Controller
 {
@@ -58,12 +62,98 @@ class ProfileController extends Controller
 
     public function history(Request $r)
     {
-        // заглушка
-        $data = [
-            ['type'=>'Получено','currency'=>'USDT','amount'=>1.23,'date'=>now()->subMinute()],
-            ['type'=>'Отправлено','currency'=>'BTC','amount'=>-0.001,'date'=>now()->subMinutes(5)],
-        ];
-        return response()->json(['history'=>$data]);
+        $prov  = $r->query('provider', 'heleket');
+        $exch  = $r->query('exchanger', 'obama');
+        $limit = (int) $r->query('limit', 20);
+
+        $items = $this->fetchExternalHistory($prov, $exch);
+        // последние N
+        $latest = collect($items)
+            ->sortByDesc('date')
+            ->take($limit)
+            ->values();
+
+        return response()->json([
+            'history' => $latest,
+        ]);
+    }
+    private array $providers  = ['heleket' => 'Heleket', 'rapira' => 'Rapira'];
+    private array $exchangers = ['obama'   => 'Obama'  , 'ural'   => 'Ural'  ];
+
+    /* ───────────── 1. Страница / «каркас» ───────────── */
+    public function index(Request $request)
+    {
+        return view('pages.wallets.history', [
+            'providers'     => $this->providers,
+            'exchangers'    => $this->exchangers,
+            'currentProv'   => $request->query('provider' , array_key_first($this->providers)),
+            'currentExch'   => $request->query('exchanger', array_key_first($this->exchangers)),
+        ]);
+    }
+
+    /* ───────────── 2. Данные (JSON) ───────────── */
+    public function data(Request $request)
+    {
+        /* — валидация — */
+        $request->validate([
+            'provider'  => ['required', 'in:' . implode(',', array_keys($this->providers))],
+            'exchanger' => ['required', 'in:' . implode(',', array_keys($this->exchangers))],
+            'page'      => ['integer', 'min:1'],
+        ]);
+
+        $prov = $request->get('provider');
+        $exch = $request->get('exchanger');
+        $page = max(1, (int)$request->get('page', 1));
+        $per  = 50;
+
+        /* — ваш реальный вызов внешнего API — */
+        $all = $this->fakeExternalHistory()   //  ←  замените на $this->fetchExternalHistory($prov,$exch)
+        ->sortByDesc('date')
+            ->values();                // сбрасываем ключи
+
+        /* — пагинация вручную, т.к. это Collection — */
+        $slice = $all->slice(($page - 1) * $per, $per)->values();
+        $p     = new LengthAwarePaginator($slice, $all->count(), $per, $page);
+
+        return response()->json([
+            'data' => $p->items(),
+            'meta' => [
+                'page' => $p->currentPage(),
+                'last' => $p->lastPage(),
+            ],
+        ]);
+    }
+
+
+    /* ───────────── Ниже — заглушки / примеры ───────────── */
+
+    /** фейковые данные, чтобы всё рендерилось без API */
+    private function fakeExternalHistory(): Collection
+    {
+        return collect(range(1, 300))->map(fn ($i) => [
+            'date'     => Carbon::now()->subMinutes($i)->format('d.m.Y H:i:s'),
+            'type'     => $i % 2 ? 'Получено' : 'Отправлено',
+            'amount'   => $i % 2 ?  0.1234 : -0.2345,
+            'currency' => $i % 3 ? 'USDT'   : 'BTC',
+        ]);
+    }
+
+    /** пример реального запроса (оставил для справки) */
+    private function fetchExternalHistory(string $prov, string $exch): Collection
+    {
+        $cfg = config("services.$prov.$exch");
+        $url = data_get($cfg, 'history_url');
+
+        /* …собираете body + sign, делаете Http::post()…  */
+        $resp  = Http::timeout(10)->post($url, []);
+        $items = data_get($resp->json(), 'result.items', []);
+
+        return collect($items)->map(fn ($i) => [
+            'type'     => $i['payment_status'],
+            'amount'   => round((float)$i['payer_amount'], 4),
+            'currency' => $i['payer_currency'],
+            'date'     => Carbon::parse($i['created_at'])->format('d.m.Y H:i:s'),
+        ]);
     }
 
     protected function normalizeHeleket(array $raw)

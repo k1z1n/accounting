@@ -34,11 +34,13 @@ return [
     'heleket' => [
         'obama' => [
             'balance_url'   => env('HELEKET_OBAMA_BALANCE_URL'),
+            'history_url'   => env('HELEKET_OBAMA_HISTORY_URL'),
             'merchant_uuid' => env('HELEKET_OBAMA_MERCHANT_UUID'),
             'api_key'       => env('HELEKET_OBAMA_API_KEY'),
         ],
         'ural' => [
             'balance_url'   => env('HELEKET_URAL_BALANCE_URL'),
+            'history_url'   => env('HELEKET_URAL_HISTORY_URL'),
             'merchant_uuid' => env('HELEKET_URAL_MERCHANT_UUID'),
             'api_key'       => env('HELEKET_URAL_API_KEY'),
         ],

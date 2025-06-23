@@ -10,6 +10,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PurchaseController;
 use App\Http\Controllers\SaleCryptController;
 use App\Http\Controllers\TransferController;
+use App\Http\Controllers\WalletHistoryController;
 use Illuminate\Support\Facades\Route;
 
 
@@ -56,6 +57,9 @@ Route::middleware('admin')->prefix('admin')->group(function () {
     Route::post('salecrypts', [AdminController::class, 'storeSaleCrypt'])->name('salecrypts.store');
     Route::post('/purchases', [AdminController::class, 'storePurchase'])->name('purchases.store');
     Route::get('/currencies/create', [CurrencyController::class, 'create'])->name('view.currency.create');
+
+    Route::get('/wallets/history',    [WalletHistoryController::class, 'index'])->name('wallets.history');
+    Route::get('/wallets/history/data',[WalletHistoryController::class, 'data' ])->name('wallets.history.data');
 
 //    Route::post('/currencies', [CurrencyController::class, 'store'])->name('currencies.store');
     Route::get('/login/logs', [AdminController::class, 'viewUserLogs'])->name('view.user.logs');

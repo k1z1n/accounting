@@ -9,10 +9,8 @@
     @vite('resources/js/app.js')
     @vite('resources/js/applications.js')
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <script src="/node_modules/flowbite/dist/flowbite.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/apexcharts@3.46.0/dist/apexcharts.min.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/flowbite@3.1.2/dist/flowbite.min.js"></script>
     <title>@yield('title','Моё приложение')</title>
 </head>
 <body class="bg-[#0a0a0a] min-h-screen flex flex-col">
