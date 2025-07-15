@@ -41,4 +41,90 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
         ];
     }
+
+    /**
+     * Константы ролей пользователей
+     */
+    public const ROLE_USER = 'user';
+    public const ROLE_ADMIN = 'admin';
+    public const ROLE_ACCOUNTANT = 'accountant';
+    public const ROLE_STATISTICIAN = 'statistician';
+
+    /**
+     * Получить все доступные роли
+     */
+    public static function getRoles(): array
+    {
+        return [
+            self::ROLE_USER => 'Пользователь',
+            self::ROLE_ADMIN => 'Администратор',
+            self::ROLE_ACCOUNTANT => 'Бухгалтер',
+            self::ROLE_STATISTICIAN => 'Статистик',
+        ];
+    }
+
+    /**
+     * Получить название роли на русском
+     */
+    public function getRoleNameAttribute(): string
+    {
+        return self::getRoles()[$this->role] ?? 'Неизвестная роль';
+    }
+
+    /**
+     * Проверить, является ли пользователь администратором
+     */
+    public function isAdmin(): bool
+    {
+        return $this->role === self::ROLE_ADMIN;
+    }
+
+    /**
+     * Проверить, является ли пользователь бухгалтером
+     */
+    public function isAccountant(): bool
+    {
+        return $this->role === self::ROLE_ACCOUNTANT;
+    }
+
+    /**
+     * Проверить, является ли пользователь статистиком
+     */
+    public function isStatistician(): bool
+    {
+        return $this->role === self::ROLE_STATISTICIAN;
+    }
+
+    /**
+     * Получить доступные платформы для роли пользователя
+     */
+    public function getAvailablePlatforms(): array
+    {
+        switch ($this->role) {
+            case self::ROLE_ADMIN:
+                // Админ имеет доступ ко всем платформам
+                return ['accounting', 'webmaster'];
+
+            case self::ROLE_ACCOUNTANT:
+                // Бухгалтер имеет доступ только к бухгалтерии
+                return ['accounting'];
+
+            case self::ROLE_STATISTICIAN:
+                // Статистик имеет доступ к SEO аналитике
+                return ['webmaster'];
+
+            case self::ROLE_USER:
+            default:
+                // Обычный пользователь имеет доступ ко всем платформам
+                return ['accounting', 'webmaster'];
+        }
+    }
+
+    /**
+     * Проверить, имеет ли пользователь доступ к платформе
+     */
+    public function hasAccessToPlatform(string $platform): bool
+    {
+        return in_array($platform, $this->getAvailablePlatforms());
+    }
 }

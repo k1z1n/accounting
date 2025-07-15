@@ -2,65 +2,130 @@
 
 namespace App\Services;
 
-use App\Http\Requests\LoginRequest;
-use App\Http\Requests\RegisterRequest;
+use App\Contracts\Repositories\UserRepositoryInterface;
+use App\Contracts\Services\AuthServiceInterface;
+use App\DTOs\UserDTO;
 use App\Models\LoginLog;
 use App\Models\User;
 use Illuminate\Auth\AuthenticationException;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 
-class AuthService
+class AuthService implements AuthServiceInterface
 {
+    public function __construct(
+        private UserRepositoryInterface $userRepository
+    ) {}
+
     /**
-     * Регистрирует нового пользователя, сохраняет registered_at
+     * Аутентификация пользователя
      */
-    public function register(RegisterRequest $request): User
+    public function authenticate(string $login, string $password, bool $remember = false): User
     {
-        $data = $request->validated();
-        $data['save_password'] = $data['password'];
-        $data['password'] = Hash::make($data['password']);
-        $user = User::create($data);
-        $user->registered_at = now();
-        $user->save();
+        if (!$this->checkCredentials($login, $password)) {
+            throw new AuthenticationException('Неверные учётные данные');
+        }
+
+        $user = $this->userRepository->findByLogin($login);
+
+        Auth::login($user, $remember);
+
+        // Обновляем последнюю активность
+        $this->userRepository->updateLastActivity($user->id);
 
         return $user;
     }
 
     /**
-     * Вход: проверка учётных, регенерация сессии, запись лога
-     * @throws AuthenticationException
+     * Регистрация нового пользователя
      */
-    public function login(LoginRequest $request): User
+    public function register(array $userData): User
     {
-        $credentials = $request->validated();
+        $userDTO = UserDTO::fromArray($userData);
 
-        if (!auth()->attempt(
-            ['login' => $credentials['login'], 'password' => $credentials['password']],
-            $credentials['remember'] ?? false
-        )) {
-            throw new AuthenticationException('Неверные учётные данные');
+        if (!$userDTO->validate()) {
+            throw new \InvalidArgumentException('Некорректные данные пользователя');
         }
 
-        $user = auth()->user();
-        $request->session()->regenerate();
+        if (!$userDTO->hasStrongPassword()) {
+            throw new \InvalidArgumentException('Пароль должен содержать минимум 6 символов');
+        }
 
+        // Проверяем уникальность логина
+        if ($this->userRepository->findByLogin($userDTO->login)) {
+            throw new \InvalidArgumentException('Пользователь с таким логином уже существует');
+        }
+
+        return $this->userRepository->createUser($userDTO->getCreateData());
+    }
+
+    /**
+     * Выход из системы
+     */
+    public function logout(Request $request): void
+    {
+        Auth::logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+    }
+
+    /**
+     * Проверить учетные данные
+     */
+    public function checkCredentials(string $login, string $password): bool
+    {
+        return Auth::attempt(['login' => $login, 'password' => $password]);
+    }
+
+    /**
+     * Получить текущего пользователя
+     */
+    public function getCurrentUser(): ?User
+    {
+        return Auth::user();
+    }
+
+    /**
+     * Проверить, авторизован ли пользователь
+     */
+    public function isAuthenticated(): bool
+    {
+        return Auth::check();
+    }
+
+    /**
+     * Логирование входа
+     */
+    public function logLogin(User $user, Request $request): void
+    {
         LoginLog::create([
             'user_id' => $user->id,
             'ip' => $request->ip(),
             'user_agent' => $request->userAgent(),
             'created_at' => now(),
         ]);
-
-        return $user;
     }
 
     /**
-     * Выход из системы
+     * Изменить пароль пользователя
      */
-    public function logout(\Illuminate\Http\Request $request): void
+    public function changePassword(User $user, string $newPassword): bool
     {
-        auth()->logout();
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
+        $data = [
+            'password' => Hash::make($newPassword),
+            'save_password' => $newPassword,
+        ];
+
+        $this->userRepository->update($user->id, $data);
+        return true;
+    }
+
+    /**
+     * Проверить текущий пароль
+     */
+    public function verifyPassword(User $user, string $password): bool
+    {
+        return Hash::check($password, $user->password);
     }
 }

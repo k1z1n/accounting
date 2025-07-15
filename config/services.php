@@ -31,6 +31,16 @@ return [
         ],
     ],
 
+    'yandex_webmaster' => [
+        'oauth_token' => env('YANDEX_WEBMASTER_TOKEN'),
+        'site_urls' => [
+            'main_site' => env('YANDEX_WEBMASTER_SITE_1', 'https://palma-forum.io'),
+            'landing' => env('YANDEX_WEBMASTER_SITE_2'),
+            'blog' => env('YANDEX_WEBMASTER_SITE_3'),
+            // Добавьте свои сайты
+        ],
+    ],
+
     'heleket' => [
         'obama' => [
             'balance_url'   => env('HELEKET_OBAMA_BALANCE_URL'),

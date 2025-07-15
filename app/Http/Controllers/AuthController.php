@@ -2,15 +2,16 @@
 
 namespace App\Http\Controllers;
 
+use App\Contracts\Services\AuthServiceInterface;
 use App\Http\Requests\LoginRequest;
 use App\Http\Requests\RegisterRequest;
-use App\Services\AuthService;
 use Illuminate\Http\Request;
 
 class AuthController extends Controller
 {
-    public function __construct(protected AuthService $authService) {
-    }
+    public function __construct(
+        private AuthServiceInterface $authService
+    ) {}
 
     public function viewRegister()
     {
@@ -19,7 +20,7 @@ class AuthController extends Controller
 
     public function register(RegisterRequest $request)
     {
-        $this->authService->register($request);
+        $this->authService->register($request->validated());
         return redirect()->route('view.main');
     }
 
@@ -30,11 +31,18 @@ class AuthController extends Controller
 
     public function login(LoginRequest $request)
     {
-        $this->authService->login($request);
+        $user = $this->authService->authenticate(
+            $request->login,
+            $request->password,
+            $request->remember ?? false
+        );
+
+        $this->authService->logLogin($user, $request);
+
         return redirect()->intended(route('view.main'));
     }
 
-    public function logout(\Illuminate\Http\Request $request)
+    public function logout(Request $request)
     {
         $this->authService->logout($request);
         return redirect()->route('view.login');

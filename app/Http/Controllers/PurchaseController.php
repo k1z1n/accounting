@@ -23,6 +23,24 @@ class PurchaseController extends Controller
         ]);
     }
 
+    public function show(Purchase $purchase)
+    {
+        $purchase->load(['exchanger', 'saleCurrency', 'receivedCurrency']);
+        $receivedIcon = $purchase->receivedCurrency ? asset('images/coins/' . $purchase->receivedCurrency->code . '.svg') : null;
+        $saleIcon = $purchase->saleCurrency ? asset('images/coins/' . $purchase->saleCurrency->code . '.svg') : null;
+        return response()->json([
+            'id' => $purchase->id,
+            'exchanger' => $purchase->exchanger?->title,
+            'received_amount' => $purchase->received_amount,
+            'received_currency' => $purchase->receivedCurrency?->code,
+            'received_icon' => $receivedIcon,
+            'sale_amount' => $purchase->sale_amount,
+            'sale_currency' => $purchase->saleCurrency?->code,
+            'sale_icon' => $saleIcon,
+            'date' => $purchase->created_at?->format('d.m.Y H:i'),
+        ]);
+    }
+
     public function update(Request $req, Purchase $purchase)
     {
         $data = $req->validate([

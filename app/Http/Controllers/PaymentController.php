@@ -23,6 +23,21 @@ class PaymentController extends Controller
         ]);
     }
 
+    public function show(Payment $payment)
+    {
+        $payment->load(['exchanger', 'sellCurrency']);
+        $sellIcon = $payment->sellCurrency ? asset('images/coins/' . $payment->sellCurrency->code . '.svg') : null;
+        return response()->json([
+            'id' => $payment->id,
+            'exchanger' => $payment->exchanger?->title,
+            'sell_amount' => $payment->sell_amount,
+            'sell_currency' => $payment->sellCurrency?->code,
+            'sell_icon' => $sellIcon,
+            'comment' => $payment->comment,
+            'date' => $payment->created_at?->format('d.m.Y H:i'),
+        ]);
+    }
+
     public function update(Request $req, Payment $payment)
     {
         $data = $req->validate([

@@ -23,6 +23,25 @@ class TransferController extends Controller
         ]);
     }
 
+    public function show(Transfer $transfer)
+    {
+        $transfer->load(['exchangerFrom', 'exchangerTo', 'commissionCurrency', 'amountCurrency']);
+        $amountIcon = $transfer->amountCurrency ? asset('images/coins/' . $transfer->amountCurrency->code . '.svg') : null;
+        $commissionIcon = $transfer->commissionCurrency ? asset('images/coins/' . $transfer->commissionCurrency->code . '.svg') : null;
+        return response()->json([
+            'id' => $transfer->id,
+            'from' => $transfer->exchangerFrom?->title,
+            'to' => $transfer->exchangerTo?->title,
+            'amount' => $transfer->amount,
+            'amount_currency' => $transfer->amountCurrency?->code,
+            'amount_icon' => $amountIcon,
+            'commission' => $transfer->commission,
+            'commission_currency' => $transfer->commissionCurrency?->code,
+            'commission_icon' => $commissionIcon,
+            'date' => $transfer->created_at?->format('d.m.Y H:i'),
+        ]);
+    }
+
     public function update(Request $req, Transfer $transfer)
     {
         $data = $req->validate([

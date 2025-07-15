@@ -1,37 +1,48 @@
 {{-- resources/views/pages/main.blade.php --}}
 @extends('template.app')
 
-@section('title', 'История заявок')
-
 @section('content')
     <div class="container mx-auto px-4 py-6 space-y-8">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-            <!-- Левая панель: дата и день недели -->
-            <div class="bg-[#1F1F1F] border border-[#2d2d2d] rounded-xl p-4 flex items-center space-x-3">
-                <!-- Иконка календаря -->
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-                <div>
+        <!-- Упрощенная панель статистики -->
+        <div class="bg-[#191919] border border-[#2d2d2d] rounded-xl p-6 mb-6">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Дата -->
+                <div class="text-center md:text-left">
+                    <div class="text-sm text-gray-400">Сегодня</div>
                     <div class="text-lg font-semibold text-white">{{ now()->format('d.m.Y') }}</div>
-                    <div class="text-gray-400 capitalize">{{ now()->locale('ru')->dayName }}</div>
                 </div>
-            </div>
 
-            <!-- Правая панель: прибыль -->
-            <div class="bg-[#1F1F1F] border border-[#2d2d2d] rounded-xl p-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <!-- Сегодня -->
-                <div class="flex flex-col">
-                    <span class="text-gray-400">Прибыль за сегодня</span>
-                    <div id="profit-today" class="mt-1 text-xl font-semibold text-gray-200 animate-pulse">...</div>
+                <!-- Прибыль за сегодня -->
+                <div class="text-center md:text-left">
+                    <div class="text-sm text-gray-400">Прибыль за сегодня</div>
+                    <div id="profit-today" class="text-lg font-semibold text-white">...</div>
                 </div>
-                <!-- С начала месяца -->
-                <div class="flex flex-col">
-                    <span class="text-gray-400">Прибыль с начала месяца</span>
-                    <div id="profit-month" class="mt-1 text-xl font-semibold text-gray-200 animate-pulse">...</div>
+
+                <!-- Прибыль за месяц -->
+                <div class="text-center md:text-left">
+                    <div class="text-sm text-gray-400">За месяц</div>
+                    <div id="profit-month" class="text-lg font-semibold text-white">...</div>
                 </div>
             </div>
         </div>
+
+        <!-- Упрощенные быстрые действия для админов -->
+        @if(auth()->user()->role === 'admin')
+        <div class="bg-[#191919] border border-[#2d2d2d] rounded-xl p-6 mb-6">
+            <h3 class="text-lg font-semibold text-white mb-4">Быстрые действия</h3>
+            <div class="flex flex-wrap gap-3">
+                <a href="{{ route('view.currency.create') }}" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors">
+                    Добавить валюту
+                </a>
+                <a href="{{ route('exchangers.create') }}" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors">
+                    Добавить платформу
+                </a>
+                <a href="{{ route('view.update.logs') }}" class="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors">
+                    Логи изменений
+                </a>
+            </div>
+        </div>
+        @endif
 
         <script>
             // Форматируем число: до 4 знаков после точки, без лишних нулей
@@ -74,11 +85,59 @@
         </script>
         @include('pages.other')
 
-        {{-- ◆========== Первый блок: «История заявок» (Applications) ==========◆ --}}
-        <div class="bg-[#191919] rounded-xl shadow-md overflow-x-auto border border-[#2d2d2d]">
-            {{-- Заголовок блока --}}
-            <div class="px-6 py-4 border-b border-[#2d2d2d]">
-                <h2 class="text-2xl font-semibold text-white">История заявок</h2>
+        <!-- История заявок -->
+        <div class="mb-8">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
+                <h2 class="text-xl font-semibold text-white">История заявок</h2>
+                <!-- Панель поиска и фильтров -->
+                <div class="flex flex-col md:flex-row gap-3 md:items-center">
+                    <!-- Поиск -->
+                    <div class="relative">
+                        <input
+                            type="text"
+                            id="tableSearch"
+                            placeholder="Поиск по заявкам..."
+                            class="form-input form-input-dark pl-10 w-full md:w-64"
+                        >
+                        <svg class="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                        </svg>
+                    </div>
+
+                    <!-- Фильтр по статусу -->
+                    <select id="statusFilter" class="form-input form-input-dark">
+                        <option value="">Все статусы</option>
+                        <option value="выполненная заявка">Выполненные</option>
+                        <option value="оплаченная заявка">Оплаченные</option>
+                        <option value="возврат">Возврат</option>
+                    </select>
+
+                    <!-- Фильтр по обменнику -->
+                    <select id="exchangerFilter" class="form-input form-input-dark">
+                        <option value="">Все обменники</option>
+                        <option value="obama">Obama</option>
+                        <option value="ural">Ural</option>
+                    </select>
+
+                    <!-- Кнопка обновления -->
+                    <button
+                        id="refreshTable"
+                        class="btn btn-primary btn-sm"
+                        data-tooltip="Обновить данные"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Загрузочный индикатор -->
+            <div id="tableLoader" class="hidden p-6 text-center">
+                <div class="inline-flex items-center space-x-2">
+                    <div class="loading-spinner"></div>
+                    <span class="text-gray-400">Загрузка данных...</span>
+                </div>
             </div>
 
             {{-- БЛОК МОДАЛЬНОГО ОКНА (не удаляйте эти ID!) --}}
@@ -270,375 +329,299 @@
             </div>
 
             {{-- Таблица --}}
-            <table id="applicationsTable" class="min-w-full table-auto border-collapse">
-                <thead class="bg-[#191919]">
-                <tr class="sticky top-0">
-                    @if(auth()->user()->role === 'admin')
-                        <th class="px-5 py-3 text-xs font-semibold text-white uppercase whitespace-nowrap border-b border-[#2d2d2d]">
-                            Действие
-                        </th>
-                        <th class="px-5 py-3 text-xs font-semibold text-white uppercase whitespace-nowrap border-b border-[#2d2d2d]">
-                            Кто изменил
-                        </th>
-                    @endif
-                    @foreach ([
-                        'Номер заявки',
-                        'Дата создания',
-                        'Обменник',
-                        'Статус',
-                        'Приход+',
-                        'Продажа−',
-                        'Купля+',
-                        'Расход−',
-                        'Мерчант',
-                        'ID ордера'
-                    ] as $col)
-                        <th class="px-5 py-3 text-xs font-semibold text-white uppercase whitespace-nowrap border-b border-[#2d2d2d]">
-                            {{ $col }}
-                        </th>
-                    @endforeach
-                </tr>
-                </thead>
-                <tbody id="appsTbody" class="bg-gray-800 divide-y divide-[#2d2d2d]">
-                @foreach($apps as $d)
-                    <tr class="bg-[#191919] hover:bg-gray-700">
+            <!-- Обертка для скролла -->
+            <div class="overflow-x-auto custom-scrollbar">
+                <table id="applicationsTable" class="table-auto border-collapse whitespace-nowrap">
+                    <thead class="bg-gray-100">
+                    <tr>
                         @if(auth()->user()->role === 'admin')
-                            <td class="px-5 py-4 text-sm text-gray-200">
-                                <button
-                                    class="editBtn px-3 py-1 bg-cyan-600 text-white rounded-md hover:bg-cyan-700 transition text-xs"
-                                    data-id="{{ $d->id }}"
-                                    data-app_id="{{ $d->app_id }}"
-                                    data-sell_amount="{{ $d->sell_amount }}"
-                                    data-sell_currency="{{ optional($d->sellCurrency)->code }}"
-                                    data-buy_amount="{{ $d->buy_amount }}"
-                                    data-buy_currency="{{ optional($d->buyCurrency)->code }}"
-                                    data-expense_amount="{{ $d->expense_amount }}"
-                                    data-expense_currency="{{ optional($d->expenseCurrency)->code }}"
-                                    data-merchant="{{ $d->merchant }}"
-                                    data-order_id="{{ $d->order_id }}"
-                                >Редактировать
-                                </button>
-                            </td>
-                            <td class="px-5 py-4 text-sm text-gray-200 text-center">
-                                {{ $d->user->login ?? '-' }}
-                            </td>
+                            <th class="px-5 py-3 text-xs font-semibold text-gray-700 uppercase whitespace-nowrap border-b border-gray-300">Действие</th>
+                            <th class="px-5 py-3 text-xs font-semibold text-gray-700 uppercase whitespace-nowrap border-b border-gray-300">Кто изменил</th>
                         @endif
-
-                        {{-- Номер заявки --}}
-                        <td class="px-5 py-4 text-sm text-gray-200 text-center whitespace-nowrap">{{ $d->app_id }}</td>
-
-                        {{-- Дата создания --}}
-                        <td class="px-5 py-4 text-sm text-gray-200 text-center whitespace-nowrap">
-                            {{ \Carbon\Carbon::parse($d->app_created_at)->format('d.m.Y H:i:s') }}
-                        </td>
-
-                        {{-- Обменник --}}
-                        <td class="px-5 py-4 text-sm text-gray-200 text-center whitespace-nowrap">{{ $d->exchanger }}</td>
-
-                        {{-- Статус --}}
-                        <td class="px-5 py-4 text-sm text-gray-200 text-center whitespace-nowrap">{{ $d->status }}</td>
-
-                        {{-- Приход+ --}}
-                        <td class="px-5 py-4 text-sm text-gray-200 whitespace-nowrap">
-                            @if($d->sale_text)
-                                @php
-                                    // сначала убираем крайние пробелы, затем разбиваем по первому пробелу
-                                    [$amount, $curCode] = explode(' ', trim($d->sale_text), 2);
-                                    // на всякий случай обрежем ещё раз
-                                    $curCode = trim($curCode);
-                                @endphp
-                                <div class="inline-flex items-center space-x-1">
-                                    <span class="text-green-400">+{{ $amount }}</span>
-                                    @if($curCode)
-                                        <img
-                                            src="{{ asset('images/coins/'.$curCode.'.svg') }}"
-                                            alt="{{ $curCode }}"
-                                            class="w-4 h-4"
-                                        >
-                                    @endif
-                                </div>
-                            @else
-                                —
-                            @endif
-                        </td>
-
-                        {{-- Продажа− --}}
-                        <td class="px-5 py-4 text-sm text-gray-200 whitespace-nowrap">
-                            @if(!is_null($d->sell_amount) && $d->sellCurrency)
-                                <div class="inline-flex items-center space-x-1">
-                                    <span
-                                        class="text-red-400">-{{ rtrim(rtrim((string)$d->sell_amount,'0'),'.') }}</span>
-                                    <img
-                                        src="{{ asset('images/coins/'.$d->sellCurrency->code.'.svg') }}"
-                                        alt="{{ $d->sellCurrency->code }}"
-                                        class="w-4 h-4"
-                                    >
-
-                                </div>
-                            @else
-                                —
-                            @endif
-                        </td>
-
-                        {{-- Купля+ --}}
-                        <td class="px-5 py-4 text-sm text-gray-200 whitespace-nowrap">
-                            @if(!is_null($d->buy_amount) && $d->buyCurrency)
-                                @php $b = rtrim(rtrim((string)$d->buy_amount,'0'),'.'); @endphp
-                                <div class="inline-flex items-center space-x-1">
-                                <span class="{{ $d->buy_amount>0?'text-green-400':'text-red-400' }}">
-                                {{ $d->buy_amount>0?'+':'' }}{{ $b }}
-                            </span>
-                                    <img
-                                        src="{{ asset('images/coins/'.$d->buyCurrency->code.'.svg') }}"
-                                        alt="{{ $d->buyCurrency->code }}"
-                                        class="w-4 h-4"
-                                    >
-                                </div>
-                            @else
-                                —
-                            @endif
-                        </td>
-
-                        {{-- Расход− --}}
-                        <td class="px-5 py-4 text-sm text-gray-200 whitespace-nowrap">
-                            @if(!is_null($d->expense_amount) && $d->expenseCurrency)
-                                <div class="inline-flex items-center space-x-1">
-                                    <span
-                                        class="text-red-400">-{{ rtrim(rtrim((string)$d->expense_amount,'0'),'.') }}</span>
-                                    {{ $d->expenseCurrency->code }}
-                                    <img
-                                        src="{{ asset('images/coins/'.$d->expenseCurrency->code.'.svg') }}"
-                                        alt="{{ $d->expenseCurrency->code }}"
-                                        class="w-4 h-4"
-                                    >
-                                </div>
-                            @else
-                                —
-                            @endif
-                        </td>
-
-                        {{-- Мерчант --}}
-                        <td class="px-5 py-4 text-sm text-gray-200 text-center whitespace-nowrap">{{ $d->merchant ?? '—' }}</td>
-
-                        {{-- ID ордера --}}
-                        <td class="px-5 py-4 text-sm text-gray-200 text-center whitespace-nowrap">{{ $d->order_id ?? '—' }}</td>
+                        @foreach ([
+                            'Номер заявки',
+                            'Дата создания',
+                            'Обменник',
+                            'Статус',
+                            'Приход+',
+                            'Продажа−',
+                            'Купля+',
+                            'Расход−',
+                            'Мерчант',
+                            'ID ордера'
+                        ] as $col)
+                            <th class="px-5 py-3 text-xs font-semibold text-gray-700 uppercase whitespace-nowrap border-b border-gray-300">{{ $col }}</th>
+                        @endforeach
                     </tr>
-                @endforeach
-                </tbody>
-            </table>
-        </div>
+                    </thead>
+                    <tbody id="appsTbody">
+                    @foreach($apps as $d)
+                        <tr class="{{ $loop->even ? 'bg-gray-50' : 'bg-white' }} hover:bg-blue-50 transition">
+                            @if(auth()->user()->role === 'admin')
+                                <td class="px-5 py-4 text-sm text-gray-800">
+                                    <button class="editBtn btn btn-primary btn-sm" ...>Редактировать</button>
+                                </td>
+                                <td class="px-5 py-4 text-sm text-gray-800 text-center custom-tooltip" data-tooltip="Кто изменил">{{ $d->user->login ?? '-' }}</td>
+                            @endif
+                            <td class="px-5 py-4 text-base text-gray-900 text-center whitespace-nowrap font-bold custom-tooltip" data-tooltip="Номер заявки">{{ $d->app_id }}</td>
+                            <td class="px-5 py-4 text-base text-gray-900 text-center whitespace-nowrap custom-tooltip" data-tooltip="Дата создания">{{ \Carbon\Carbon::parse($d->app_created_at)->format('d.m.Y H:i:s') }}</td>
+                            <td class="px-5 py-4 text-base text-gray-900 text-center whitespace-nowrap custom-tooltip" data-tooltip="Обменник">{{ $d->exchanger }}</td>
+                            <td class="px-5 py-4 text-base text-gray-900 text-center whitespace-nowrap custom-tooltip" data-tooltip="Статус">{{ $d->status }}</td>
+                            <td class="px-5 py-4 text-lg whitespace-nowrap custom-tooltip" data-tooltip="Приход+">
+                                @if($d->sale_text)
+                                    @php [$amount, $curCode] = explode(' ', trim($d->sale_text), 2); $curCode = trim($curCode); @endphp
+                                    <div class="inline-flex items-center space-x-1">
+                                        <span class="text-green-500 font-bold">+{{ $amount }}</span>
+                                        @if($curCode)
+                                            <img src="{{ asset('images/coins/'.$curCode.'.svg') }}" alt="{{ $curCode }}" class="w-5 h-5">
+                                        @endif
+                                    </div>
+                                @else — @endif
+                            </td>
+                            <td class="px-5 py-4 text-lg whitespace-nowrap custom-tooltip" data-tooltip="Продажа−">
+                                @if(!is_null($d->sell_amount) && $d->sellCurrency)
+                                    <div class="inline-flex items-center space-x-1">
+                                        <span class="text-red-500 font-bold">-{{ rtrim(rtrim((string)$d->sell_amount,'0'),'.') }}</span>
+                                        <img src="{{ asset('images/coins/'.$d->sellCurrency->code.'.svg') }}" alt="{{ $d->sellCurrency->code }}" class="w-5 h-5">
+                                    </div>
+                                @else — @endif
+                            </td>
+                            <td class="px-5 py-4 text-lg whitespace-nowrap custom-tooltip" data-tooltip="Купля+">
+                                @if(!is_null($d->buy_amount) && $d->buyCurrency)
+                                    @php $b = rtrim(rtrim((string)$d->buy_amount,'0'),'.'); @endphp
+                                    <div class="inline-flex items-center space-x-1">
+                                        <span class="{{ $d->buy_amount>0?'text-green-500':'text-red-500' }} font-bold">{{ $d->buy_amount>0?'+':'' }}{{ $b }}</span>
+                                        <img src="{{ asset('images/coins/'.$d->buyCurrency->code.'.svg') }}" alt="{{ $d->buyCurrency->code }}" class="w-5 h-5">
+                                    </div>
+                                @else — @endif
+                            </td>
+                            <td class="px-5 py-4 text-lg whitespace-nowrap custom-tooltip" data-tooltip="Расход−">
+                                @if(!is_null($d->expense_amount) && $d->expenseCurrency)
+                                    <div class="inline-flex items-center space-x-1">
+                                        <span class="text-red-500 font-bold">-{{ rtrim(rtrim((string)$d->expense_amount,'0'),'.') }}</span>
+                                        <img src="{{ asset('images/coins/'.$d->expenseCurrency->code.'.svg') }}" alt="{{ $d->expenseCurrency->code }}" class="w-5 h-5">
+                                    </div>
+                                @else — @endif
+                            </td>
+                            <td class="px-5 py-4 text-base text-gray-900 text-center whitespace-nowrap custom-tooltip" data-tooltip="Мерчант">{{ $d->merchant ?? '—' }}</td>
+                            <td class="px-5 py-4 text-base text-gray-900 text-center whitespace-nowrap custom-tooltip" data-tooltip="ID ордера">{{ $d->order_id ?? '—' }}</td>
+                        </tr>
+                    @endforeach
+                    </tbody>
+                </table>
+            </div>
 
-        {{-- «Загрузить ещё» --}}
-        <div id="loader" class="hidden mt-4 text-center">
-            <svg class="animate-spin h-8 w-8 text-gray-600 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none"
-                 viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor"
-                      d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
-            </svg>
-        </div>
+            {{-- «Загрузить ещё» --}}
+            <div id="loader" class="hidden mt-4 text-center">
+                <svg class="animate-spin h-8 w-8 text-gray-600 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none"
+                     viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor"
+                          d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                </svg>
+            </div>
 
-        <div class="text-center">
-            <button
-                id="loadMoreBtn"
-                class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
-                data-next-page="{{ $apps->currentPage() + 1 }}"
-                data-has-more="{{ $apps->hasMorePages() ? 'true' : 'false' }}"
-            >
-                Загрузить ещё
-            </button>
-        </div>
+            <div class="text-center">
+                <button
+                    id="loadMoreBtn"
+                    class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+                    data-next-page="{{ $apps->currentPage() + 1 }}"
+                    data-has-more="{{ $apps->hasMorePages() ? 'true' : 'false' }}"
+                >
+                    Загрузить ещё
+                </button>
+            </div>
 
-        {{-- Скрипты для модалки и «Загрузить ещё» --}}
-        <script>
-            document.addEventListener('DOMContentLoaded', () => {
-                // Установим флаг isAdmin, чтобы JS понимал, нужно ли отрисовывать колонки «Редактировать» и «Кто изменил»
-                window.isAdmin = @json(auth()->user()->role === 'admin');
+            {{-- Скрипты для модалки и «Загрузить ещё» --}}
+            <script>
+                document.addEventListener('DOMContentLoaded', () => {
+                    // Установим флаг isAdmin, чтобы JS понимал, нужно ли отрисовывать колонки «Редактировать» и «Кто изменил»
+                    window.isAdmin = @json(auth()->user()->role === 'admin');
 
-                // ========== USDT Total ==========
-                function fetchAndRenderUsdtTotal() {
-                    fetch("{{ route('usdt.total') }}", {
-                        headers: {
-                            'Accept': 'application/json',
-                            'X-Requested-With': 'XMLHttpRequest'
-                        }
-                    })
-                        .then(response => {
-                            if (!response.ok) throw new Error("HTTP status " + response.status);
-                            return response.json();
-                        })
-                        .then(json => {
-                            const cell = document.getElementById('usdt-total-cell');
-                            if (!cell) return;
-
-                            cell.classList.remove('positive', 'negative');
-                            let val = json.usdt_total;
-                            let sign = '';
-                            if (val > 0) sign = '+';
-                            else if (val < 0) sign = '-';
-                            val = Math.abs(val).toFixed(8).replace(/\.?0+$/, '');
-                            cell.textContent = sign + val;
-                            if (val !== '0') {
-                                if (sign === '+') cell.classList.add('positive');
-                                else if (sign === '-') cell.classList.add('negative');
+                    // ========== USDT Total ==========
+                    function fetchAndRenderUsdtTotal() {
+                        fetch("{{ route('usdt.total') }}", {
+                            headers: {
+                                'Accept': 'application/json',
+                                'X-Requested-With': 'XMLHttpRequest'
                             }
                         })
-                        .catch(err => console.error("Ошибка при получении usdt_total:", err));
-                }
+                            .then(response => {
+                                if (!response.ok) throw new Error("HTTP status " + response.status);
+                                return response.json();
+                            })
+                            .then(json => {
+                                const cell = document.getElementById('usdt-total-cell');
+                                if (!cell) return;
 
-                fetchAndRenderUsdtTotal();
-                setInterval(fetchAndRenderUsdtTotal, 5000);
-
-                window.onerror = function (message, source, lineno, colno, error) {
-                    console.error(`JS Error: ${message} at ${source}:${lineno}:${colno}`, error);
-                };
-
-                // ========== Модальное окно редактирования ==========
-                const editModal = document.getElementById('editModalBackdrop');
-                const closeEditModalBtn = document.getElementById('closeEditModalBtn');
-                const editModalBackdropClose = document.getElementById('editModalBackdropClose');
-                const modalAppIdLabel = document.getElementById('modalAppId');
-                const editForm = document.getElementById('editForm');
-
-                function showEditModal() {
-                    editModal.classList.remove('hidden');
-                    document.body.style.overflow = 'hidden';
-                }
-
-                function hideEditModal() {
-                    editModal.classList.add('hidden');
-                    document.body.style.overflow = '';
-                    ['sell_amount', 'sell_currency', 'buy_amount', 'buy_currency', 'expense_amount', 'expense_currency', 'merchant', 'order_id']
-                        .forEach(f => {
-                            const errEl = document.getElementById('err_' + f);
-                            if (errEl) errEl.textContent = '';
-                        });
-                }
-
-                closeEditModalBtn.addEventListener('click', hideEditModal);
-                editModalBackdropClose.addEventListener('click', hideEditModal);
-                document.addEventListener('keydown', (e) => {
-                    if (!editModal.classList.contains('hidden') && e.key === 'Escape') {
-                        hideEditModal();
+                                cell.classList.remove('positive', 'negative');
+                                let val = json.usdt_total;
+                                let sign = '';
+                                if (val > 0) sign = '+';
+                                else if (val < 0) sign = '-';
+                                val = Math.abs(val).toFixed(8).replace(/\.?0+$/, '');
+                                cell.textContent = sign + val;
+                                if (val !== '0') {
+                                    if (sign === '+') cell.classList.add('positive');
+                                    else if (sign === '-') cell.classList.add('negative');
+                                }
+                            })
+                            .catch(err => console.error("Ошибка при получении usdt_total:", err));
                     }
-                });
 
-                // Навешиваем «Редактировать» на все кнопки (в том числе динамически добавленные)
-                function attachEditHandlers(root = document) {
-                    root.querySelectorAll('.editBtn').forEach(button => {
-                        if (button.dataset.listenerAdded) return;
-                        button.dataset.listenerAdded = 'true';
+                    fetchAndRenderUsdtTotal();
+                    setInterval(fetchAndRenderUsdtTotal, 5000);
 
-                        button.addEventListener('click', () => {
-                            const id = button.dataset.id;
-                            const appId = button.dataset.app_id;
-                            const sellAmount = button.dataset.sell_amount;
-                            const sellCurrency = button.dataset.sell_currency;
-                            const buyAmount = button.dataset.buy_amount;
-                            const buyCurrency = button.dataset.buy_currency;
-                            const expenseAmount = button.dataset.expense_amount;
-                            const expenseCurrency = button.dataset.expense_currency;
-                            const merchant = button.dataset.merchant;
-                            const orderId = button.dataset.order_id;
-
-                            document.getElementById('edit_app_id').value = id;
-                            modalAppIdLabel.textContent = `#${appId}`;
-                            document.getElementById('edit_sell_amount').value = sellAmount || '';
-                            document.getElementById('edit_buy_amount').value = buyAmount || '';
-                            document.getElementById('edit_expense_amount').value = expenseAmount || '';
-                            document.getElementById('edit_merchant').value = merchant || '';
-                            document.getElementById('edit_order_id').value = orderId || '';
-                            document.getElementById('edit_sell_currency').value = sellCurrency || '';
-                            document.getElementById('edit_buy_currency').value = buyCurrency || '';
-                            document.getElementById('edit_expense_currency').value = expenseCurrency || '';
-
-                            showEditModal();
-                        });
-                    });
-                }
-
-                attachEditHandlers();
-
-                // Отправка формы редактирования
-                editForm.addEventListener('submit', function (e) {
-                    e.preventDefault();
-                    ['sell_amount', 'sell_currency', 'buy_amount', 'buy_currency', 'expense_amount', 'expense_currency', 'merchant', 'order_id']
-                        .forEach(f => {
-                            const errEl = document.getElementById('err_' + f);
-                            if (errEl) errEl.textContent = '';
-                        });
-
-                    const id = document.getElementById('edit_app_id').value;
-                    const data = {
-                        sell_amount: document.getElementById('edit_sell_amount').value.trim(),
-                        sell_currency: document.getElementById('edit_sell_currency').value.trim(),
-                        buy_amount: document.getElementById('edit_buy_amount').value.trim(),
-                        buy_currency: document.getElementById('edit_buy_currency').value.trim(),
-                        expense_amount: document.getElementById('edit_expense_amount').value.trim(),
-                        expense_currency: document.getElementById('edit_expense_currency').value.trim(),
-                        merchant: document.getElementById('edit_merchant').value.trim(),
-                        order_id: document.getElementById('edit_order_id').value.trim(),
+                    window.onerror = function (message, source, lineno, colno, error) {
+                        console.error(`JS Error: ${message} at ${source}:${lineno}:${colno}`, error);
                     };
 
-                    fetch(`/applications/${id}`, {
-                        method: 'PUT',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                            'X-Requested-With': 'XMLHttpRequest'
-                        },
-                        body: JSON.stringify(data)
-                    })
-                        .then(res => {
-                            if (res.ok) return res.json();
-                            if (res.status === 422) return res.json().then(json => Promise.reject({validation: json.errors}));
-                            throw new Error(`Статус ${res.status}`);
-                        })
-                        .then(() => {
-                            window.location.reload();
-                        })
-                        .catch(err => {
-                            if (err.validation) {
-                                Object.entries(err.validation).forEach(([field, messages]) => {
-                                    const el = document.getElementById('err_' + field);
-                                    if (el) el.textContent = messages[0];
-                                });
-                            } else {
-                                console.error('JS: Ошибка редактирования:', err);
-                                alert('Не удалось сохранить изменения');
-                            }
-                        });
-                });
+                    // ========== Модальное окно редактирования ==========
+                    const editModal = document.getElementById('editModalBackdrop');
+                    const closeEditModalBtn = document.getElementById('closeEditModalBtn');
+                    const editModalBackdropClose = document.getElementById('editModalBackdropClose');
+                    const modalAppIdLabel = document.getElementById('modalAppId');
+                    const editForm = document.getElementById('editForm');
 
-                // ========== Динамическая подгрузка «Загрузить ещё» ==========
-                function loadMoreApplications() {
-                    const btn = document.getElementById('loadMoreBtn');
-                    if (!btn || btn.dataset.hasMore !== 'true') return;
+                    function showEditModal() {
+                        editModal.classList.remove('hidden');
+                        document.body.style.overflow = 'hidden';
+                    }
 
-                    const nextPage = btn.dataset.nextPage;
-                    btn.disabled = true;
-                    btn.textContent = 'Загрузка...';
+                    function hideEditModal() {
+                        editModal.classList.add('hidden');
+                        document.body.style.overflow = '';
+                        ['sell_amount', 'sell_currency', 'buy_amount', 'buy_currency', 'expense_amount', 'expense_currency', 'merchant', 'order_id']
+                            .forEach(f => {
+                                const errEl = document.getElementById('err_' + f);
+                                if (errEl) errEl.textContent = '';
+                            });
+                    }
 
-                    fetch(`{{ route('api.applications') }}?page=${nextPage}`, {
-                        headers: {
-                            'Accept': 'application/json',
-                            'X-Requested-With': 'XMLHttpRequest'
+                    closeEditModalBtn.addEventListener('click', hideEditModal);
+                    editModalBackdropClose.addEventListener('click', hideEditModal);
+                    document.addEventListener('keydown', (e) => {
+                        if (!editModal.classList.contains('hidden') && e.key === 'Escape') {
+                            hideEditModal();
                         }
-                    })
-                        .then(r => {
-                            if (!r.ok) throw new Error(r.status);
-                            return r.json();
+                    });
+
+                    // Навешиваем «Редактировать» на все кнопки (в том числе динамически добавленные)
+                    function attachEditHandlers(root = document) {
+                        root.querySelectorAll('.editBtn').forEach(button => {
+                            if (button.dataset.listenerAdded) return;
+                            button.dataset.listenerAdded = 'true';
+
+                            button.addEventListener('click', () => {
+                                const id = button.dataset.id;
+                                const appId = button.dataset.app_id;
+                                const sellAmount = button.dataset.sell_amount;
+                                const sellCurrency = button.dataset.sell_currency;
+                                const buyAmount = button.dataset.buy_amount;
+                                const buyCurrency = button.dataset.buy_currency;
+                                const expenseAmount = button.dataset.expense_amount;
+                                const expenseCurrency = button.dataset.expense_currency;
+                                const merchant = button.dataset.merchant;
+                                const orderId = button.dataset.order_id;
+
+                                document.getElementById('edit_app_id').value = id;
+                                modalAppIdLabel.textContent = `#${appId}`;
+                                document.getElementById('edit_sell_amount').value = sellAmount || '';
+                                document.getElementById('edit_buy_amount').value = buyAmount || '';
+                                document.getElementById('edit_expense_amount').value = expenseAmount || '';
+                                document.getElementById('edit_merchant').value = merchant || '';
+                                document.getElementById('edit_order_id').value = orderId || '';
+                                document.getElementById('edit_sell_currency').value = sellCurrency || '';
+                                document.getElementById('edit_buy_currency').value = buyCurrency || '';
+                                document.getElementById('edit_expense_currency').value = expenseCurrency || '';
+
+                                showEditModal();
+                            });
+                        });
+                    }
+
+                    attachEditHandlers();
+
+                    // Отправка формы редактирования
+                    editForm.addEventListener('submit', function (e) {
+                        e.preventDefault();
+                        ['sell_amount', 'sell_currency', 'buy_amount', 'buy_currency', 'expense_amount', 'expense_currency', 'merchant', 'order_id']
+                            .forEach(f => {
+                                const errEl = document.getElementById('err_' + f);
+                                if (errEl) errEl.textContent = '';
+                            });
+
+                        const id = document.getElementById('edit_app_id').value;
+                        const data = {
+                            sell_amount: document.getElementById('edit_sell_amount').value.trim(),
+                            sell_currency: document.getElementById('edit_sell_currency').value.trim(),
+                            buy_amount: document.getElementById('edit_buy_amount').value.trim(),
+                            buy_currency: document.getElementById('edit_buy_currency').value.trim(),
+                            expense_amount: document.getElementById('edit_expense_amount').value.trim(),
+                            expense_currency: document.getElementById('edit_expense_currency').value.trim(),
+                            merchant: document.getElementById('edit_merchant').value.trim(),
+                            order_id: document.getElementById('edit_order_id').value.trim(),
+                        };
+
+                        fetch(`/applications/${id}`, {
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                                'X-Requested-With': 'XMLHttpRequest'
+                            },
+                            body: JSON.stringify(data)
                         })
-                        .then(json => {
-                            const tbody = document.getElementById('appsTbody');
+                            .then(res => {
+                                if (res.ok) return res.json();
+                                if (res.status === 422) return res.json().then(json => Promise.reject({validation: json.errors}));
+                                throw new Error(`Статус ${res.status}`);
+                            })
+                            .then(() => {
+                                window.location.reload();
+                            })
+                            .catch(err => {
+                                if (err.validation) {
+                                    Object.entries(err.validation).forEach(([field, messages]) => {
+                                        const el = document.getElementById('err_' + field);
+                                        if (el) el.textContent = messages[0];
+                                    });
+                                } else {
+                                    console.error('JS: Ошибка редактирования:', err);
+                                    alert('Не удалось сохранить изменения');
+                                }
+                            });
+                    });
 
-                            json.data.forEach(d => {
-                                // старт строки
-                                let rowHtml = `<tr class="bg-[#191919] hover:bg-gray-700">`;
+                    // ========== Динамическая подгрузка «Загрузить ещё» ==========
+                    function loadMoreApplications() {
+                        const btn = document.getElementById('loadMoreBtn');
+                        if (!btn || btn.dataset.hasMore !== 'true') return;
 
-                                if (window.isAdmin) {
-                                    // Действие (Редактировать)
-                                    rowHtml += `
+                        const nextPage = btn.dataset.nextPage;
+                        btn.disabled = true;
+                        btn.textContent = 'Загрузка...';
+
+                        fetch(`{{ route('api.applications') }}?page=${nextPage}`, {
+                            headers: {
+                                'Accept': 'application/json',
+                                'X-Requested-With': 'XMLHttpRequest'
+                            }
+                        })
+                            .then(r => {
+                                if (!r.ok) throw new Error(r.status);
+                                return r.json();
+                            })
+                            .then(json => {
+                                const tbody = document.getElementById('appsTbody');
+
+                                json.data.forEach(d => {
+                                    // старт строки
+                                    let rowHtml = `<tr class="bg-[#191919] hover:bg-gray-700">`;
+
+                                    if (window.isAdmin) {
+                                        // Действие (Редактировать)
+                                        rowHtml += `
                 <td class="px-5 py-4 text-sm text-gray-200 whitespace-nowrap">
                     <button
                         class="editBtn px-3 py-1 bg-cyan-600 text-white rounded-md hover:bg-cyan-700 transition text-xs"
@@ -655,246 +638,222 @@
                     >Редактировать</button>
                 </td>`;
 
-                                    // Кто изменил
-                                    const who = d.user?.login ?? '-';
-                                    rowHtml += `
+                                        // Кто изменил
+                                        const who = d.user?.login ?? '-';
+                                        rowHtml += `
                 <td class="px-5 py-4 text-sm text-gray-200 text-center whitespace-nowrap">
                     ${who}
                 </td>`;
-                                }
+                                    }
 
-                                // Номер заявки
-                                rowHtml += `
+                                    // Номер заявки
+                                    rowHtml += `
             <td class="px-5 py-4 text-sm text-gray-200 text-center whitespace-nowrap">
                 ${d.app_id}
             </td>`;
 
-                                // Дата создания
-                                const dt = new Date(d.app_created_at);
-                                const fmt = `${String(dt.getDate()).padStart(2, '0')}.${String(dt.getMonth() + 1).padStart(2, '0')}.${dt.getFullYear()} ${String(dt.getHours()).padStart(2, '0')}:${String(dt.getMinutes()).padStart(2, '0')}:${String(dt.getSeconds()).padStart(2, '0')}`;
-                                rowHtml += `
+                                    // Дата создания
+                                    const dt = new Date(d.app_created_at);
+                                    const fmt = `${String(dt.getDate()).padStart(2, '0')}.${String(dt.getMonth() + 1).padStart(2, '0')}.${dt.getFullYear()} ${String(dt.getHours()).padStart(2, '0')}:${String(dt.getMinutes()).padStart(2, '0')}:${String(dt.getSeconds()).padStart(2, '0')}`;
+                                    rowHtml += `
             <td class="px-5 py-4 text-sm text-gray-200 text-center whitespace-nowrap">
                 ${fmt}
             </td>`;
 
-                                // Обменник
-                                rowHtml += `
+                                    // Обменник
+                                    rowHtml += `
             <td class="px-5 py-4 text-sm text-gray-200 text-center whitespace-nowrap">
                 ${d.exchanger}
             </td>`;
 
-                                // Статус
-                                rowHtml += `
+                                    // Статус
+                                    rowHtml += `
             <td class="px-5 py-4 text-sm text-gray-200 text-center whitespace-nowrap">
                 ${d.status}
             </td>`;
 
-                                // Приход+
-                                if (d.sale_text) {
-                                    const [amt, cur] = d.sale_text.trim().split(' ');
-                                    rowHtml += `
+                                    // Приход+
+                                    if (d.sale_text) {
+                                        const [amt, cur] = d.sale_text.trim().split(' ');
+                                        rowHtml += `
                 <td class="px-5 py-4 text-sm text-gray-200 whitespace-nowrap">
                     <div class="inline-flex items-center space-x-1">
                         <span class="text-green-400">+${amt}</span>
                         ${cur ? `<img src="/images/coins/${cur}.svg" alt="${cur}" class="w-4 h-4">` : ''}
                     </div>
                 </td>`;
-                                } else {
-                                    rowHtml += `<td class="px-5 py-4 text-sm text-gray-200 whitespace-nowrap">—</td>`;
-                                }
+                                    } else {
+                                        rowHtml += `<td class="px-5 py-4 text-sm text-gray-200 whitespace-nowrap">—</td>`;
+                                    }
 
-                                // Продажа−
-                                if (d.sell_amount !== null && d.sell_currency) {
-                                    const sell = String(d.sell_amount).replace(/\.?0+$/, '').replace(/^-/, '');
-                                    rowHtml += `
+                                    // Продажа−
+                                    if (d.sell_amount !== null && d.sell_currency) {
+                                        const sell = String(d.sell_amount).replace(/\.?0+$/, '').replace(/^-/, '');
+                                        rowHtml += `
                 <td class="px-5 py-4 text-sm text-gray-200 whitespace-nowrap">
                     <div class="inline-flex items-center space-x-1">
                         <span class="text-red-400">-${sell}</span>
                         <img src="/images/coins/${d.sell_currency.code}.svg" alt="${d.sell_currency.code}" class="w-4 h-4">
                     </div>
                 </td>`;
-                                } else {
-                                    rowHtml += `<td class="px-5 py-4 text-sm text-gray-200 whitespace-nowrap">—</td>`;
-                                }
+                                    } else {
+                                        rowHtml += `<td class="px-5 py-4 text-sm text-gray-200 whitespace-nowrap">—</td>`;
+                                    }
 
-                                // Купля+
-                                if (d.buy_amount !== null && d.buy_currency) {
-                                    const buy = String(d.buy_amount).replace(/\.?0+$/, '').replace(/^-/, '');
-                                    const sign = d.buy_amount > 0 ? '+' : '-';
-                                    const cls = d.buy_amount > 0 ? 'text-green-400' : 'text-red-400';
-                                    rowHtml += `
+                                    // Купля+
+                                    if (d.buy_amount !== null && d.buy_currency) {
+                                        const buy = String(d.buy_amount).replace(/\.?0+$/, '').replace(/^-/, '');
+                                        const sign = d.buy_amount > 0 ? '+' : '-';
+                                        const cls = d.buy_amount > 0 ? 'text-green-400' : 'text-red-400';
+                                        rowHtml += `
                 <td class="px-5 py-4 text-sm text-gray-200 whitespace-nowrap">
                     <div class="inline-flex items-center space-x-1">
                         <span class="${cls}">${sign}${buy}</span>
                         <img src="/images/coins/${d.buy_currency.code}.svg" alt="${d.buy_currency.code}" class="w-4 h-4">
                     </div>
                 </td>`;
-                                } else {
-                                    rowHtml += `<td class="px-5 py-4 text-sm text-gray-200 whitespace-nowrap">—</td>`;
-                                }
+                                    } else {
+                                        rowHtml += `<td class="px-5 py-4 text-sm text-gray-200 whitespace-nowrap">—</td>`;
+                                    }
 
-                                // Расход−
-                                if (d.expense_amount !== null && d.expense_currency) {
-                                    const exp = String(d.expense_amount).replace(/\.?0+$/, '').replace(/^-/, '');
-                                    rowHtml += `
+                                    // Расход−
+                                    if (d.expense_amount !== null && d.expense_currency) {
+                                        const exp = String(d.expense_amount).replace(/\.?0+$/, '').replace(/^-/, '');
+                                        rowHtml += `
                 <td class="px-5 py-4 text-sm text-gray-200 whitespace-nowrap">
                     <div class="inline-flex items-center space-x-1">
                         <span class="text-red-400">-${exp}</span>
                         <img src="/images/coins/${d.expense_currency.code}.svg" alt="${d.expense_currency.code}" class="w-4 h-4">
                     </div>
                 </td>`;
-                                } else {
-                                    rowHtml += `<td class="px-5 py-4 text-sm text-gray-200 whitespace-nowrap">—</td>`;
-                                }
+                                    } else {
+                                        rowHtml += `<td class="px-5 py-4 text-sm text-gray-200 whitespace-nowrap">—</td>`;
+                                    }
 
-                                // Мерчант
-                                rowHtml += `
+                                    // Мерчант
+                                    rowHtml += `
             <td class="px-5 py-4 text-sm text-gray-200 text-center whitespace-nowrap">
                 ${d.merchant ?? '—'}
             </td>`;
 
-                                // ID ордера
-                                rowHtml += `
+                                    // ID ордера
+                                    rowHtml += `
             <td class="px-5 py-4 text-sm text-gray-200 text-center whitespace-nowrap">
                 ${d.order_id ?? '—'}
             </td>`;
 
-                                // закрываем строку
-                                rowHtml += `</tr>`;
+                                    // закрываем строку
+                                    rowHtml += `</tr>`;
 
-                                tbody.insertAdjacentHTML('beforeend', rowHtml);
+                                    tbody.insertAdjacentHTML('beforeend', rowHtml);
+                                });
+
+                                btn.dataset.nextPage = parseInt(nextPage) + 1;
+                                btn.dataset.hasMore = json.has_more ? 'true' : 'false';
+                                btn.disabled = false;
+                                btn.textContent = json.has_more ? 'Загрузить ещё' : 'Больше заявок нет';
+
+                                attachEditHandlers();
+                            })
+                            .catch(err => {
+                                console.error("Ошибка при подгрузке ещё заявок:", err);
+                                btn.disabled = false;
+                                btn.textContent = 'Загрузить ещё';
                             });
+                    }
 
-                            btn.dataset.nextPage = parseInt(nextPage) + 1;
-                            btn.dataset.hasMore = json.has_more ? 'true' : 'false';
-                            btn.disabled = false;
-                            btn.textContent = json.has_more ? 'Загрузить ещё' : 'Больше заявок нет';
+                    document.getElementById('loadMoreBtn').addEventListener('click', loadMoreApplications);
+                });
+            </script>
 
-                            attachEditHandlers();
-                        })
-                        .catch(err => {
-                            console.error("Ошибка при подгрузке ещё заявок:", err);
-                            btn.disabled = false;
-                            btn.textContent = 'Загрузить ещё';
-                        });
-                }
-
-                document.getElementById('loadMoreBtn').addEventListener('click', loadMoreApplications);
-            });
-        </script>
-
-        {{-- ◆========== Второй блок: «История операций» (dynamic columns) ==========◆ --}}
-        <div class="bg-[#191919] rounded-xl shadow-md overflow-x-auto border border-[#2d2d2d]">
-            <div class="px-6 py-4 border-b border-[#2d2d2d]">
-                <h2 class="text-2xl font-semibold text-white">История операций по валютам</h2>
-            </div>
-            <table class="min-w-full table-auto border-collapse divide-y divide-[#2d2d2d]">
-                <thead class="bg-[#191919]">
-                <tr class="sticky top-0">
-                    @foreach($currenciesForEdit as $currency)
-                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">
-                            @php
-                                // цветной бэкграунд (если есть)
-                                $hex = ltrim($currency->color ?? '', '#');
-                                // путь к файлу и URL
-                                $iconPath = public_path("images/coins/{$currency->code}.svg");
-                                $iconUrl  = asset("images/coins/{$currency->code}.svg");
-                            @endphp
-
-                            @if($hex)
-                                <div
-                                    class="inline-block px-2 py-1 rounded text-white text-xs"
-                                    style="background-color: #{{ $hex }};"
-                                >
-                                    {{ $currency->code }}
-                                </div>
-                            @elseif(file_exists($iconPath))
-                                <div class="inline-flex items-center space-x-1">
-                                    <img src="{{ $iconUrl }}" alt="{{ $currency->code }}" class="w-6 h-6">
-                                    {{--                                    <span>{{ $currency->code }}</span>--}}
-                                </div>
-                            @else
-                                {{ $currency->code }}
-                            @endif
-                        </th>
-                    @endforeach
-                </tr>
-                </thead>
-                <tbody class="bg-gray-800 divide-y divide-[#2d2d2d]">
-                @foreach($histories as $history)
-                    <tr class="bg-[#191919] hover:bg-gray-700">
-                        @foreach($currenciesForEdit as $currency)
-                            @php
-                                $cell = '';
-                                if ($history->currency_id === $currency->id && $history->amount !== null) {
-                                    // абсолютное значение
-                                    $abs = abs($history->amount);
-                                    // форматируем с 8 знаками после точки (подставьте своё количество)
-                                    $formatted = sprintf('%.8f', $abs);
-                                    // обрезаем лишние нули в конце, а затем — возможную точку
-                                    $trimmed = rtrim(rtrim($formatted, '0'), '.');
-                                    // знак
-                                    $sign = $history->amount > 0 ? '+' : '-';
-                                    $cell = $sign . $trimmed;
-                                }
-                            @endphp
-                            <td class="px-4 py-2 text-sm text-gray-200 whitespace-nowrap">
-                                @if($cell !== '')
-                                    <span class="{{ $history->amount > 0 ? 'text-green-600' : 'text-red-600' }}">
-            {{ $cell }}
-        </span>
-                                @else
-                                    —
-                                @endif
-                            </td>
-                        @endforeach
-                    </tr>
-                @endforeach
-                </tbody>
-                <tfoot>
-                <tr class="bg-[#191919]">
-                    @foreach($currenciesForEdit as $currency)
+            {{-- ◆========== Второй блок: «История операций» (банковский стиль) ==========◆ --}}
+            <div class="bg-[#191919] rounded-xl shadow-md border border-[#2d2d2d]">
+                <div class="px-6 py-4 border-b border-[#2d2d2d]">
+                    <h2 class="text-2xl font-semibold text-white">История операций</h2>
+                </div>
+                <div class="divide-y divide-[#2d2d2d]">
+                    @forelse($histories as $history)
                         @php
-                            $sum = $totals[$currency->id] ?? 0;
-                            if ($sum > 0) {
-                                $formatted = '+' . rtrim(rtrim((string) $sum, '0'), '.');
-                            } elseif ($sum < 0) {
-                                $formatted = '-' . ltrim(rtrim((string) abs($sum), '0'), '.');
+                            $amount = $history->amount;
+                            $sign = $amount > 0 ? '+' : '-';
+                            $abs = abs($amount);
+                            $formatted = rtrim(rtrim(sprintf('%.8f', $abs), '0'), '.');
+                            $currency = $history->currency;
+                            $icon = $currency ? "/images/coins/{$currency->code}.svg" : null;
+                            $date = $history->created_at ? \Carbon\Carbon::parse($history->created_at)->format('d.m.Y H:i') : '';
+                            $type = class_basename($history->sourceable_type);
+                            $source = $history->sourceable;
+                            $typeRu = $type;
+                            if ($type === 'Purchase') $typeRu = 'Покупка крипты';
+                            elseif ($type === 'SaleCrypt') $typeRu = 'Продажа крипты';
+                            elseif ($type === 'Payment') $typeRu = 'Оплата';
+                            elseif ($type === 'Transfer') $typeRu = 'Перевод';
+                            elseif ($type === 'Application') $typeRu = 'Заявка';
+                            $exchanger = null;
+                            if ($type === 'Purchase' && $source && $source->exchanger) {
+                                $exchanger = $source->exchanger->title;
+                            } elseif ($type === 'SaleCrypt' && $source && $source->exchanger) {
+                                $exchanger = $source->exchanger->title;
+                            } elseif ($type === 'Payment' && $source && $source->exchanger) {
+                                $exchanger = $source->exchanger->title;
+                            } elseif ($type === 'Transfer' && $source && $source->exchangerFrom) {
+                                $exchanger = $source->exchangerFrom->title . ' → ' . ($source->exchangerTo->title ?? '');
+                            } elseif ($type === 'Application' && $source && $source->merchant) {
+                                $exchanger = $source->merchant;
                             } else {
-                                $formatted = '0';
+                                $exchanger = $typeRu;
                             }
-                        @endphp
-                        <td class="px-4 py-2 text-sm whitespace-nowrap">
-                                <span
-                                    class="{{ $sum > 0 ? 'text-green-600' : ($sum < 0 ? 'text-red-600' : 'text-gray-900') }}">
-                                    {{ $formatted }}
-                                </span>
-                        </td>
-                    @endforeach
-                </tr>
-                </tfoot>
-            </table>
-
-            <!-- Стилизация контейнера итоговой суммы в USDT -->
-            <div
-                id="usdtTotalContainer"
-                class="bg-[#191919]
-                    rounded-lg
-                    px-4 py-3
-                    flex items-center justify-between
-                    shadow-sm
-                "
-            >
-                <div class="text-gray-700 text-sm font-medium">
-                    Итог (в USDT):
+                                @endphp
+                        <div class="flex items-center justify-between px-6 py-4 bg-[#191919] hover:bg-gray-800 transition"
+                             data-type="{{ $type }}"
+                             data-id="{{ $source->id ?? '' }}"
+                             data-exchanger="{{ $exchanger ?? '' }}"
+                             data-amount="{{ $amount ?? '' }}"
+                             data-currency="{{ $currency->code ?? '' }}"
+                             data-date="{{ $date ?? '' }}"
+                             data-type-ru="{{ $typeRu ?? '' }}"
+                             @if($source)
+                                data-sale-amount="{{ $source->sale_amount ?? '' }}"
+                                data-sale-currency="{{ optional($source->saleCurrency)->code ?? '' }}"
+                                data-fixed-amount="{{ $source->fixed_amount ?? '' }}"
+                                data-fixed-currency="{{ optional($source->fixedCurrency)->code ?? '' }}"
+                                data-received-amount="{{ $source->received_amount ?? '' }}"
+                                data-received-currency="{{ optional($source->receivedCurrency)->code ?? '' }}"
+                                data-sell-amount="{{ $source->sell_amount ?? '' }}"
+                                data-sell-currency="{{ optional($source->sellCurrency)->code ?? '' }}"
+                                data-comment="{{ $source->comment ?? '' }}"
+                                data-commission="{{ $source->commission ?? '' }}"
+                                data-commission-currency="{{ optional($source->commissionCurrency)->code ?? '' }}"
+                                data-amount-transfer="{{ $source->amount ?? '' }}"
+                                data-amount-currency="{{ optional($source->amountCurrency)->code ?? '' }}"
+                             @endif
+                        >
+                            <div class="flex-1 min-w-0">
+                                <div class="text-white font-medium truncate">
+                                    {{ $exchanger }}
+                                    </div>
+                                <div class="text-xs text-gray-400 mt-1">
+                                    <span>{{ $date }}</span>
+                                    </div>
+                            </div>
+                            <div class="flex items-center gap-2 ml-4">
+                                <span class="text-lg font-bold {{ $amount > 0 ? 'text-green-400' : 'text-red-400' }}">{{ $sign }}{{ $formatted }}</span>
+                                @if($currency)
+                                    <img src="{{ $icon }}" alt="{{ $currency->code }}" class="w-6 h-6" onerror="this.style.display='none';this.insertAdjacentHTML('afterend', '<span>{{ $currency->code }}</span>')">
+                                @endif
                 </div>
-                <div
-                    id="usdt-total-cell"
-                    class="inline-block px-3 py-1 rounded font-bold text-lg"
-                >
-                    —
                 </div>
+                @empty
+                    <div class="px-6 py-8 text-center text-gray-400">Нет операций</div>
+                @endforelse
             </div>
+        </div>
+
+        {{-- Кнопка "Показать все" --}}
+        <div class="flex justify-center mt-6">
+            <a href="{{ route('history.all') }}" class="px-6 py-3 bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg font-medium transition-colors">
+                Показать всю историю операций
+            </a>
         </div>
 
         {{-- Итого USDT по дням — Flowbite Chart --}}
@@ -972,39 +931,28 @@
                         <tr class="bg-[#191919] hover:bg-gray-700">
                             @if(auth()->user()->role === 'admin')
                                 <td class="px-5 py-4 whitespace-nowrap space-x-2">
-                                    <button
-                                        class="edit-transfer-btn px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs"
-                                        data-id="{{ $t->id }}"
-                                        data-from-id="{{ $t->exchanger_from_id }}"
-                                        data-to-id="{{ $t->exchanger_to_id }}"
-                                        data-amount="{{ $t->amount }}"
-                                        data-amount-currency-id="{{ $t->amount_currency_id }}"
-                                        data-commission="{{ $t->commission }}"
-                                        data-commission-currency-id="{{ $t->commission_currency_id }}"
-                                    >
-                                        <svg xmlns="http://www.w3.org/2000/svg"
-                                             class="w-4 h-4 text-white transition-colors"
-                                             fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <button class="edit-transfer-btn px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs"
+                                            data-id="{{ $t->id }}"
+                                            data-from-id="{{ $t->exchanger_from_id }}"
+                                            data-to-id="{{ $t->exchanger_to_id }}"
+                                            data-amount="{{ $t->amount }}"
+                                            data-amount-currency-id="{{ $t->amount_currency_id }}"
+                                            data-commission="{{ $t->commission }}"
+                                            data-commission-currency-id="{{ $t->commission_currency_id }}">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-white transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                             <path d="M17 3a2.828 2.828 0 014 4L7 21H3v-4L17 3z"></path>
                                         </svg>
                                     </button>
-                                    <button
-                                        class="delete-transfer-btn px-2 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-xs"
-                                        data-id="{{ $t->id }}"
-                                    >
-                                        <svg xmlns="http://www.w3.org/2000/svg"
-                                             class="w-4 h-4 text-white transition-colors"
-                                             fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                            <circle cx="9" cy="21" r="1"></circle>
-                                            <circle cx="20" cy="21" r="1"></circle>
-                                            <path
-                                                d="M1 1h4l2.68 13.39a2 2 0 001.99 1.61h9.72a2 2 0 001.97-1.64L23 6H6"></path>
+                                    <button class="delete-transfer-btn px-2 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-xs"
+                                            data-id="{{ $t->id }}">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-white transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                            <path d="M6 18L18 6M6 6l12 12"></path>
                                         </svg>
                                     </button>
                                 </td>
                             @endif
-                            <td class="px-5 py-4 text-gray-200 whitespace-nowrap">{{ optional($t->exchangerFrom)->title ?? '—' }}</td>
-                            <td class="px-5 py-4 text-gray-200 whitespace-nowrap">{{ optional($t->exchangerTo)->title ?? '—' }}</td>
+                            <td class="px-5 py-4 text-sm whitespace-nowrap">{{ $t->exchangerFrom->title ?? '—' }}</td>
+                            <td class="px-5 py-4 text-sm whitespace-nowrap">{{ $t->exchangerTo->title ?? '—' }}</td>
                             <td class="px-5 py-4 text-sm whitespace-nowrap">
                                 @if(!is_null($t->amount))
                                     @php
@@ -1050,12 +998,10 @@
                     </tbody>
                 </table>
                 <div class="px-6 py-2 text-center">
-                    <button
-                        id="loadMoreTransfers"
-                        class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-                        data-next-page="{{ $transfers->currentPage()+1 }}"
-                        data-has-more="{{ $transfers->hasMorePages() ? 'true' : 'false' }}"
-                    >Загрузить ещё
+                    <button id="loadMoreTransfers" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                            data-next-page="{{ $transfers->currentPage()+1 }}"
+                            data-has-more="{{ $transfers->hasMorePages() ? 'true' : 'false' }}">
+                        Загрузить ещё
                     </button>
                 </div>
             </div>
@@ -1089,36 +1035,23 @@
                         <tr class="bg-[#191919] hover:bg-gray-700">
                             @if(auth()->user()->role === 'admin')
                                 <td class="px-5 py-4 whitespace-nowrap space-x-2">
-                                    <button
-                                        class="edit-payment-btn px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs"
-                                        data-id="{{ $p->id }}"
-                                        data-exchanger-id="{{ $p->exchanger_id }}"
-                                        data-sell-amount="{{ $p->sell_amount }}"
-                                        data-sell-currency-id="{{ $p->sell_currency_id }}"
-                                        data-comment="{{ $p->comment }}"
-                                    >
-                                        <svg xmlns="http://www.w3.org/2000/svg"
-                                             class="w-4 h-4 text-white transition-colors"
-                                             fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <button class="edit-payment-btn px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs"
+                                            data-id="{{ $p->id }}"
+                                            data-amount="{{ $p->sell_amount }}"
+                                            data-comment="{{ $p->comment }}">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-white transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                             <path d="M17 3a2.828 2.828 0 014 4L7 21H3v-4L17 3z"></path>
                                         </svg>
                                     </button>
-                                    <button
-                                        class="delete-payment-btn px-2 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-xs"
-                                        data-id="{{ $p->id }}"
-                                    >
-                                        <svg xmlns="http://www.w3.org/2000/svg"
-                                             class="w-4 h-4 text-white transition-colors"
-                                             fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                            <circle cx="9" cy="21" r="1"></circle>
-                                            <circle cx="20" cy="21" r="1"></circle>
-                                            <path
-                                                d="M1 1h4l2.68 13.39a2 2 0 001.99 1.61h9.72a2 2 0 001.97-1.64L23 6H6"></path>
+                                    <button class="delete-payment-btn px-2 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-xs"
+                                            data-id="{{ $p->id }}">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-white transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                            <path d="M6 18L18 6M6 6l12 12"></path>
                                         </svg>
                                     </button>
                                 </td>
                             @endif
-                            <td class="px-5 py-4 text-white whitespace-nowrap">{{ optional($p->exchanger)->title ?? '—' }}</td>
+                            <td class="px-5 py-4 text-sm whitespace-nowrap">{{ $p->platform ?? '—' }}</td>
                             <td class="px-5 py-4 text-sm whitespace-nowrap">
                                 @if(!is_null($p->sell_amount))
                                     @php
@@ -1145,12 +1078,10 @@
                     </tbody>
                 </table>
                 <div class="px-6 py-2 text-center">
-                    <button
-                        id="loadMorePayments"
-                        class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-                        data-next-page="{{ $payments->currentPage()+1 }}"
-                        data-has-more="{{ $payments->hasMorePages() ? 'true' : 'false' }}"
-                    >Загрузить ещё
+                    <button id="loadMorePayments" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                            data-next-page="{{ $payments->currentPage()+1 }}"
+                            data-has-more="{{ $payments->hasMorePages() ? 'true' : 'false' }}">
+                        Загрузить ещё
                     </button>
                 </div>
             </div>
@@ -1187,51 +1118,40 @@
                         <tr class="bg-[#191919] hover:bg-gray-700">
                             @if(auth()->user()->role === 'admin')
                                 <td class="px-5 py-4 whitespace-nowrap space-x-2">
-                                    <button
-                                        class="edit-purchase-btn px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs"
-                                        data-id="{{ $pc->id }}"
-                                        data-exchanger-id="{{ $pc->exchanger_id }}"
-                                        data-received-amount="{{ $pc->received_amount }}"
-                                        data-received-currency-id="{{ $pc->received_currency_id }}"
-                                        data-sale-amount="{{ $pc->sale_amount }}"
-                                        data-sale-currency-id="{{ $pc->sale_currency_id }}"
-                                    >
-                                        <svg xmlns="http://www.w3.org/2000/svg"
-                                             class="w-4 h-4 text-white transition-colors"
-                                             fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <button class="edit-purchase-btn px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs"
+                                            data-id="{{ $pc->id }}"
+                                            data-exchanger-id="{{ $pc->exchanger_id }}"
+                                            data-received-amount="{{ $pc->received_amount }}"
+                                            data-received-currency-id="{{ $pc->received_currency_id }}"
+                                            data-sale-amount="{{ $pc->sale_amount }}"
+                                            data-sale-currency-id="{{ $pc->sale_currency_id }}">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-white transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                             <path d="M17 3a2.828 2.828 0 014 4L7 21H3v-4L17 3z"></path>
                                         </svg>
                                     </button>
-                                    <button
-                                        class="delete-purchase-btn px-2 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-xs"
-                                        data-id="{{ $pc->id }}"
-                                    >
-                                        <svg xmlns="http://www.w3.org/2000/svg"
-                                             class="w-4 h-4 text-white transition-colors"
-                                             fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                            <circle cx="9" cy="21" r="1"></circle>
-                                            <circle cx="20" cy="21" r="1"></circle>
-                                            <path
-                                                d="M1 1h4l2.68 13.39a2 2 0 001.99 1.61h9.72a2 2 0 001.97-1.64L23 6H6"></path>
+                                    <button class="delete-purchase-btn px-2 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-xs"
+                                            data-id="{{ $pc->id }}">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-white transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                            <path d="M6 18L18 6M6 6l12 12"></path>
                                         </svg>
                                     </button>
                                 </td>
                             @endif
-                            <td class="px-5 py-4 text-gray-200 whitespace-nowrap">{{ optional($pc->exchanger)->title ?? '—' }}</td>
+                            <td class="px-5 py-4 text-sm whitespace-nowrap">{{ $pc->platform ?? '—' }}</td>
                             <td class="px-5 py-4 text-sm whitespace-nowrap">
                                 @if(!is_null($pc->received_amount))
                                     @php
-                                        $recAmt  = rtrim(rtrim((string)$pc->received_amount, '0'), '.');
-                                        $codeRec = optional($pc->receivedCurrency)->code;
-                                        $pathRec = public_path("images/coins/{$codeRec}.svg");
-                                        $urlRec  = asset("images/coins/{$codeRec}.svg");
+                                        $recvAmt  = rtrim(rtrim((string)$pc->received_amount, '0'), '.');
+                                        $codeRecv = optional($pc->receivedCurrency)->code;
+                                        $pathRecv = public_path("images/coins/{$codeRecv}.svg");
+                                        $urlRecv  = asset("images/coins/{$codeRecv}.svg");
                                     @endphp
                                     <div class="inline-flex items-center space-x-1">
-                                        <span class="text-green-400">+{{ $recAmt }}</span>
-                                        @if($codeRec && file_exists($pathRec))
-                                            <img src="{{ $urlRec }}" alt="{{ $codeRec }}" class="w-4 h-4">
+                                        <span class="text-green-400">+{{ $recvAmt }}</span>
+                                        @if($codeRecv && file_exists($pathRecv))
+                                            <img src="{{ $urlRecv }}" alt="{{ $codeRecv }}" class="w-4 h-4">
                                         @else
-                                            <span class="text-white">{{ $codeRec }}</span>
+                                            <span class="text-white">{{ $codeRecv }}</span>
                                         @endif
                                     </div>
                                 @else
@@ -1258,7 +1178,6 @@
                                     —
                                 @endif
                             </td>
-                            {{-- Заменяем в <tbody> ячейку ID ордера --}}
                             <td class="px-5 py-4 text-sm text-gray-200 text-center whitespace-nowrap">
                                 <button class="details-btn text-cyan-400 hover:underline" data-id="{{ $pc->application_id }}">
                                     #{{ $pc->application_id }}
@@ -1269,12 +1188,10 @@
                     </tbody>
                 </table>
                 <div class="px-6 py-2 text-center">
-                    <button
-                        id="loadMorePurchases"
-                        class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-                        data-next-page="{{ $purchases->currentPage()+1 }}"
-                        data-has-more="{{ $purchases->hasMorePages() ? 'true' : 'false' }}"
-                    >Загрузить ещё
+                    <button id="loadMorePurchases" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                            data-next-page="{{ $purchases->currentPage()+1 }}"
+                            data-has-more="{{ $purchases->hasMorePages() ? 'true' : 'false' }}">
+                        Загрузить ещё
                     </button>
                 </div>
             </div>
@@ -1311,51 +1228,39 @@
                         <tr class="bg-[#191919] hover:bg-gray-700">
                             @if(auth()->user()->role === 'admin')
                                 <td class="px-5 py-4 whitespace-nowrap space-x-2">
-                                    <button
-                                        class="edit-salecrypt-btn px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs"
-                                        data-id="{{ $sc->id }}"
-                                        data-exchanger-id="{{ $sc->exchanger_id }}"
-                                        data-sale-amount="{{ $sc->sale_amount }}"
-                                        data-sale-currency-id="{{ $sc->sale_currency_id }}"
-                                        data-fixed-amount="{{ $sc->fixed_amount }}"
-                                        data-fixed-currency-id="{{ $sc->fixed_currency_id }}"
-                                    >
-                                        <svg xmlns="http://www.w3.org/2000/svg"
-                                             class="w-4 h-4 text-white transition-colors"
-                                             fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <button class="edit-salecrypt-btn px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs"
+                                            data-id="{{ $sc->id }}"
+                                            data-sale-amount="{{ $sc->sale_amount }}"
+                                            data-sale-currency-id="{{ $sc->sale_currency_id }}"
+                                            data-fixed-amount="{{ $sc->fixed_amount }}"
+                                            data-fixed-currency-id="{{ $sc->fixed_currency_id }}">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-white transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                             <path d="M17 3a2.828 2.828 0 014 4L7 21H3v-4L17 3z"></path>
                                         </svg>
                                     </button>
-                                    <button
-                                        class="delete-salecrypt-btn px-2 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-xs"
-                                        data-id="{{ $sc->id }}"
-                                    >
-                                        <svg xmlns="http://www.w3.org/2000/svg"
-                                             class="w-4 h-4 text-white transition-colors"
-                                             fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                            <circle cx="9" cy="21" r="1"></circle>
-                                            <circle cx="20" cy="21" r="1"></circle>
-                                            <path
-                                                d="M1 1h4l2.68 13.39a2 2 0 001.99 1.61h9.72a2 2 0 001.97-1.64L23 6H6"></path>
+                                    <button class="delete-salecrypt-btn px-2 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-xs"
+                                            data-id="{{ $sc->id }}">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-white transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                            <path d="M6 18L18 6M6 6l12 12"></path>
                                         </svg>
                                     </button>
                                 </td>
                             @endif
-                            <td class="px-5 py-4 text-gray-200 whitespace-nowrap">{{ optional($sc->exchanger)->title ?? '—' }}</td>
+                            <td class="px-5 py-4 text-sm whitespace-nowrap">{{ $sc->platform ?? '—' }}</td>
                             <td class="px-5 py-4 text-sm whitespace-nowrap">
                                 @if(!is_null($sc->sale_amount))
                                     @php
-                                        $sa     = rtrim(rtrim((string)$sc->sale_amount, '0'), '.');
-                                        $codeSa = optional($sc->saleCurrency)->code;
-                                        $pathSa = public_path("images/coins/{$codeSa}.svg");
-                                        $urlSa  = asset("images/coins/{$codeSa}.svg");
+                                        $saleAmt  = rtrim(rtrim((string)$sc->sale_amount, '0'), '.');
+                                        $codeSale = optional($sc->saleCurrency)->code;
+                                        $pathSale = public_path("images/coins/{$codeSale}.svg");
+                                        $urlSale  = asset("images/coins/{$codeSale}.svg");
                                     @endphp
                                     <div class="inline-flex items-center space-x-1">
-                                        <span class="text-red-400">-{{ ltrim($sa,'-') }}</span>
-                                        @if($codeSa && file_exists($pathSa))
-                                            <img src="{{ $urlSa }}" alt="{{ $codeSa }}" class="w-4 h-4">
+                                        <span class="text-red-400">-{{ $saleAmt }}</span>
+                                        @if($codeSale && file_exists($pathSale))
+                                            <img src="{{ $urlSale }}" alt="{{ $codeSale }}" class="w-4 h-4">
                                         @else
-                                            <span class="text-white">{{ $codeSa }}</span>
+                                            <span class="text-white">{{ $codeSale }}</span>
                                         @endif
                                     </div>
                                 @else
@@ -1371,9 +1276,9 @@
                                         $urlFa  = asset("images/coins/{$codeFa}.svg");
                                     @endphp
                                     <div class="inline-flex items-center space-x-1">
-                <span class="{{ $sc->fixed_amount>0 ? 'text-green-400':'text-red-400' }}">
-                  {{ $sc->fixed_amount>0?'+':'' }}{{ ltrim($fa,'-') }}
-                </span>
+                                        <span class="{{ $sc->fixed_amount>0 ? 'text-green-400':'text-red-400' }}">
+                                          {{ $sc->fixed_amount>0?'+':'' }}{{ ltrim($fa,'-') }}
+                                        </span>
                                         @if($codeFa && file_exists($pathFa))
                                             <img src="{{ $urlFa }}" alt="{{ $codeFa }}" class="w-4 h-4">
                                         @else
@@ -1384,7 +1289,6 @@
                                     —
                                 @endif
                             </td>
-                            {{-- Заменяем в <tbody> ячейку ID ордера --}}
                             <td class="px-5 py-4 text-sm text-gray-200 text-center whitespace-nowrap">
                                 <button class="details-btn text-cyan-400 hover:underline" data-id="{{ $sc->application_id }}">
                                     #{{ $sc->application_id }}
@@ -1395,12 +1299,10 @@
                     </tbody>
                 </table>
                 <div class="px-6 py-2 text-center">
-                    <button
-                        id="loadMoreSaleCrypts"
-                        class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-                        data-next-page="{{ $saleCrypts->currentPage()+1 }}"
-                        data-has-more="{{ $saleCrypts->hasMorePages() ? 'true' : 'false' }}"
-                    >Загрузить ещё
+                    <button id="loadMoreSaleCrypts" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                            data-next-page="{{ $saleCrypts->currentPage()+1 }}"
+                            data-has-more="{{ $saleCrypts->hasMorePages() ? 'true' : 'false' }}">
+                        Загрузить ещё
                     </button>
                 </div>
             </div>
@@ -1411,5 +1313,45 @@
     @include('modal.edit-salecrypt')
     @include('modal.edit-transfer')
     @include('modal.show-application')
-    @vite('resources/js/crud.js')
+    @vite(['resources/js/crud.js'])
 @endsection
+
+
+@push('scripts')
+<script>
+document.querySelectorAll('.custom-tooltip').forEach(td => {
+  const label = td.getAttribute('data-tooltip');
+  if (!label) return;
+  let tip;
+  function showTooltip(e) {
+    tip = document.createElement('div');
+    tip.className = 'tooltip-box';
+    tip.textContent = label;
+    document.body.appendChild(tip);
+    const rect = td.getBoundingClientRect();
+    const tipRect = tip.getBoundingClientRect();
+    let left = rect.left + rect.width/2 - tipRect.width/2;
+    let top = rect.top - tipRect.height - 8;
+    if (left < 8) left = 8;
+    if (left + tipRect.width > window.innerWidth - 8) left = window.innerWidth - tipRect.width - 8;
+    if (top < 8) top = rect.bottom + 8;
+    tip.style.left = left + 'px';
+    tip.style.top = top + 'px';
+    tip.style.opacity = '1';
+    tip.style.transform = 'scale(1)';
+    console.log('TOOLTIP SHOWN:', label);
+  }
+  function hideTooltip() {
+    if (tip) {
+      tip.remove();
+      tip = null;
+      console.log('TOOLTIP HIDE');
+    }
+  }
+  td.addEventListener('mouseenter', showTooltip);
+  td.addEventListener('mouseleave', hideTooltip);
+  td.addEventListener('focus', showTooltip);
+  td.addEventListener('blur', hideTooltip);
+});
+</script>
+@endpush

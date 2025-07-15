@@ -1,7 +1,6 @@
 @import "tailwindcss";
 @source "../views";
 
-
 /* Положительный итог (плюс): зелёный фон и тёмно-зелёный текст */
 #usdt-total-cell.positive {
     @apply text-green-800;

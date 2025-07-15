@@ -18,6 +18,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Symfony\Component\DomCrawler\Crawler;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class MainController extends Controller
 {
@@ -650,53 +651,99 @@ class MainController extends Controller
             'saleCrypts.fixedCurrency', 'saleCrypts.saleCurrency',
         ])->findOrFail($id);
 
-        // Если sale_text задан и содержит пробел, разбиваем на число и код
-        if ($app->sale_text && str_contains($app->sale_text, ' ')) {
-            [$incoming_amount, $incoming_currency] = explode(' ', $app->sale_text, 2);
-        } else {
-            $incoming_amount   = null;
-            $incoming_currency = null;
-        }
+        // Иконки для основных валют
+        $sellIcon = $app->sellCurrency ? asset('images/coins/' . $app->sellCurrency->code . '.svg') : null;
+        $buyIcon = $app->buyCurrency ? asset('images/coins/' . $app->buyCurrency->code . '.svg') : null;
+        $expenseIcon = $app->expenseCurrency ? asset('images/coins/' . $app->expenseCurrency->code . '.svg') : null;
+
+        // Сопутствующие покупки
+        $relatedPurchases = $app->purchases->map(fn($p) => [
+            'id' => $p->id,
+            'received_amount' => $p->received_amount,
+            'received_currency' => $p->receivedCurrency?->code,
+            'received_icon' => $p->receivedCurrency ? asset('images/coins/' . $p->receivedCurrency->code . '.svg') : null,
+            'sale_amount' => $p->sale_amount,
+            'sale_currency' => $p->saleCurrency?->code,
+            'sale_icon' => $p->saleCurrency ? asset('images/coins/' . $p->saleCurrency->code . '.svg') : null,
+        ]);
+        // Сопутствующие продажи
+        $relatedSaleCrypts = $app->saleCrypts->map(fn($s) => [
+            'id' => $s->id,
+            'fixed_amount' => $s->fixed_amount,
+            'fixed_currency' => $s->fixedCurrency?->code,
+            'fixed_icon' => $s->fixedCurrency ? asset('images/coins/' . $s->fixedCurrency->code . '.svg') : null,
+            'sale_amount' => $s->sale_amount,
+            'sale_currency' => $s->saleCurrency?->code,
+            'sale_icon' => $s->saleCurrency ? asset('images/coins/' . $s->saleCurrency->code . '.svg') : null,
+        ]);
 
         return response()->json([
             'app_id'                => $app->app_id,
-            'app_created_at'        => Carbon::parse($app->app_created_at)->format('d.m.Y H:i:s'),
+            'app_created_at'        => $app->app_created_at ? Carbon::parse($app->app_created_at)->format('d.m.Y H:i:s') : null,
             'exchanger'             => $app->exchanger,
             'status'                => $app->status,
-
-            // Вместо sale_text — два поля
-            'incoming_amount'       => $incoming_amount,
-            'incoming_currency_code'=> $incoming_currency,
-
-            // Продажа
-            'sell_amount'           => $app->sell_amount,
-            'sell_currency_code'    => $app->sellCurrency?->code,
-
-            // Купля
-            'buy_amount'            => $app->buy_amount,
-            'buy_currency_code'     => $app->buyCurrency?->code,
-
-            // Расход
-            'expense_amount'        => $app->expense_amount,
-            'expense_currency_code' => $app->expenseCurrency?->code,
-
             'merchant'              => $app->merchant,
-
-            // Сопутствующие покупки
-            'related_purchases'     => $app->purchases->map(fn($p) => [
-                'received_amount'        => $p->received_amount,
-                'received_currency_code' => $p->receivedCurrency?->code,
-                'sale_amount'            => $p->sale_amount,
-                'sale_currency_code'     => $p->saleCurrency?->code,
-            ]),
-
-            // Продажи крипты
-            'related_sale_crypts'   => $app->saleCrypts->map(fn($s) => [
-                'fixed_amount'           => $s->fixed_amount,
-                'fixed_currency_code'    => $s->fixedCurrency?->code,
-                'sale_amount'            => $s->sale_amount,
-                'sale_currency_code'     => $s->saleCurrency?->code,
-            ]),
+            'sell_amount'           => $app->sell_amount,
+            'sell_currency'         => $app->sellCurrency?->code,
+            'sell_icon'             => $sellIcon,
+            'buy_amount'            => $app->buy_amount,
+            'buy_currency'          => $app->buyCurrency?->code,
+            'buy_icon'              => $buyIcon,
+            'expense_amount'        => $app->expense_amount,
+            'expense_currency'      => $app->expenseCurrency?->code,
+            'expense_icon'          => $expenseIcon,
+            'order_id'              => $app->order_id,
+            'user_id'               => $app->user_id,
+            'related_purchases'     => $relatedPurchases,
+            'related_sale_crypts'   => $relatedSaleCrypts,
         ]);
+    }
+
+    /**
+     * Страница с полной историей (все записи, без ограничения).
+     */
+    public function allHistory(Request $request)
+    {
+        // Группируем связи по типу sourceable
+        // MorphTo::morphWith([
+        //     \App\Models\Purchase::class => ['exchanger', 'saleCurrency', 'receivedCurrency'],
+        //     \App\Models\SaleCrypt::class => ['exchanger', 'saleCurrency', 'fixedCurrency'],
+        //     \App\Models\Payment::class => ['exchanger', 'sellCurrency'],
+        //     \App\Models\Transfer::class => ['exchangerFrom', 'exchangerTo', 'commissionCurrency', 'amountCurrency'],
+        //     \App\Models\Application::class => ['sellCurrency', 'buyCurrency', 'expenseCurrency', 'purchases', 'saleCrypts'],
+        // ]);
+
+        $histories = History::with(['currency', 'sourceable'])
+            ->orderBy('created_at', 'desc')
+            ->paginate(30);
+
+        // Подгружаем только реально существующие связи для каждого типа sourceable
+        foreach ($histories as $history) {
+            if ($history->sourceable instanceof \App\Models\Purchase) {
+                $history->sourceable->loadMissing(['exchanger', 'saleCurrency', 'receivedCurrency']);
+            } elseif ($history->sourceable instanceof \App\Models\SaleCrypt) {
+                $history->sourceable->loadMissing(['exchanger', 'saleCurrency', 'fixedCurrency']);
+            } elseif ($history->sourceable instanceof \App\Models\Payment) {
+                $history->sourceable->loadMissing(['exchanger', 'sellCurrency']);
+            } elseif ($history->sourceable instanceof \App\Models\Transfer) {
+                $history->sourceable->loadMissing(['exchangerFrom', 'exchangerTo', 'commissionCurrency', 'amountCurrency']);
+            } elseif ($history->sourceable instanceof \App\Models\Application) {
+                $history->sourceable->loadMissing(['sellCurrency', 'buyCurrency', 'expenseCurrency', 'purchases', 'saleCrypts']);
+            }
+        }
+
+        // Итоги по всем валютам (оставим для возможного футера)
+        $rawTotals = History::whereNotNull('currency_id')
+            ->groupBy('currency_id')
+            ->select('currency_id', DB::raw('SUM(amount) as total'))
+            ->pluck('total', 'currency_id');
+
+        $currencies = Currency::whereIn('id', $rawTotals->keys())->get();
+        $totals = [];
+        foreach ($currencies as $c) {
+            $totals[$c->id] = $rawTotals->get($c->id, 0);
+        }
+
+        return view('pages.all-history', compact('histories', 'currencies', 'totals'));
     }
 }

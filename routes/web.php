@@ -11,18 +11,23 @@ use App\Http\Controllers\PurchaseController;
 use App\Http\Controllers\SaleCryptController;
 use App\Http\Controllers\TransferController;
 use App\Http\Controllers\WalletHistoryController;
+use App\Http\Controllers\YandexWebmasterController;
 use Illuminate\Support\Facades\Route;
 
+// Тестовый маршрут для AG Grid
+Route::get('/test-ag-grid', function () {
+    return view('test-ag-grid');
+});
 
 Route::middleware('guest')->group(function () {
 //    Route::get('register', [AuthController::class, 'viewRegister'])->name('view.register');
     Route::get('login', [AuthController::class, 'viewLogin'])->name('view.login');
     Route::post('login', [AuthController::class, 'login'])->name('login.perform');
-
 });
-Route::middleware('auth')->group(function () {
+
+Route::middleware(['auth'])->group(function () {
     Route::get('/', [MainController::class, 'viewMain'])->name('view.main');
-    Route::get('/api/applications', [MainController::class, 'apiApplications'])->name('api.applications');
+
     Route::put('/applications/{id}', [MainController::class, 'update']);
     Route::get('/usdt-total', [MainController::class, 'usdtTotal'])->name('usdt.total');
     Route::post('logout', [AuthController::class, 'logout'])->name('logout');
@@ -30,14 +35,20 @@ Route::middleware('auth')->group(function () {
     Route::get('/api/wallets/balances', [ProfileController::class, 'balances'])->name('api.wallets.balances');
     Route::get('/api/wallets/history', [ProfileController::class, 'history'])->name('api.wallets.history');
     Route::get('/chart/usdt', [MainController::class, 'usdtChart']);
-    Route::resource('purchases', PurchaseController::class)->only(['index']);
-    Route::resource('transfers', TransferController::class)->only(['index']);
-    Route::resource('payments', PaymentController::class)->only(['index']);
-    Route::resource('sale-crypts', SaleCryptController::class)->only(['index']);
+    Route::resource('purchases', PurchaseController::class)->only(['index', 'show']);
+    Route::resource('transfers', TransferController::class)->only(['index', 'show']);
+    Route::resource('payments', PaymentController::class)->only(['index', 'show']);
+    Route::resource('sale-crypts', SaleCryptController::class)->only(['index', 'show']);
     Route::get('/api/applications/{id}', [MainController::class, 'apiShowApplication']);
+    Route::get('/api/applications', [MainController::class, 'apiApplications'])->name('api.applications');
+    Route::get('/history/all', [MainController::class, 'allHistory'])->name('history.all');
+    Route::get('/purchase/{purchase}', [\App\Http\Controllers\PurchaseController::class, 'show'])->name('purchase.show');
+    Route::get('/salecrypt/{saleCrypt}', [\App\Http\Controllers\SaleCryptController::class, 'show'])->name('salecrypt.show');
+    Route::get('/payment/{payment}', [\App\Http\Controllers\PaymentController::class, 'show'])->name('payment.show');
+    Route::get('/transfer/{transfer}', [\App\Http\Controllers\TransferController::class, 'show'])->name('transfer.show');
 });
 
-Route::middleware('admin')->prefix('admin')->group(function () {
+Route::middleware(['admin'])->prefix('admin')->group(function () {
 
     Route::resource('currencies', CurrencyController::class)->except(['show', 'index', 'create']);
     Route::resource('platforms', PlatformController::class)->except(['show', 'index', 'create', 'store']);
@@ -72,3 +83,23 @@ Route::middleware('admin')->prefix('admin')->group(function () {
     Route::put('/applications/{id}', [MainController::class, 'updateApplication'])->name('applications.update');
     Route::get('/api/applications/{id}', [MainController::class, 'apiShowApplication']);
 });
+
+// Маршруты для Яндекс.Вебмастера
+Route::middleware(['auth', 'platform'])->prefix('webmaster')->name('webmaster.')->group(function () {
+    Route::get('/dashboard', [YandexWebmasterController::class, 'dashboard'])->name('dashboard');
+    Route::get('/comparison', [YandexWebmasterController::class, 'comparison'])->name('comparison');
+
+    // API маршруты
+    Route::prefix('api')->name('api.')->group(function () {
+        Route::get('/stats', [YandexWebmasterController::class, 'getStats'])->name('stats');
+        Route::get('/search-queries', [YandexWebmasterController::class, 'getSearchQueries'])->name('search_queries');
+        Route::get('/indexing', [YandexWebmasterController::class, 'getIndexing'])->name('indexing');
+        Route::get('/crawl-errors', [YandexWebmasterController::class, 'getCrawlErrors'])->name('crawl_errors');
+        Route::get('/external-links', [YandexWebmasterController::class, 'getExternalLinks'])->name('external_links');
+        Route::get('/sites', [YandexWebmasterController::class, 'getSites'])->name('sites');
+        Route::get('/test-connection', [YandexWebmasterController::class, 'testConnection'])->name('test_connection');
+        Route::post('/export', [YandexWebmasterController::class, 'export'])->name('export');
+    });
+});
+
+

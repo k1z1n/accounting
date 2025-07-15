@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\CheckPlatform;
 use App\Http\Middleware\IsAdmin;
 use App\Http\Middleware\IsGuest;
 use App\Http\Middleware\IsUser;
@@ -27,6 +28,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->alias([
             'admin' => IsAdmin::class,
+            'platform' => CheckPlatform::class,
 //            'user' => IsUser::class,
 //            'guest_user' => IsGuest::class,
         ]);

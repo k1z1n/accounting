@@ -107,4 +107,22 @@ class SaleCryptController extends Controller
 
         return response()->json(['success' => true]);
     }
+
+    public function show(SaleCrypt $saleCrypt)
+    {
+        $saleCrypt->load(['exchanger', 'saleCurrency', 'fixedCurrency']);
+        $saleIcon = $saleCrypt->saleCurrency ? asset('images/coins/' . $saleCrypt->saleCurrency->code . '.svg') : null;
+        $fixedIcon = $saleCrypt->fixedCurrency ? asset('images/coins/' . $saleCrypt->fixedCurrency->code . '.svg') : null;
+        return response()->json([
+            'id' => $saleCrypt->id,
+            'exchanger' => $saleCrypt->exchanger?->title,
+            'sale_amount' => $saleCrypt->sale_amount,
+            'sale_currency' => $saleCrypt->saleCurrency?->code,
+            'sale_icon' => $saleIcon,
+            'fixed_amount' => $saleCrypt->fixed_amount,
+            'fixed_currency' => $saleCrypt->fixedCurrency?->code,
+            'fixed_icon' => $fixedIcon,
+            'date' => $saleCrypt->created_at?->format('d.m.Y H:i'),
+        ]);
+    }
 }

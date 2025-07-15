@@ -42,23 +42,9 @@ class DatabaseSeeder extends Seeder
             ]);
         }
 
-        $password = Str::random(10);
-
-        // Создаём пользователя
-        $user = User::create([
-            'login'          => 'admin',
-            'password'       => bcrypt($password),
-            'save_password'  => $password,
-            'role'           => 'admin',
-            'blocked'        => 'none',
-            'registered_at'  => now(),
+        // Запускаем seeder для ролей пользователей
+        $this->call([
+            UserRolesSeeder::class,
         ]);
-
-        // Выводим пароль в консоль (php artisan db:seed)
-        echo "\n===============================\n";
-        echo "Admin создан!\n";
-        echo "login: admin\n";
-        echo "password: $password\n";
-        echo "===============================\n\n";
     }
 }

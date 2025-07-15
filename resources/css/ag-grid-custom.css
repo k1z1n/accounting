@@ -1,0 +1,94 @@
+/* Zebra-striping и hover */
+.ag-theme-alpine .ag-row:nth-child(even) {
+  background: #191919;
+}
+.ag-theme-alpine .ag-row:nth-child(odd) {
+  background: #232323;
+}
+.ag-theme-alpine .ag-row:hover {
+  background: #2563eb !important;
+  color: #fff;
+}
+
+/* Header */
+.ag-theme-alpine .ag-header-cell, .ag-theme-alpine .ag-header-group-cell {
+  background: #f3f4f6;
+  color: #222;
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  border-bottom: 2px solid #d1d5db;
+  padding: 12px 20px;
+}
+
+/* Ячейки */
+.ag-theme-alpine .ag-cell {
+  font-size: 15px;
+  color: #e5e7eb;
+  padding: 14px 20px;
+  border-bottom: 1px solid #2d2d2d;
+  white-space: nowrap;
+  background: transparent;
+  display: flex;
+  align-items: center;
+}
+
+/* Суммы */
+.ag-theme-alpine .ag-cell .text-green-400, .ag-theme-alpine .ag-cell .text-green-500 {
+  color: #22c55e !important;
+  font-weight: bold;
+}
+.ag-theme-alpine .ag-cell .text-red-400, .ag-theme-alpine .ag-cell .text-red-500 {
+  color: #ef4444 !important;
+  font-weight: bold;
+}
+
+/* Кнопки действий */
+.ag-theme-alpine .action-button {
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  background: #2563eb;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.ag-theme-alpine .action-button.edit {
+  background: #2563eb;
+}
+.ag-theme-alpine .action-button.delete {
+  background: #ef4444;
+}
+.ag-theme-alpine .action-button:hover {
+  background: #1e40af;
+}
+
+/* Иконки валют */
+.ag-theme-alpine .ag-cell img {
+  width: 20px;
+  height: 20px;
+  margin-left: 6px;
+}
+
+/* Тултипы */
+.ag-theme-alpine .ag-tooltip {
+  background: #222;
+  color: #fff;
+  border-radius: 6px;
+  padding: 8px 14px;
+  font-size: 13px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  z-index: 1000;
+}
+
+/* Центрирование текста в некоторых колонках */
+.ag-theme-alpine .ag-cell.text-center {
+  justify-content: center;
+}
+
+/* Bold для важных колонок */
+.ag-theme-alpine .ag-cell.font-bold {
+  font-weight: bold;
+}
