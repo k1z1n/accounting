@@ -54,6 +54,6 @@ class RefreshCookiesCommand extends Command
             }
 
             return $success ? 0 : 1;
-        }
+            }
     }
 }

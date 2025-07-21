@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\ApplicationController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CurrencyController;
 use App\Http\Controllers\MainController;
@@ -19,6 +20,38 @@ Route::get('/test-ag-grid', function () {
     return view('test-ag-grid');
 });
 
+// Простой тест AG-Grid
+Route::get('/test-ag-grid-simple', function () {
+    return view('test-ag-grid-simple');
+});
+
+// Тест AG-Grid для оплат
+Route::get('/test-payments', function () {
+    return view('test-payments');
+});
+
+// Тест основной страницы оплат без аутентификации
+Route::get('/test-payments-main', function () {
+    return view('pages.payments');
+});
+
+// Тестовый API для оплат без аутентификации
+Route::get('/test-payments/data', [\App\Http\Controllers\TestPaymentController::class, 'getPayments']);
+
+// Тестовый API для переводов без аутентификации
+Route::get('/test-transfers/data', [\App\Http\Controllers\TestTransferController::class, 'getTransfers']);
+
+// Тестовый API для продаж крипты без аутентификации
+Route::get('/test-sale-crypts/data', [\App\Http\Controllers\TestSaleCryptController::class, 'getSaleCrypts']);
+
+// Тестовый API для покупок без аутентификации
+Route::get('/test-purchases/data', [\App\Http\Controllers\TestPurchaseController::class, 'getPurchases']);
+
+// Отладочная страница AG-Grid
+Route::get('/test-ag-grid-debug', function () {
+    return view('test-ag-grid-debug');
+});
+
 Route::middleware('guest')->group(function () {
 //    Route::get('register', [AuthController::class, 'viewRegister'])->name('view.register');
     Route::get('login', [AuthController::class, 'viewLogin'])->name('view.login');
@@ -28,7 +61,34 @@ Route::middleware('guest')->group(function () {
 Route::middleware(['auth'])->group(function () {
     Route::get('/', [MainController::class, 'viewMain'])->name('view.main');
 
-    Route::put('/applications/{id}', [MainController::class, 'update']);
+    // Маршруты для отдельной страницы заявок
+    Route::get('/applications', [ApplicationController::class, 'index'])->name('applications.index');
+    Route::get('/applications/data', [ApplicationController::class, 'getApplications'])->name('applications.data');
+    Route::get('/applications/sync', [ApplicationController::class, 'sync'])->name('applications.sync');
+    Route::get('/applications/{id}/edit', [ApplicationController::class, 'edit'])->name('applications.edit');
+    Route::put('/applications/{id}', [ApplicationController::class, 'update'])->name('applications.update');
+
+    // Маршруты для новых таблиц
+    Route::get('/payments', [PaymentController::class, 'index'])->name('payments.index');
+    Route::get('/payments/data', [PaymentController::class, 'getPayments'])->name('payments.data');
+
+    Route::get('/sale-crypt', [SaleCryptController::class, 'index'])->name('sale-crypt.index');
+    Route::get('/sale-crypt/data', [SaleCryptController::class, 'getSaleCrypts'])->name('sale-crypt.data');
+
+    Route::get('/purchase', [PurchaseController::class, 'index'])->name('purchase.index');
+    Route::get('/purchase/data', [PurchaseController::class, 'getPurchases'])->name('purchase.data');
+
+    Route::get('/transfer', [TransferController::class, 'index'])->name('transfer.index');
+    Route::get('/transfer/data', [TransferController::class, 'getTransfers'])->name('transfer.data');
+
+    // Тестовый маршрут для проверки PUT запросов
+    Route::put('/test-put/{id}', function($id) {
+        Log::info("Тестовый PUT запрос", ['id' => $id, 'method' => request()->method()]);
+        return response()->json(['success' => true, 'id' => $id]);
+    });
+
+    // Старый маршрут для совместимости (удаляем дубликат)
+    // Route::put('/applications/{id}', [MainController::class, 'update']);
     Route::get('/usdt-total', [MainController::class, 'usdtTotal'])->name('usdt.total');
     Route::post('logout', [AuthController::class, 'logout'])->name('logout');
     Route::get('/profile', [ProfileController::class, 'dashboard'])->name('view.profile');
@@ -80,12 +140,15 @@ Route::middleware(['admin'])->prefix('admin')->group(function () {
     Route::post('register', [AuthController::class, 'register'])->name('register.perform');
 
     Route::post('/applications', [MainController::class, 'storeApplication'])->name('applications.store');
-    Route::put('/applications/{id}', [MainController::class, 'updateApplication'])->name('applications.update');
+    // Убираем дублирующий маршрут - используем ApplicationController
     Route::get('/api/applications/{id}', [MainController::class, 'apiShowApplication']);
+
+    // Страница балансов обменников (реальные балансы через API)
+    Route::get('exchangers/balances', [AdminController::class, 'exchangerBalancesPage'])->name('admin.exchanger.balances');
 });
 
 // Маршруты для Яндекс.Вебмастера
-Route::middleware(['auth', 'platform'])->prefix('webmaster')->name('webmaster.')->group(function () {
+Route::middleware(['auth'])->prefix('webmaster')->name('webmaster.')->group(function () {
     Route::get('/dashboard', [YandexWebmasterController::class, 'dashboard'])->name('dashboard');
     Route::get('/comparison', [YandexWebmasterController::class, 'comparison'])->name('comparison');
 

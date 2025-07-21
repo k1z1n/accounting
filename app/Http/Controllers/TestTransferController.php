@@ -6,22 +6,14 @@ use App\Models\Transfer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
-class TransferController extends Controller
+class TestTransferController extends Controller
 {
     /**
-     * Страница переводов
-     */
-    public function index()
-    {
-        return view('pages.transfer');
-    }
-
-    /**
-     * API для получения переводов (для AG-Grid)
+     * API для получения переводов без аутентификации (для тестирования)
      */
     public function getTransfers(Request $request)
     {
-        Log::info("TransferController::getTransfers: начало обработки запроса", [
+        Log::info("TestTransferController::getTransfers: начало обработки запроса", [
             'page' => $request->get('page', 1),
             'perPage' => $request->get('perPage', 50),
             'statusFilter' => $request->get('statusFilter', ''),
@@ -31,24 +23,13 @@ class TransferController extends Controller
         try {
             $page = $request->get('page', 1);
             $perPage = $request->get('perPage', 50);
-            $statusFilter = $request->get('statusFilter', '');
-            $exchangerFilter = $request->get('exchangerFilter', '');
 
-            $query = Transfer::with(['amountCurrency']);
-
-            // Применяем фильтры (отключены, так как полей status и exchanger нет в миграции)
-            // if ($statusFilter) {
-            //     $query->where('status', $statusFilter);
-            // }
-
-            // if ($exchangerFilter) {
-            //     $query->where('exchanger', $exchangerFilter);
-            // }
+            $query = Transfer::with(['amountCurrency', 'commissionCurrency', 'exchangerFrom', 'exchangerTo']);
 
             $transfers = $query->orderByDesc('created_at')
                 ->paginate($perPage, ['*'], 'page', $page);
 
-            Log::info("TransferController::getTransfers: результат запроса", [
+            Log::info("TestTransferController::getTransfers: результат запроса", [
                 'total_records' => $transfers->total(),
                 'current_page' => $transfers->currentPage(),
                 'per_page' => $transfers->perPage(),
@@ -66,7 +47,7 @@ class TransferController extends Controller
                 'hasMorePages' => $transfers->hasMorePages(),
             ]);
         } catch (\Exception $e) {
-            Log::error('TransferController::getTransfers error', [
+            Log::error('TestTransferController::getTransfers error', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);

@@ -6,49 +6,28 @@ use App\Models\Purchase;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
-class PurchaseController extends Controller
+class TestPurchaseController extends Controller
 {
     /**
-     * Страница покупки крипты
-     */
-    public function index()
-    {
-        return view('pages.purchase');
-    }
-
-    /**
-     * API для получения покупок крипты (для AG-Grid)
+     * API для получения покупок без аутентификации (для тестирования)
      */
     public function getPurchases(Request $request)
     {
-        Log::info("PurchaseController::getPurchases: начало обработки запроса", [
+        Log::info("TestPurchaseController::getPurchases: начало обработки запроса", [
             'page' => $request->get('page', 1),
-            'perPage' => $request->get('perPage', 50),
-            'statusFilter' => $request->get('statusFilter', ''),
-            'exchangerFilter' => $request->get('exchangerFilter', '')
+            'perPage' => $request->get('perPage', 50)
         ]);
 
         try {
             $page = $request->get('page', 1);
             $perPage = $request->get('perPage', 50);
-            $statusFilter = $request->get('statusFilter', '');
-            $exchangerFilter = $request->get('exchangerFilter', '');
 
-            $query = Purchase::with(['user', 'sellCurrency', 'buyCurrency']);
-
-            // Применяем фильтры
-            if ($statusFilter) {
-                $query->where('status', $statusFilter);
-            }
-
-            if ($exchangerFilter) {
-                $query->where('exchanger', $exchangerFilter);
-            }
+            $query = Purchase::with(['saleCurrency', 'receivedCurrency', 'exchanger']);
 
             $purchases = $query->orderByDesc('created_at')
                 ->paginate($perPage, ['*'], 'page', $page);
 
-            Log::info("PurchaseController::getPurchases: результат запроса", [
+            Log::info("TestPurchaseController::getPurchases: результат запроса", [
                 'total_records' => $purchases->total(),
                 'current_page' => $purchases->currentPage(),
                 'per_page' => $purchases->perPage(),
@@ -66,7 +45,7 @@ class PurchaseController extends Controller
                 'hasMorePages' => $purchases->hasMorePages(),
             ]);
         } catch (\Exception $e) {
-            Log::error('PurchaseController::getPurchases error', [
+            Log::error('TestPurchaseController::getPurchases error', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);

@@ -204,6 +204,7 @@ class ApplicationsGrid {
                 sortable: true,
                 filter: true
             },
+            getRowId: params => String(params.data.app_id),
             onFirstDataRendered: params => {
                 const allColumnIds = [];
                 params.columnApi.getAllColumns().forEach(col => {
@@ -559,15 +560,43 @@ class ApplicationsGrid {
         const data = Object.fromEntries(formData.entries());
 
         try {
-            const response = await fetch(`/api/applications/${data.id}`, {
-                method: 'PUT',
+            console.log('ApplicationsGrid: отправляем запрос на обновление заявки', { id: data.id, data });
+
+            const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+            if (!csrfMeta) {
+                throw new Error('CSRF токен не найден в meta теге');
+            }
+
+            const csrfToken = csrfMeta.getAttribute('content');
+            if (!csrfToken) {
+                throw new Error('CSRF токен пустой');
+            }
+
+            console.log('ApplicationsGrid: CSRF токен:', csrfToken);
+
+            const url = `/applications/${data.id}`;
+            console.log('ApplicationsGrid: URL запроса:', url);
+
+            // Используем FormData для совместимости с Laravel
+            const formData = new FormData();
+            formData.append('_method', 'PUT');
+            formData.append('_token', csrfToken);
+
+            // Добавляем данные
+            Object.keys(data).forEach(key => {
+                if (data[key] !== null && data[key] !== undefined) {
+                    formData.append(key, data[key]);
+                }
+            });
+
+            console.log('ApplicationsGrid: отправляем FormData:', Object.fromEntries(formData));
+
+            const response = await fetch(url, {
+                method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest',
                     'Accept': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
                 },
-                body: JSON.stringify(data)
+                body: formData
             });
 
             if (!response.ok) {
@@ -577,8 +606,19 @@ class ApplicationsGrid {
             const result = await response.json();
             console.log('ApplicationsGrid: данные обновлены', result);
 
-            // Обновляем данные в гриде
-            await this.refreshData();
+            // Получаем id изменённой заявки
+            const updatedId = result.id || data.id;
+
+            // Делаем дополнительный запрос за полной заявкой
+            const fullRes = await fetch(`/api/applications/${updatedId}`, {
+                headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+            });
+            if (fullRes.ok) {
+                const fullApp = await fullRes.json();
+                if (this.gridApi && fullApp && fullApp.id) {
+                    this.gridApi.applyTransaction({ update: [fullApp] });
+                }
+            }
 
             // Закрываем модальное окно
             this.closeEditModal();

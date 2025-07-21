@@ -2,95 +2,84 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\History;
 use App\Models\Payment;
-use App\Models\UpdateLog;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class PaymentController extends Controller
 {
-    public function index(Request $request)
+    /**
+     * Страница оплат
+     */
+    public function index()
     {
-        $perPage = 10;
-        $page    = $request->get('page', 1);
-        $data    = Payment::with(['exchangerFrom','exchangerTo','amountCurrency','commissionCurrency'])
-            ->orderByDesc('created_at')
-            ->paginate($perPage, ['*'], 'page', $page);
-
-        return response()->json([
-            'data'     => $data->items(),
-            'has_more' => $data->hasMorePages(),
-        ]);
+        return view('pages.payments');
     }
 
-    public function show(Payment $payment)
+    /**
+     * API для получения оплат (для AG-Grid)
+     */
+    public function getPayments(Request $request)
     {
-        $payment->load(['exchanger', 'sellCurrency']);
-        $sellIcon = $payment->sellCurrency ? asset('images/coins/' . $payment->sellCurrency->code . '.svg') : null;
-        return response()->json([
-            'id' => $payment->id,
-            'exchanger' => $payment->exchanger?->title,
-            'sell_amount' => $payment->sell_amount,
-            'sell_currency' => $payment->sellCurrency?->code,
-            'sell_icon' => $sellIcon,
-            'comment' => $payment->comment,
-            'date' => $payment->created_at?->format('d.m.Y H:i'),
-        ]);
-    }
-
-    public function update(Request $req, Payment $payment)
-    {
-        $data = $req->validate([
-            'exchanger_id'      => 'nullable|exists:exchangers,id',
-            'sell_amount'       => 'nullable|numeric',
-            'sell_currency_id'  => 'nullable|exists:currencies,id',
-            'comment'           => 'nullable|string',
+        Log::info("PaymentController::getPayments: начало обработки запроса", [
+            'page' => $request->get('page', 1),
+            'perPage' => $request->get('perPage', 50),
+            'statusFilter' => $request->get('statusFilter', ''),
+            'exchangerFilter' => $request->get('exchangerFilter', '')
         ]);
 
-        $original = $payment->getOriginal();
-        $payment->update($data);
+        try {
+            $page = $request->get('page', 1);
+            $perPage = $request->get('perPage', 50);
+            $statusFilter = $request->get('statusFilter', '');
+            $exchangerFilter = $request->get('exchangerFilter', '');
 
-        History::where('sourceable_type', Payment::class)
-            ->where('sourceable_id', $payment->id)
-            ->delete();
+            $query = Payment::with(['user', 'sellCurrency']);
 
-        if ($payment->sell_amount) {
-            History::create([
-                'sourceable_type' => Payment::class,
-                'sourceable_id'   => $payment->id,
-                'amount'          => -$payment->sell_amount,
-                'currency_id'     => $payment->sell_currency_id,
+            // Применяем фильтры (отключены, так как полей status и exchanger нет в миграции)
+            // if ($statusFilter) {
+            //     $query->where('status', $statusFilter);
+            // }
+
+            // if ($exchangerFilter) {
+            //     $query->where('exchanger', $exchangerFilter);
+            // }
+
+            $payments = $query->orderByDesc('created_at')
+                ->paginate($perPage, ['*'], 'page', $page);
+
+            Log::info("PaymentController::getPayments: результат запроса", [
+                'total_records' => $payments->total(),
+                'current_page' => $payments->currentPage(),
+                'per_page' => $payments->perPage(),
+                'last_page' => $payments->lastPage(),
+                'has_more_pages' => $payments->hasMorePages(),
+                'items_count' => count($payments->items())
             ]);
+
+            return response()->json([
+                'data' => $payments->items(),
+                'total' => $payments->total(),
+                'perPage' => $payments->perPage(),
+                'currentPage' => $payments->currentPage(),
+                'lastPage' => $payments->lastPage(),
+                'hasMorePages' => $payments->hasMorePages(),
+            ]);
+        } catch (\Exception $e) {
+            Log::error('PaymentController::getPayments error', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'error' => 'Ошибка загрузки данных',
+                'data' => [],
+                'total' => 0,
+                'perPage' => 50,
+                'currentPage' => 1,
+                'lastPage' => 1,
+                'hasMorePages' => false,
+            ], 500);
         }
-
-        UpdateLog::create([
-            'user_id'           => auth()->id(),
-            'sourceable_type'   => Payment::class,
-            'sourceable_id'     => $payment->id,
-            'update'            => 'Обновлена оплата, old='
-                .json_encode($original, JSON_UNESCAPED_UNICODE)
-                .' new='
-                .json_encode($data, JSON_UNESCAPED_UNICODE),
-        ]);
-
-        return response()->json(['success' => true]);
-    }
-
-    public function destroy(Payment $payment)
-    {
-        History::where('sourceable_type', Payment::class)
-            ->where('sourceable_id', $payment->id)
-            ->delete();
-
-        UpdateLog::create([
-            'user_id'           => auth()->id(),
-            'sourceable_type'   => Payment::class,
-            'sourceable_id'     => $payment->id,
-            'update'            => 'Удалена оплата #'.$payment->id,
-        ]);
-
-        $payment->delete();
-
-        return response()->json(['success' => true]);
     }
 }

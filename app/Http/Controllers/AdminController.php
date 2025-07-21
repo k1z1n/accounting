@@ -324,4 +324,15 @@ class AdminController extends Controller
             'logs', 'currencyCodes', 'exchangerNames'
         ));
     }
+
+    /**
+     * Страница балансов обменников (реальные балансы через API)
+     */
+    public function exchangerBalancesPage()
+    {
+        // Список провайдеров и обменников (как в ProfileController)
+        $providers = ['heleket' => 'Heleket', 'rapira' => 'Rapira'];
+        $exchangers = ['obama' => 'Obama', 'ural' => 'Ural'];
+        return view('admin.exchanger-balances', compact('providers', 'exchangers'));
+    }
 }
