@@ -6,7 +6,6 @@
           content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
 
-
     <!-- Стили и скрипты -->
     @vite('resources/css/app.css')
     @vite('resources/js/app.js')
@@ -21,14 +20,15 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@30.2.1/styles/ag-theme-alpine.css">
     <script src="https://cdn.jsdelivr.net/npm/ag-grid-community@30.2.1/dist/ag-grid-community.min.js"></script>
 
-
+    @stack('styles')
 </head>
-<body class="bg-[#0a0a0a] min-h-screen flex flex-col" data-is-admin="{{ auth()->check() && auth()->user()->role === 'admin' ? 'true' : 'false' }}">
+<body class="bg-[#0a0a0a] min-h-screen flex flex-col" data-is-admin="{{ auth()->user()->role === 'admin' ? 'true' : 'false' }}">
 @include('includes.header')
 
 <main class="flex-1 container mx-auto p-4">
     @yield('content')
 </main>
+
 @stack('scripts')
 </body>
 </html>

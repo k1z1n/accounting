@@ -6,8 +6,8 @@
     <div class="bg-[#191919] border border-[#2d2d2d] rounded-xl p-6">
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
-                <h1 class="text-2xl font-bold text-white">Оплаты</h1>
-                <p class="text-gray-400 mt-1">Управление оплатами</p>
+                <h1 class="text-2xl font-bold text-white">Продажа крипты</h1>
+                <p class="text-gray-400 mt-1">Управление продажей криптовалюты</p>
             </div>
 
             <!-- Панель фильтров -->
@@ -63,14 +63,14 @@
 
     <!-- AG-Grid контейнер -->
     <div class="bg-[#191919] border border-[#2d2d2d] rounded-xl p-6">
-        <div id="paymentsGrid" class="ag-theme-alpine-dark" style="height: 600px; width: 100%; min-width: 800px;"></div>
+        <div id="saleCryptGrid" class="ag-theme-alpine-dark" style="height: 600px; width: 100%; min-width: 800px;"></div>
 
         <!-- Кнопка "Показать еще" -->
         <div class="mt-4 text-center">
             <button
                 id="loadMoreBtn"
                 class="px-6 py-3 bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg transition-colors font-medium hidden"
-                onclick="window.paymentsPage.loadMore()"
+                onclick="window.saleCryptPage.loadMore()"
             >
                 <span class="flex items-center space-x-2">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -95,41 +95,24 @@
         <h3 class="text-lg font-semibold text-white mb-4">Статистика</h3>
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div class="text-center">
-                <div class="text-2xl font-bold text-cyan-400" id="totalPayments">0</div>
-                <div class="text-sm text-gray-400">Всего оплат</div>
+                <div class="text-2xl font-bold text-cyan-400" id="totalSaleCrypts">0</div>
+                <div class="text-sm text-gray-400">Всего продаж</div>
             </div>
             <div class="text-center">
-                <div class="text-2xl font-bold text-green-400" id="completedPayments">0</div>
+                <div class="text-2xl font-bold text-green-400" id="completedSaleCrypts">0</div>
                 <div class="text-sm text-gray-400">Выполненные</div>
             </div>
             <div class="text-center">
-                <div class="text-2xl font-bold text-blue-400" id="paidPayments">0</div>
+                <div class="text-2xl font-bold text-blue-400" id="paidSaleCrypts">0</div>
                 <div class="text-sm text-gray-400">Оплаченные</div>
             </div>
             <div class="text-center">
-                <div class="text-2xl font-bold text-red-400" id="returnPayments">0</div>
+                <div class="text-2xl font-bold text-red-400" id="returnSaleCrypts">0</div>
                 <div class="text-sm text-gray-400">Возвраты</div>
             </div>
         </div>
     </div>
 </div>
 
-<script>
-    // Ждем загрузки AG-Grid перед инициализацией
-    function waitForAGGrid() {
-        if (typeof agGrid !== 'undefined') {
-            console.log('AG-Grid загружен, инициализируем PaymentsPage');
-            // Загружаем наш скрипт только после загрузки AG-Grid
-            const script = document.createElement('script');
-            script.src = "{{ asset('js/payments-page.js') }}";
-            document.head.appendChild(script);
-        } else {
-            console.log('AG-Grid еще не загружен, ждем...');
-            setTimeout(waitForAGGrid, 100);
-        }
-    }
-
-    // Запускаем проверку
-    waitForAGGrid();
-</script>
+<script src="{{ asset('js/sale-crypt-page.js') }}"></script>
 @endsection

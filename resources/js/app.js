@@ -2,7 +2,6 @@
 import './bootstrap';
 import Chart from 'chart.js/auto';
 import { agGridStyles } from './ag-grid-config';
-import './applications-grid';
 import './transfers-grid';
 import './universal-grid';
 import './mobile-optimization';

@@ -29,4 +29,9 @@ class Payment extends Model
     {
         return $this->belongsTo(Currency::class, 'sell_currency_id');
     }
+
+    public function currency(): BelongsTo
+    {
+        return $this->belongsTo(Currency::class, 'sell_currency_id');
+    }
 }

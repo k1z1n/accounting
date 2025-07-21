@@ -2,26 +2,18 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Purchase;
+use App\Models\Payment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
-class PurchaseController extends Controller
+class TestPaymentController extends Controller
 {
     /**
-     * Страница покупки крипты
+     * API для получения оплат (для AG-Grid) - без аутентификации
      */
-    public function index()
+    public function getPayments(Request $request)
     {
-        return view('pages.purchase');
-    }
-
-    /**
-     * API для получения покупок крипты (для AG-Grid)
-     */
-    public function getPurchases(Request $request)
-    {
-        Log::info("PurchaseController::getPurchases: начало обработки запроса", [
+        Log::info("TestPaymentController::getPayments: начало обработки запроса", [
             'page' => $request->get('page', 1),
             'perPage' => $request->get('perPage', 50),
             'statusFilter' => $request->get('statusFilter', ''),
@@ -34,7 +26,7 @@ class PurchaseController extends Controller
             $statusFilter = $request->get('statusFilter', '');
             $exchangerFilter = $request->get('exchangerFilter', '');
 
-            $query = Purchase::with(['user', 'sellCurrency', 'buyCurrency']);
+            $query = Payment::with(['user', 'sellCurrency', 'exchanger']);
 
             // Применяем фильтры
             if ($statusFilter) {
@@ -45,28 +37,28 @@ class PurchaseController extends Controller
                 $query->where('exchanger', $exchangerFilter);
             }
 
-            $purchases = $query->orderByDesc('created_at')
+            $payments = $query->orderByDesc('created_at')
                 ->paginate($perPage, ['*'], 'page', $page);
 
-            Log::info("PurchaseController::getPurchases: результат запроса", [
-                'total_records' => $purchases->total(),
-                'current_page' => $purchases->currentPage(),
-                'per_page' => $purchases->perPage(),
-                'last_page' => $purchases->lastPage(),
-                'has_more_pages' => $purchases->hasMorePages(),
-                'items_count' => count($purchases->items())
+            Log::info("TestPaymentController::getPayments: результат запроса", [
+                'total_records' => $payments->total(),
+                'current_page' => $payments->currentPage(),
+                'per_page' => $payments->perPage(),
+                'last_page' => $payments->lastPage(),
+                'has_more_pages' => $payments->hasMorePages(),
+                'items_count' => count($payments->items())
             ]);
 
             return response()->json([
-                'data' => $purchases->items(),
-                'total' => $purchases->total(),
-                'perPage' => $purchases->perPage(),
-                'currentPage' => $purchases->currentPage(),
-                'lastPage' => $purchases->lastPage(),
-                'hasMorePages' => $purchases->hasMorePages(),
+                'data' => $payments->items(),
+                'total' => $payments->total(),
+                'perPage' => $payments->perPage(),
+                'currentPage' => $payments->currentPage(),
+                'lastPage' => $payments->lastPage(),
+                'hasMorePages' => $payments->hasMorePages(),
             ]);
         } catch (\Exception $e) {
-            Log::error('PurchaseController::getPurchases error', [
+            Log::error('TestPaymentController::getPayments error', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);

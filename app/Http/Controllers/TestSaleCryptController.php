@@ -6,49 +6,28 @@ use App\Models\SaleCrypt;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
-class SaleCryptController extends Controller
+class TestSaleCryptController extends Controller
 {
     /**
-     * Страница продажи крипты
-     */
-    public function index()
-    {
-        return view('pages.sale-crypt');
-    }
-
-    /**
-     * API для получения продаж крипты (для AG-Grid)
+     * API для получения продаж крипты без аутентификации (для тестирования)
      */
     public function getSaleCrypts(Request $request)
     {
-        Log::info("SaleCryptController::getSaleCrypts: начало обработки запроса", [
+        Log::info("TestSaleCryptController::getSaleCrypts: начало обработки запроса", [
             'page' => $request->get('page', 1),
-            'perPage' => $request->get('perPage', 50),
-            'statusFilter' => $request->get('statusFilter', ''),
-            'exchangerFilter' => $request->get('exchangerFilter', '')
+            'perPage' => $request->get('perPage', 50)
         ]);
 
         try {
             $page = $request->get('page', 1);
             $perPage = $request->get('perPage', 50);
-            $statusFilter = $request->get('statusFilter', '');
-            $exchangerFilter = $request->get('exchangerFilter', '');
 
-            $query = SaleCrypt::with(['user', 'sellCurrency', 'buyCurrency']);
-
-            // Применяем фильтры
-            if ($statusFilter) {
-                $query->where('status', $statusFilter);
-            }
-
-            if ($exchangerFilter) {
-                $query->where('exchanger', $exchangerFilter);
-            }
+            $query = SaleCrypt::with(['saleCurrency', 'fixedCurrency', 'exchanger']);
 
             $saleCrypts = $query->orderByDesc('created_at')
                 ->paginate($perPage, ['*'], 'page', $page);
 
-            Log::info("SaleCryptController::getSaleCrypts: результат запроса", [
+            Log::info("TestSaleCryptController::getSaleCrypts: результат запроса", [
                 'total_records' => $saleCrypts->total(),
                 'current_page' => $saleCrypts->currentPage(),
                 'per_page' => $saleCrypts->perPage(),
@@ -66,7 +45,7 @@ class SaleCryptController extends Controller
                 'hasMorePages' => $saleCrypts->hasMorePages(),
             ]);
         } catch (\Exception $e) {
-            Log::error('SaleCryptController::getSaleCrypts error', [
+            Log::error('TestSaleCryptController::getSaleCrypts error', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);

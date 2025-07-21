@@ -40,13 +40,62 @@ class ProfileController extends Controller
                 $balances= $this->normalizeHeleket($raw);
             } else {
                 // Rapira: JWT + POST
+                $privateKey = $cfg['private_key'];
+                if (str_contains($privateKey, '\\n')) {
+                    $privateKey = str_replace('\\n', "\n", $privateKey);
+                }
+                $privateKey = trim($privateKey);
+                // Логируем начало и конец ключа
+                Log::info('RAPIRA PRIVATE KEY (start/end):', [
+                    'start' => substr($privateKey, 0, 40),
+                    'end'   => substr($privateKey, -40),
+                ]);
+                // Если только тело — добавляем заголовки
+                if (!str_starts_with($privateKey, '-----BEGIN')) {
+                    $body = preg_replace('/\s+/', '', $privateKey);
+                    $body = trim(chunk_split($body, 64, "\n"));
+                    $privateKey = "-----BEGIN PRIVATE KEY-----\n" . $body . "\n-----END PRIVATE KEY-----";
+                }
+                // Если RSA PRIVATE KEY — конвертируем в PKCS#8
+                if (str_starts_with($privateKey, '-----BEGIN RSA PRIVATE KEY-----')) {
+                    $tmpIn  = tempnam(sys_get_temp_dir(), 'rsa_in_');
+                    $tmpOut = tempnam(sys_get_temp_dir(), 'rsa_out_');
+                    file_put_contents($tmpIn, $privateKey);
+                    $cmd = "openssl pkcs8 -topk8 -inform PEM -outform PEM -in $tmpIn -out $tmpOut -nocrypt 2>&1";
+                    $output = shell_exec($cmd);
+                    if (file_exists($tmpOut)) {
+                        $converted = file_get_contents($tmpOut);
+                        if (str_starts_with($converted, '-----BEGIN PRIVATE KEY-----')) {
+                            $privateKey = $converted;
+                            Log::info('RAPIRA: RSA PRIVATE KEY успешно конвертирован в PKCS#8');
+                        } else {
+                            Log::error('RAPIRA: Ошибка конвертации RSA PRIVATE KEY', ['output' => $output]);
+                        }
+                        unlink($tmpOut);
+                    } else {
+                        Log::error('RAPIRA: Не удалось создать временный файл для конвертации');
+                    }
+                    unlink($tmpIn);
+                }
+                // Логируем итоговый формат
+                Log::info('RAPIRA PRIVATE KEY (final, start/end):', [
+                    'start' => substr($privateKey, 0, 40),
+                    'end'   => substr($privateKey, -40),
+                ]);
                 $jwt      = $this->makeJwt([
                     'exp' => time() + 3600,
                     'jti' => bin2hex(random_bytes(12)),
-                ], $cfg['private_key']);
+                ], $privateKey);
+                // Логируем JWT и параметры запроса
+                Log::info('RAPIRA JWT', ['jwt' => $jwt]);
+                Log::info('RAPIRA REQUEST', [
+                    'url' => $url,
+                    'kid' => $cfg['uid'],
+                    'jwt_token' => $jwt,
+                ]);
                 $resp     = Http::timeout(5)->post($url, [
                     'kid'       => $cfg['uid'],
-                    'jwt_token' => $jwt,
+                    'jwt'       => $jwt, // было 'jwt_token' => $jwt
                 ]);
                 $resp->throw();
                 $raw      = $resp->json();
@@ -163,7 +212,7 @@ class ProfileController extends Controller
         return collect($all)->map(fn($b)=>[
             'code'   => strtoupper($b['currency_code']),
             'amount' => (float)$b['balance'],
-            'icon'   => asset("img/coins/".strtolower($b['currency_code']).".png"),
+            'icon'   => asset("images/coins/".strtoupper($b['currency_code']).".svg"),
         ]);
     }
 
@@ -174,7 +223,7 @@ class ProfileController extends Controller
         return collect($list)->map(fn($b)=>[
             'code'   => strtoupper($b['unit']),
             'amount' => (float)$b['balance'],
-            'icon'   => asset("img/coins/".strtolower($b['unit']).".png"),
+            'icon'   => asset("images/coins/".strtoupper($b['unit']).".svg"),
         ]);
     }
 

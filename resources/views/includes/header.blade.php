@@ -10,6 +10,7 @@
                 @endguest
 
                 @auth
+                    <li><a href="{{ route('applications.index') }}" class="hover:text-cyan-400 transition-colors">Заявки</a></li>
                     @if(auth()->user()->role === 'admin')
                         <li class="relative group">
                             <span class="cursor-pointer hover:text-cyan-400 transition-colors">Списки</span>

@@ -16,7 +16,8 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
+        // Создаем тестовых пользователей
+        User::factory(5)->create();
 
         $exchangers = [
             'Obama Heleket',
@@ -45,6 +46,14 @@ class DatabaseSeeder extends Seeder
         // Запускаем seeder для ролей пользователей
         $this->call([
             UserRolesSeeder::class,
+        ]);
+
+        // Запускаем сидеры для тестовых данных
+        $this->call([
+            PaymentSeeder::class,
+            SaleCryptSeeder::class,
+            PurchaseSeeder::class,
+            TransferSeeder::class,
         ]);
     }
 }

@@ -15,7 +15,6 @@ class Purchase extends Model
         'sale_currency_id',
         'received_amount',
         'received_currency_id',
-        'application_id',
     ];
 
     /**
@@ -40,10 +39,5 @@ class Purchase extends Model
     public function receivedCurrency()
     {
         return $this->belongsTo(Currency::class, 'received_currency_id');
-    }
-
-    public function application()
-    {
-        return $this->belongsTo(Application::class, 'application_id');
     }
 }
