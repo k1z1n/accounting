@@ -1,3 +1,4 @@
+(function() {
 class PurchasePage {
     constructor() {
         console.log('PurchasePage: конструктор вызван');
@@ -60,37 +61,40 @@ class PurchasePage {
         return `<span class="${color}">${icon} ${status}</span>`;
     }
 
+    actionRenderer(params) {
+        return `
+            <div class="flex gap-2 justify-center">
+                <button class="edit-purchase-btn" title="Редактировать" data-id="${params.data.id}">
+                    <svg class="w-5 h-5 text-cyan-400 hover:text-cyan-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536M9 13l6.586-6.586a2 2 0 112.828 2.828L11.828 15.828a4 4 0 01-2.828 1.172H7v-2a4 4 0 011.172-2.828z"/></svg>
+                </button>
+                <button class="delete-purchase-btn" title="Удалить" data-id="${params.data.id}">
+                    <svg class="w-5 h-5 text-red-400 hover:text-red-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+        `;
+    }
+
     setupColumnDefs() {
         this.columnDefs = [
             {
-                headerName: 'ID',
-                field: 'id',
-                width: 80,
+                headerName: 'ДЕЙСТВИЕ',
+                field: 'actions',
+                width: 100,
+                cellRenderer: this.actionRenderer,
+                pinned: 'left',
+                suppressMenu: true,
+                sortable: false,
+                filter: false
+            },
+            {
+                headerName: 'ПЛАТФОРМА',
+                field: 'exchanger.title',
+                width: 150,
                 sortable: true,
                 filter: true
             },
             {
-                headerName: 'Сумма продажи',
-                field: 'sale_amount',
-                width: 120,
-                sortable: true,
-                filter: true,
-                cellRenderer: (params) => {
-                    const data = params.data;
-                    if (!data.sale_amount || !data.sale_currency) return '—';
-                    const amount = parseFloat(data.sale_amount).toFixed(2);
-                    const currency = data.sale_currency.code;
-                    const container = document.createElement('div');
-                    container.className = 'inline-flex items-center space-x-1';
-                    container.innerHTML = `
-                        <span>${amount}</span>
-                        <img src="/images/coins/${currency}.svg" alt="${currency}" class="w-4 h-4" onerror="this.style.display='none'">
-                    `;
-                    return container;
-                }
-            },
-            {
-                headerName: 'Полученная сумма',
+                headerName: 'ПОЛУЧЕНО +',
                 field: 'received_amount',
                 width: 120,
                 sortable: true,
@@ -100,29 +104,29 @@ class PurchasePage {
                     if (!data.received_amount || !data.received_currency) return '—';
                     const amount = parseFloat(data.received_amount).toFixed(2);
                     const currency = data.received_currency.code;
-                    const container = document.createElement('div');
-                    container.className = 'inline-flex items-center space-x-1';
-                    container.innerHTML = `
-                        <span>${amount}</span>
-                        <img src="/images/coins/${currency}.svg" alt="${currency}" class="w-4 h-4" onerror="this.style.display='none'">
-                    `;
-                    return container;
+                    return `<span>${amount} <img src="/images/coins/${currency}.svg" alt="${currency}" class="w-4 h-4 inline-block align-middle ml-1" onerror="this.style.display='none'"> <span class='font-mono text-emerald-300'>${currency}</span></span>`;
                 }
             },
             {
-                headerName: 'Обменник',
-                field: 'exchanger.title',
+                headerName: 'ПРОДАНО −',
+                field: 'sale_amount',
+                width: 120,
+                sortable: true,
+                filter: true,
+                cellRenderer: (params) => {
+                    const data = params.data;
+                    if (!data.sale_amount || !data.sale_currency) return '—';
+                    const amount = parseFloat(data.sale_amount).toFixed(2);
+                    const currency = data.sale_currency.code;
+                    return `<span>${amount} <img src="/images/coins/${currency}.svg" alt="${currency}" class="w-4 h-4 inline-block align-middle ml-1" onerror="this.style.display='none'"> <span class='font-mono text-pink-300'>${currency}</span></span>`;
+                }
+            },
+            {
+                headerName: 'ЗАЯВКА',
+                field: 'order_id',
                 width: 120,
                 sortable: true,
                 filter: true
-            },
-            {
-                headerName: 'Дата',
-                field: 'created_at',
-                width: 150,
-                sortable: true,
-                filter: true,
-                cellRenderer: this.dateRenderer
             }
         ];
     }
@@ -314,11 +318,14 @@ class PurchasePage {
         const completed = 0;
         const paid = 0;
         const returned = 0;
-
-        document.getElementById('totalPurchases').textContent = total;
-        document.getElementById('completedPurchases').textContent = completed;
-        document.getElementById('paidPurchases').textContent = paid;
-        document.getElementById('returnPurchases').textContent = returned;
+        const elTotal = document.getElementById('totalPurchases');
+        if (elTotal) elTotal.textContent = total;
+        const elCompleted = document.getElementById('completedPurchases');
+        if (elCompleted) elCompleted.textContent = completed;
+        const elPaid = document.getElementById('paidPurchases');
+        if (elPaid) elPaid.textContent = paid;
+        const elReturned = document.getElementById('returnPurchases');
+        if (elReturned) elReturned.textContent = returned;
     }
 
     showLoadMoreSpinner() {
@@ -357,7 +364,6 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('PurchasePage: DOM загружен, инициализируем страницу');
     window.purchasePage = new PurchasePage();
 });
-
 // Проверка AG-Grid
 const checkAGGrid = () => {
     if (typeof agGrid === 'undefined') {
@@ -367,5 +373,5 @@ const checkAGGrid = () => {
         console.log('PurchasePage: AG-Grid загружен');
     }
 };
-
 checkAGGrid();
+})();

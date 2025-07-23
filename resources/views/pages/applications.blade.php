@@ -145,6 +145,26 @@
             </div>
         </div>
     </div>
+
+    <!-- Независимые таблицы операций на всю ширину -->
+    <div class="mt-12 space-y-8">
+        <div class="bg-[#191919] border border-[#2d2d2d] rounded-xl p-4">
+            <h2 class="text-lg font-semibold text-cyan-300 mb-2">Оплаты</h2>
+            <div id="paymentsGrid" class="ag-theme-alpine-dark" style="height: 400px; width: 100%; min-width: 600px;"></div>
+        </div>
+        <div class="bg-[#191919] border border-[#2d2d2d] rounded-xl p-4">
+            <h2 class="text-lg font-semibold text-emerald-300 mb-2">Покупки крипты</h2>
+            <div id="purchaseGrid" class="ag-theme-alpine-dark" style="height: 400px; width: 100%; min-width: 600px;"></div>
+        </div>
+        <div class="bg-[#191919] border border-[#2d2d2d] rounded-xl p-4">
+            <h2 class="text-lg font-semibold text-pink-300 mb-2">Продажи крипты</h2>
+            <div id="saleCryptGrid" class="ag-theme-alpine-dark" style="height: 400px; width: 100%; min-width: 600px;"></div>
+        </div>
+        <div class="bg-[#191919] border border-[#2d2d2d] rounded-xl p-4">
+            <h2 class="text-lg font-semibold text-yellow-300 mb-2">Переводы</h2>
+            <div id="transferGrid" class="ag-theme-alpine-dark" style="height: 400px; width: 100%; min-width: 600px;"></div>
+        </div>
+    </div>
 </div>
 
 <!-- Модальное окно редактирования -->
@@ -325,4 +345,16 @@
 
 @push('scripts')
 <script src="{{ asset('js/applications-page.js') }}"></script>
+<script src="{{ asset('js/payments-page.js') }}"></script>
+<script src="{{ asset('js/purchase-page.js') }}"></script>
+<script src="{{ asset('js/sale-crypt-page.js') }}"></script>
+<script src="{{ asset('js/transfer-page.js') }}"></script>
+<script>
+window.addEventListener('DOMContentLoaded', function() {
+    if (window.PaymentsPage) new window.PaymentsPage('paymentsGrid', { compact: true });
+    if (window.PurchasePage) new window.PurchasePage('purchaseGrid', { compact: true });
+    if (window.SaleCryptPage) new window.SaleCryptPage('saleCryptGrid', { compact: true });
+    if (window.TransferPage) new window.TransferPage('transferGrid', { compact: true });
+});
+</script>
 @endpush
