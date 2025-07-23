@@ -1,3 +1,4 @@
+(function() {
 class PaymentsPage {
     constructor() {
         console.log('PaymentsPage: конструктор вызван');
@@ -60,24 +61,40 @@ class PaymentsPage {
         return `<span class="${color}">${icon} ${status}</span>`;
     }
 
+    actionRenderer(params) {
+        return `
+            <div class="flex gap-2 justify-center">
+                <button class="edit-payment-btn" title="Редактировать" data-id="${params.data.id}">
+                    <svg class="w-5 h-5 text-cyan-400 hover:text-cyan-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536M9 13l6.586-6.586a2 2 0 112.828 2.828L11.828 15.828a4 4 0 01-2.828 1.172H7v-2a4 4 0 011.172-2.828z"/></svg>
+                </button>
+                <button class="delete-payment-btn" title="Удалить" data-id="${params.data.id}">
+                    <svg class="w-5 h-5 text-red-400 hover:text-red-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+        `;
+    }
+
     setupColumnDefs() {
         this.columnDefs = [
             {
-                headerName: 'ID',
-                field: 'id',
-                width: 80,
-                sortable: true,
-                filter: true
+                headerName: 'ДЕЙСТВИЕ',
+                field: 'actions',
+                width: 100,
+                cellRenderer: this.actionRenderer,
+                pinned: 'left',
+                suppressMenu: true,
+                sortable: false,
+                filter: false
             },
             {
-                headerName: 'Пользователь',
-                field: 'user.login',
+                headerName: 'ПЛАТФОРМА',
+                field: 'exchanger.title',
                 width: 150,
                 sortable: true,
                 filter: true
             },
             {
-                headerName: 'Сумма продажи',
+                headerName: 'СУММА',
                 field: 'sell_amount',
                 width: 120,
                 sortable: true,
@@ -87,36 +104,15 @@ class PaymentsPage {
                     if (!data.sell_amount || !data.sell_currency) return '—';
                     const amount = parseFloat(data.sell_amount).toFixed(2);
                     const currency = data.sell_currency.code;
-                    const container = document.createElement('div');
-                    container.className = 'inline-flex items-center space-x-1';
-                    container.innerHTML = `
-                        <span>${amount}</span>
-                        <img src="/images/coins/${currency}.svg" alt="${currency}" class="w-4 h-4" onerror="this.style.display='none'">
-                    `;
-                    return container;
+                    return `<span>${amount} <img src="/images/coins/${currency}.svg" alt="${currency}" class="w-4 h-4 inline-block align-middle ml-1" onerror="this.style.display='none'"> <span class='font-mono text-cyan-300'>${currency}</span></span>`;
                 }
             },
             {
-                headerName: 'Обменник',
-                field: 'exchanger.title',
-                width: 120,
-                sortable: true,
-                filter: true
-            },
-            {
-                headerName: 'Комментарий',
+                headerName: 'КОММЕНТАРИЙ',
                 field: 'comment',
                 width: 200,
                 sortable: true,
                 filter: true
-            },
-            {
-                headerName: 'Дата',
-                field: 'created_at',
-                width: 150,
-                sortable: true,
-                filter: true,
-                cellRenderer: this.dateRenderer
             }
         ];
     }
@@ -416,18 +412,19 @@ class PaymentsPage {
 
     updateStatistics() {
         console.log('PaymentsPage: обновляем статистику');
-
         const total = this.allData.length;
         // Статистика по статусам отключена, так как поля status нет в миграции
         const completed = 0;
         const paid = 0;
         const returned = 0;
-
-        document.getElementById('totalPayments').textContent = total;
-        document.getElementById('completedPayments').textContent = completed;
-        document.getElementById('paidPayments').textContent = paid;
-        document.getElementById('returnPayments').textContent = returned;
-
+        const elTotal = document.getElementById('totalPayments');
+        if (elTotal) elTotal.textContent = total;
+        const elCompleted = document.getElementById('completedPayments');
+        if (elCompleted) elCompleted.textContent = completed;
+        const elPaid = document.getElementById('paidPayments');
+        if (elPaid) elPaid.textContent = paid;
+        const elReturned = document.getElementById('returnPayments');
+        if (elReturned) elReturned.textContent = returned;
         console.log('PaymentsPage: статистика обновлена:', { total, completed, paid, returned });
     }
 
@@ -490,3 +487,4 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('PaymentsPage: AG-Grid загружен при загрузке DOM');
     }
 });
+})();

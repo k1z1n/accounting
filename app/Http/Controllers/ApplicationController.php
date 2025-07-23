@@ -312,11 +312,23 @@ class ApplicationController extends Controller
         $hasErrors = false;
         foreach ($exchangers as $exchangerName => $cfg) {
             try {
-                $response = \Illuminate\Support\Facades\Http::withHeaders([
-                    'Cookie' => $cfg['cookies'],
+                $url = $cfg['url'];
+                $cookieHeader = $cfg['cookies'];
+                $headers = [
+                    'Cookie' => $cookieHeader,
                     'User-Agent' => 'Mozilla/5.0',
-                ])->timeout(15)->get($cfg['url']); // Увеличили timeout до 15 секунд
-
+                ];
+                Log::info("fetchAndSyncRemote: отправляем запрос к $exchangerName", [
+                    'url' => $url,
+                    'headers' => $headers
+                ]);
+                $response = \Illuminate\Support\Facades\Http::withHeaders($headers)->timeout(15)->get($url);
+                Log::info("fetchAndSyncRemote: получен ответ от $exchangerName", [
+                    'status' => $response->status(),
+                    'response_headers' => $response->headers(),
+                    'set_cookie' => $response->header('Set-Cookie'),
+                    'body_snippet' => mb_substr($response->body(), 0, 500)
+                ]);
                 $responses[$exchangerName] = $response;
             } catch (\Exception $e) {
                 Log::error("fetchAndSyncRemote: ошибка запроса к {$exchangerName}", [

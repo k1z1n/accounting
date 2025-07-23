@@ -1,3 +1,4 @@
+(function() {
 class SaleCryptPage {
     constructor() {
         console.log('SaleCryptPage: конструктор вызван');
@@ -60,17 +61,40 @@ class SaleCryptPage {
         return `<span class="${color}">${icon} ${status}</span>`;
     }
 
+    actionRenderer(params) {
+        return `
+            <div class="flex gap-2 justify-center">
+                <button class="edit-salecrypt-btn" title="Редактировать" data-id="${params.data.id}">
+                    <svg class="w-5 h-5 text-cyan-400 hover:text-cyan-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536M9 13l6.586-6.586a2 2 0 112.828 2.828L11.828 15.828a4 4 0 01-2.828 1.172H7v-2a4 4 0 011.172-2.828z"/></svg>
+                </button>
+                <button class="delete-salecrypt-btn" title="Удалить" data-id="${params.data.id}">
+                    <svg class="w-5 h-5 text-red-400 hover:text-red-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+        `;
+    }
+
     setupColumnDefs() {
         this.columnDefs = [
             {
-                headerName: 'ID',
-                field: 'id',
-                width: 80,
+                headerName: 'ДЕЙСТВИЕ',
+                field: 'actions',
+                width: 100,
+                cellRenderer: this.actionRenderer,
+                pinned: 'left',
+                suppressMenu: true,
+                sortable: false,
+                filter: false
+            },
+            {
+                headerName: 'ПЛАТФОРМА',
+                field: 'exchanger.title',
+                width: 150,
                 sortable: true,
                 filter: true
             },
             {
-                headerName: 'Сумма продажи',
+                headerName: 'ПРОДАЖА −',
                 field: 'sale_amount',
                 width: 120,
                 sortable: true,
@@ -80,17 +104,11 @@ class SaleCryptPage {
                     if (!data.sale_amount || !data.sale_currency) return '—';
                     const amount = parseFloat(data.sale_amount).toFixed(2);
                     const currency = data.sale_currency.code;
-                    const container = document.createElement('div');
-                    container.className = 'inline-flex items-center space-x-1';
-                    container.innerHTML = `
-                        <span>${amount}</span>
-                        <img src="/images/coins/${currency}.svg" alt="${currency}" class="w-4 h-4" onerror="this.style.display='none'">
-                    `;
-                    return container;
+                    return `<span>${amount} <img src="/images/coins/${currency}.svg" alt="${currency}" class="w-4 h-4 inline-block align-middle ml-1" onerror="this.style.display='none'"> <span class='font-mono text-pink-300'>${currency}</span></span>`;
                 }
             },
             {
-                headerName: 'Фиксированная сумма',
+                headerName: 'ПОЛУЧЕНО +',
                 field: 'fixed_amount',
                 width: 120,
                 sortable: true,
@@ -100,29 +118,15 @@ class SaleCryptPage {
                     if (!data.fixed_amount || !data.fixed_currency) return '—';
                     const amount = parseFloat(data.fixed_amount).toFixed(2);
                     const currency = data.fixed_currency.code;
-                    const container = document.createElement('div');
-                    container.className = 'inline-flex items-center space-x-1';
-                    container.innerHTML = `
-                        <span>${amount}</span>
-                        <img src="/images/coins/${currency}.svg" alt="${currency}" class="w-4 h-4" onerror="this.style.display='none'">
-                    `;
-                    return container;
+                    return `<span>${amount} <img src="/images/coins/${currency}.svg" alt="${currency}" class="w-4 h-4 inline-block align-middle ml-1" onerror="this.style.display='none'"> <span class='font-mono text-emerald-300'>${currency}</span></span>`;
                 }
             },
             {
-                headerName: 'Обменник',
-                field: 'exchanger.title',
+                headerName: 'ЗАЯВКА',
+                field: 'order_id',
                 width: 120,
                 sortable: true,
                 filter: true
-            },
-            {
-                headerName: 'Дата',
-                field: 'created_at',
-                width: 150,
-                sortable: true,
-                filter: true,
-                cellRenderer: this.dateRenderer
             }
         ];
     }
@@ -314,11 +318,14 @@ class SaleCryptPage {
         const completed = 0;
         const paid = 0;
         const returned = 0;
-
-        document.getElementById('totalSaleCrypts').textContent = total;
-        document.getElementById('completedSaleCrypts').textContent = completed;
-        document.getElementById('paidSaleCrypts').textContent = paid;
-        document.getElementById('returnSaleCrypts').textContent = returned;
+        const elTotal = document.getElementById('totalSaleCrypts');
+        if (elTotal) elTotal.textContent = total;
+        const elCompleted = document.getElementById('completedSaleCrypts');
+        if (elCompleted) elCompleted.textContent = completed;
+        const elPaid = document.getElementById('paidSaleCrypts');
+        if (elPaid) elPaid.textContent = paid;
+        const elReturned = document.getElementById('returnSaleCrypts');
+        if (elReturned) elReturned.textContent = returned;
     }
 
     showLoadMoreSpinner() {
@@ -357,7 +364,6 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('SaleCryptPage: DOM загружен, инициализируем страницу');
     window.saleCryptPage = new SaleCryptPage();
 });
-
 // Проверка AG-Grid
 const checkAGGrid = () => {
     if (typeof agGrid === 'undefined') {
@@ -367,5 +373,5 @@ const checkAGGrid = () => {
         console.log('SaleCryptPage: AG-Grid загружен');
     }
 };
-
 checkAGGrid();
+})();

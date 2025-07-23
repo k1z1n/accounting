@@ -1,3 +1,4 @@
+(function() {
 class TransferPage {
     constructor() {
         console.log('TransferPage: конструктор вызван');
@@ -60,31 +61,47 @@ class TransferPage {
         return `<span class="${color}">${icon} ${status}</span>`;
     }
 
+    actionRenderer(params) {
+        return `
+            <div class="flex gap-2 justify-center">
+                <button class="edit-transfer-btn" title="Редактировать" data-id="${params.data.id}">
+                    <svg class="w-5 h-5 text-cyan-400 hover:text-cyan-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536M9 13l6.586-6.586a2 2 0 112.828 2.828L11.828 15.828a4 4 0 01-2.828 1.172H7v-2a4 4 0 011.172-2.828z"/></svg>
+                </button>
+                <button class="delete-transfer-btn" title="Удалить" data-id="${params.data.id}">
+                    <svg class="w-5 h-5 text-red-400 hover:text-red-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+        `;
+    }
+
     setupColumnDefs() {
         this.columnDefs = [
             {
-                headerName: 'ID',
-                field: 'id',
-                width: 80,
-                sortable: true,
-                filter: true
+                headerName: 'ДЕЙСТВИЕ',
+                field: 'actions',
+                width: 100,
+                cellRenderer: this.actionRenderer,
+                pinned: 'left',
+                suppressMenu: true,
+                sortable: false,
+                filter: false
             },
             {
-                headerName: 'От обменника',
+                headerName: 'ОТКУДА',
                 field: 'exchanger_from.title',
-                width: 120,
+                width: 150,
                 sortable: true,
                 filter: true
             },
             {
-                headerName: 'К обменнику',
+                headerName: 'КУДА',
                 field: 'exchanger_to.title',
-                width: 120,
+                width: 150,
                 sortable: true,
                 filter: true
             },
             {
-                headerName: 'Сумма',
+                headerName: 'СУММА',
                 field: 'amount',
                 width: 120,
                 sortable: true,
@@ -94,17 +111,11 @@ class TransferPage {
                     if (!data.amount || !data.amount_currency) return '—';
                     const amount = parseFloat(data.amount).toFixed(2);
                     const currency = data.amount_currency.code;
-                    const container = document.createElement('div');
-                    container.className = 'inline-flex items-center space-x-1';
-                    container.innerHTML = `
-                        <span>${amount}</span>
-                        <img src="/images/coins/${currency}.svg" alt="${currency}" class="w-4 h-4" onerror="this.style.display='none'">
-                    `;
-                    return container;
+                    return `<span>${amount} <img src="/images/coins/${currency}.svg" alt="${currency}" class="w-4 h-4 inline-block align-middle ml-1" onerror="this.style.display='none'"> <span class='font-mono text-cyan-300'>${currency}</span></span>`;
                 }
             },
             {
-                headerName: 'Комиссия',
+                headerName: 'КОМИССИЯ',
                 field: 'commission',
                 width: 120,
                 sortable: true,
@@ -114,22 +125,8 @@ class TransferPage {
                     if (!data.commission || !data.commission_currency) return '—';
                     const amount = parseFloat(data.commission).toFixed(2);
                     const currency = data.commission_currency.code;
-                    const container = document.createElement('div');
-                    container.className = 'inline-flex items-center space-x-1';
-                    container.innerHTML = `
-                        <span>${amount}</span>
-                        <img src="/images/coins/${currency}.svg" alt="${currency}" class="w-4 h-4" onerror="this.style.display='none'">
-                    `;
-                    return container;
+                    return `<span>${amount} <img src="/images/coins/${currency}.svg" alt="${currency}" class="w-4 h-4 inline-block align-middle ml-1" onerror="this.style.display='none'"> <span class='font-mono text-pink-300'>${currency}</span></span>`;
                 }
-            },
-            {
-                headerName: 'Дата',
-                field: 'created_at',
-                width: 150,
-                sortable: true,
-                filter: true,
-                cellRenderer: this.dateRenderer
             }
         ];
     }
@@ -148,25 +145,6 @@ class TransferPage {
             },
             rowSelection: 'single',
             animateRows: true,
-            suppressRowClickSelection: false,
-            suppressCellFocus: true,
-            suppressRowDeselection: false,
-            suppressRowClickSelection: false,
-            suppressRowTransform: true,
-            suppressAnimationFrame: false,
-            suppressBrowserResizeObserver: false,
-            suppressColumnVirtualisation: false,
-            suppressRowVirtualisation: false,
-            suppressMenuHide: false,
-            suppressMovableColumns: false,
-            suppressFieldDotNotation: false,
-            suppressPropertyNamesCheck: false,
-            suppressParentsInRowNodes: false,
-            suppressModelUpdateAfterUpdateTransaction: false,
-            suppressLoadingOverlay: false,
-            suppressNoRowsOverlay: false,
-            suppressColumnMoveAnimation: false,
-            suppressRowHoverHighlight: false,
             onGridReady: (params) => {
                 console.log('TransferPage: AG-Grid готов');
                 this.gridApi = params.api;
@@ -175,6 +153,18 @@ class TransferPage {
             onFirstDataRendered: (params) => {
                 console.log('TransferPage: данные отрендерены');
                 params.api.sizeColumnsToFit();
+            },
+            onCellClicked: (params) => {
+                if (params.colDef.field === 'actions') {
+                    const target = params.event.target.closest('button');
+                    if (target && target.classList.contains('edit-transfer-btn')) {
+                        alert('Редактировать перевод ID: ' + params.data.id);
+                    } else if (target && target.classList.contains('delete-transfer-btn')) {
+                        if (confirm('Удалить перевод ID: ' + params.data.id + '?')) {
+                            alert('Удаление перевода ID: ' + params.data.id);
+                        }
+                    }
+                }
             }
         };
     }
@@ -321,11 +311,14 @@ class TransferPage {
         const completed = 0;
         const paid = 0;
         const returned = 0;
-
-        document.getElementById('totalTransfers').textContent = total;
-        document.getElementById('completedTransfers').textContent = completed;
-        document.getElementById('paidTransfers').textContent = paid;
-        document.getElementById('returnTransfers').textContent = returned;
+        const elTotal = document.getElementById('totalTransfers');
+        if (elTotal) elTotal.textContent = total;
+        const elCompleted = document.getElementById('completedTransfers');
+        if (elCompleted) elCompleted.textContent = completed;
+        const elPaid = document.getElementById('paidTransfers');
+        if (elPaid) elPaid.textContent = paid;
+        const elReturned = document.getElementById('returnTransfers');
+        if (elReturned) elReturned.textContent = returned;
     }
 
     showLoadMoreSpinner() {
@@ -364,7 +357,6 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('TransferPage: DOM загружен, инициализируем страницу');
     window.transferPage = new TransferPage();
 });
-
 // Проверка AG-Grid
 const checkAGGrid = () => {
     if (typeof agGrid === 'undefined') {
@@ -374,5 +366,5 @@ const checkAGGrid = () => {
         console.log('TransferPage: AG-Grid загружен');
     }
 };
-
 checkAGGrid();
+})();
