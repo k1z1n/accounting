@@ -1,6 +1,81 @@
 @extends('template.app')
 @section('title','Балансы обменников')
 @section('content')
+<style>
+.balance-section {
+    margin-bottom: 2.5rem;
+}
+.balance-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+.balance-cards {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+.balance-card {
+    background: #232b3a;
+    border-radius: 1rem;
+    padding: 1.1rem 1.3rem 1.1rem 1.1rem;
+    min-width: 170px;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    box-shadow: 0 2px 8px #0002;
+    transition: box-shadow .2s, transform .2s;
+}
+.balance-card:hover {
+    box-shadow: 0 4px 16px #0004;
+    transform: translateY(-2px) scale(1.03);
+}
+.balance-icon {
+    width: 2.2rem;
+    height: 2.2rem;
+    border-radius: 0.5rem;
+    background: #191919;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 1px 4px #0002;
+}
+.balance-code {
+    font-family: monospace;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #c3e3ff;
+    margin-bottom: 0.1rem;
+}
+.balance-name {
+    font-size: 0.95rem;
+    color: #8ecae6;
+    margin-bottom: 0.2rem;
+}
+.balance-amount {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: 0.01em;
+}
+.balance-amount.zero {
+    color: #888;
+}
+.balance-amount.positive {
+    color: #22d3ee;
+}
+.balance-amount.negative {
+    color: #f87171;
+}
+@media (max-width: 700px) {
+    .balance-cards { flex-direction: column; gap: 0.7rem; }
+    .balance-card { min-width: 0; width: 100%; }
+}
+</style>
+
 <div class="container mx-auto px-4 py-6 space-y-6">
     <h1 class="text-2xl font-bold text-white mb-4">Балансы обменников (реальные, через API)</h1>
     <div class="bg-[#191919] rounded-2xl p-6 flex flex-col md:flex-row md:items-end gap-4">
@@ -24,17 +99,8 @@
             <button id="refreshBtn" class="mt-6 px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700">Обновить</button>
         </div>
     </div>
-    <div class="bg-[#191919] rounded-2xl shadow-md overflow-auto">
-        <table class="min-w-full text-sm text-gray-200">
-            <thead class="bg-[#1F1F1F]">
-            <tr>
-                <th class="px-3 py-2">Валюта</th>
-                <th class="px-3 py-2 text-right">Баланс</th>
-                <th class="px-3 py-2">Иконка</th>
-            </tr>
-            </thead>
-            <tbody id="balancesTbody" class="divide-y divide-[#2d2d2d]"></tbody>
-        </table>
+    <div class="bg-[#191919] rounded-2xl shadow-md overflow-auto p-6 md:p-10">
+        <div id="balancesBlock"></div>
     </div>
     <div id="errorBlock" class="text-red-400 mt-4"></div>
 </div>
@@ -42,30 +108,52 @@
 document.addEventListener('DOMContentLoaded', function() {
     const provSel = document.getElementById('prov');
     const exchSel = document.getElementById('exch');
-    const tbody   = document.getElementById('balancesTbody');
+    const balancesBlock = document.getElementById('balancesBlock');
     const errorBlock = document.getElementById('errorBlock');
     const refreshBtn = document.getElementById('refreshBtn');
 
+    function renderCard(b) {
+        let amount = +b.amount;
+        let amountClass = amount > 0 ? 'text-cyan-400' : (amount < 0 ? 'text-red-400' : 'text-gray-400');
+        return `<div class="flex items-center gap-4 bg-[#232b3a] rounded-2xl px-6 py-5 shadow hover:shadow-lg transition w-full sm:w-auto">
+            <span class="flex-shrink-0 bg-[#191919] rounded-xl p-2 flex items-center justify-center"><img src="${b.icon}" alt="${b.code}" class="w-8 h-8"></span>
+            <div class="flex-1 min-w-0">
+                <div class="font-mono text-lg font-bold text-cyan-100 flex items-center gap-2 leading-tight">${b.code}${b.name ? `<span class='text-xs text-gray-400 font-normal ml-2'>${b.name}</span>` : ''}</div>
+                <div class="${amountClass} font-extrabold text-2xl tabular-nums leading-snug mt-1">${amount.toLocaleString('ru-RU', {minimumFractionDigits: 2, maximumFractionDigits: 8})}</div>
+            </div>
+        </div>`;
+    }
+
+    function renderSection(title, arr, color, icon) {
+        if (!arr || !arr.length) return '';
+        return `<div class="mb-10">
+            <div class="flex items-center gap-2 mb-4 text-lg font-bold ${color} tracking-tight pl-1">${icon ? `<span class='text-2xl'>${icon}</span>` : ''}${title}</div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">${arr.map(renderCard).join('')}</div>
+        </div>`;
+    }
+
     function renderBalances(balances) {
-        tbody.innerHTML = '';
-        if (!balances.length) {
-            tbody.innerHTML = '<tr><td colspan="3" class="py-6 text-center text-gray-500">Нет данных</td></tr>';
+        balancesBlock.innerHTML = '';
+        // Heleket: merchant/user
+        if (balances && typeof balances === 'object' && (balances.merchant || balances.user)) {
+            let html = '';
+            html += renderSection('Баланс мерчанта', balances.merchant, 'text-cyan-400', '💼');
+            html += renderSection('Баланс пользователя', balances.user, 'text-emerald-400', '👤');
+            if (!html) html = '<div class="text-gray-500 py-8 text-center">Нет данных</div>';
+            balancesBlock.innerHTML = html;
             return;
         }
-        balances.forEach(b => {
-            tbody.insertAdjacentHTML('beforeend', `
-                <tr>
-                    <td class="px-3 py-2 font-mono">${b.code}</td>
-                    <td class="px-3 py-2 text-right">${(+b.amount).toLocaleString('ru-RU', {minimumFractionDigits: 2, maximumFractionDigits: 8})}</td>
-                    <td class="px-3 py-2"><img src="${b.icon}" alt="${b.code}" class="w-6 h-6 inline"></td>
-                </tr>
-            `);
-        });
+        // Остальные провайдеры: обычный массив
+        if (!balances || !balances.length) {
+            balancesBlock.innerHTML = '<div class="text-gray-500 py-8 text-center">Нет данных</div>';
+            return;
+        }
+        balancesBlock.innerHTML = `<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">${balances.map(renderCard).join('')}</div>`;
     }
 
     async function loadBalances() {
         errorBlock.textContent = '';
-        tbody.innerHTML = '<tr><td colspan="3" class="py-6 text-center text-gray-500">Загрузка…</td></tr>';
+        balancesBlock.innerHTML = '<div class="text-gray-500 py-8 text-center">Загрузка…</div>';
         const prov = provSel.value;
         const exch = exchSel.value;
         try {
@@ -73,13 +161,13 @@ document.addEventListener('DOMContentLoaded', function() {
             const json = await resp.json();
             if (!resp.ok || json.error) {
                 errorBlock.textContent = json.error || 'Ошибка загрузки';
-                tbody.innerHTML = '';
+                balancesBlock.innerHTML = '';
                 return;
             }
             renderBalances(json.balances || []);
         } catch (e) {
             errorBlock.textContent = 'Ошибка запроса: ' + e;
-            tbody.innerHTML = '';
+            balancesBlock.innerHTML = '';
         }
     }
 

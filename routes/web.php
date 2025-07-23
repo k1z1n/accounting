@@ -145,6 +145,10 @@ Route::middleware(['admin'])->prefix('admin')->group(function () {
 
     // Страница балансов обменников (реальные балансы через API)
     Route::get('exchangers/balances', [AdminController::class, 'exchangerBalancesPage'])->name('admin.exchanger.balances');
+    Route::get('dashboard', [\App\Http\Controllers\AdminController::class, 'dashboardPage'])->name('admin.dashboard');
+    Route::get('dashboard/stats', [\App\Http\Controllers\AdminController::class, 'dashboardStats'])->name('admin.dashboard.stats');
+    Route::get('bybit/candles', [\App\Http\Controllers\AdminController::class, 'bybitCandles'])->name('admin.bybit.candles');
+    Route::get('crypto-trades', [\App\Http\Controllers\AdminController::class, 'cryptoTrades'])->name('admin.cryptoTrades');
 });
 
 // Маршруты для Яндекс.Вебмастера

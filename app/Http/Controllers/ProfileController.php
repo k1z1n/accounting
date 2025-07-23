@@ -41,23 +41,29 @@ class ProfileController extends Controller
             } else {
                 // Rapira: JWT + POST
                 $privateKey = $cfg['private_key'];
+                Log::info('RAPIRA: Исходный ключ', [
+                    'length' => strlen($privateKey),
+                    'start' => substr($privateKey, 0, 50),
+                    'end' => substr($privateKey, -50),
+                    'contains_newlines' => str_contains($privateKey, "\n"),
+                    'contains_backslash_n' => str_contains($privateKey, '\\n'),
+                ]);
                 if (str_contains($privateKey, '\\n')) {
                     $privateKey = str_replace('\\n', "\n", $privateKey);
                 }
                 $privateKey = trim($privateKey);
-                // Логируем начало и конец ключа
-                Log::info('RAPIRA PRIVATE KEY (start/end):', [
-                    'start' => substr($privateKey, 0, 40),
-                    'end'   => substr($privateKey, -40),
-                ]);
-                // Если только тело — добавляем заголовки
+                if (base64_decode($privateKey, true) !== false && !str_contains($privateKey, '-----BEGIN')) {
+                    Log::info('RAPIRA: Декодируем base64 ключ');
+                    $privateKey = base64_decode($privateKey);
+                }
                 if (!str_starts_with($privateKey, '-----BEGIN')) {
+                    Log::info('RAPIRA: Добавляем PEM заголовки');
                     $body = preg_replace('/\s+/', '', $privateKey);
                     $body = trim(chunk_split($body, 64, "\n"));
                     $privateKey = "-----BEGIN PRIVATE KEY-----\n" . $body . "\n-----END PRIVATE KEY-----";
                 }
-                // Если RSA PRIVATE KEY — конвертируем в PKCS#8
                 if (str_starts_with($privateKey, '-----BEGIN RSA PRIVATE KEY-----')) {
+                    Log::info('RAPIRA: Конвертируем RSA PRIVATE KEY в PKCS#8');
                     $tmpIn  = tempnam(sys_get_temp_dir(), 'rsa_in_');
                     $tmpOut = tempnam(sys_get_temp_dir(), 'rsa_out_');
                     file_put_contents($tmpIn, $privateKey);
@@ -67,9 +73,9 @@ class ProfileController extends Controller
                         $converted = file_get_contents($tmpOut);
                         if (str_starts_with($converted, '-----BEGIN PRIVATE KEY-----')) {
                             $privateKey = $converted;
-                            Log::info('RAPIRA: RSA PRIVATE KEY успешно конвертирован в PKCS#8');
+                            Log::info('RAPIRA: Конвертация успешна');
                         } else {
-                            Log::error('RAPIRA: Ошибка конвертации RSA PRIVATE KEY', ['output' => $output]);
+                            Log::error('RAPIRA: Ошибка конвертации', ['output' => $output]);
                         }
                         unlink($tmpOut);
                     } else {
@@ -77,29 +83,56 @@ class ProfileController extends Controller
                     }
                     unlink($tmpIn);
                 }
-                // Логируем итоговый формат
-                Log::info('RAPIRA PRIVATE KEY (final, start/end):', [
-                    'start' => substr($privateKey, 0, 40),
-                    'end'   => substr($privateKey, -40),
+                Log::info('RAPIRA: Финальный ключ', [
+                    'length' => strlen($privateKey),
+                    'start' => substr($privateKey, 0, 50),
+                    'end' => substr($privateKey, -50),
+                    'is_valid_pem' => str_starts_with($privateKey, '-----BEGIN') && str_ends_with($privateKey, '-----'),
                 ]);
-                $jwt      = $this->makeJwt([
-                    'exp' => time() + 3600,
+                $keyResource = openssl_pkey_get_private($privateKey);
+                if ($keyResource === false) {
+                    Log::error('RAPIRA: Невалидный приватный ключ', [
+                        'openssl_error' => openssl_error_string(),
+                    ]);
+                    return response()->json(['balances'=>[], 'error'=>'Невалидный приватный ключ'], 500);
+                }
+                openssl_free_key($keyResource);
+                Log::info('RAPIRA: Генерируем JWT...');
+                $jwt = $this->makeJwt([
+                    'exp' => time() + 1800,
                     'jti' => bin2hex(random_bytes(12)),
                 ], $privateKey);
-                // Логируем JWT и параметры запроса
-                Log::info('RAPIRA JWT', ['jwt' => $jwt]);
-                Log::info('RAPIRA REQUEST', [
-                    'url' => $url,
+                Log::info('RAPIRA: JWT сгенерирован', ['jwt_length' => strlen($jwt), 'jwt_start' => substr($jwt,0,40)]);
+                Log::info('RAPIRA: Получаем токен...');
+                $tokenResp = Http::timeout(10)->post('https://api.rapira.net/open/generate_jwt', [
                     'kid' => $cfg['uid'],
                     'jwt_token' => $jwt,
                 ]);
-                $resp     = Http::timeout(5)->post($url, [
-                    'kid'       => $cfg['uid'],
-                    'jwt'       => $jwt, // было 'jwt_token' => $jwt
-                ]);
-                $resp->throw();
-                $raw      = $resp->json();
+                Log::info('RAPIRA: Ответ generate_jwt', ['status' => $tokenResp->status(), 'body' => $tokenResp->body()]);
+                if (!$tokenResp->ok()) {
+                    Log::error('Rapira generate_jwt error', ['status' => $tokenResp->status(), 'body' => $tokenResp->body()]);
+                    return response()->json(['balances'=>[], 'error'=>'Ошибка авторизации Rapira (generate_jwt)'], 500);
+                }
+                $tokenData = $tokenResp->json();
+                $rapiraToken = $tokenData['token'] ?? null;
+                if (!$rapiraToken) {
+                    Log::error('Rapira generate_jwt: token not found', ['response' => $tokenData]);
+                    return response()->json(['balances'=>[], 'error'=>'Ошибка авторизации Rapira (token not found)'], 500);
+                }
+                Log::info('RAPIRA: Токен получен', ['token_length' => strlen($rapiraToken), 'token_start' => substr($rapiraToken,0,40)]);
+                Log::info('RAPIRA: Запрашиваем балансы...');
+                $balanceResp = Http::timeout(10)->withHeaders([
+                    'Authorization' => 'Bearer ' . $rapiraToken,
+                ])->get($url);
+                Log::info('RAPIRA: Ответ баланса', ['status' => $balanceResp->status(), 'body' => $balanceResp->body()]);
+                if (!$balanceResp->ok()) {
+                    Log::error('Rapira balance error', ['status' => $balanceResp->status(), 'body' => $balanceResp->body()]);
+                    return response()->json(['balances'=>[], 'error'=>'Ошибка получения баланса Rapira'], 500);
+                }
+                $raw = $balanceResp->json();
+                Log::info('RAPIRA: Сырые данные баланса', ['raw' => $raw]);
                 $balances = $this->normalizeRapira($raw);
+                Log::info('RAPIRA: Нормализованные балансы', ['balances' => $balances]);
             }
 
             return response()->json(['balances'=>$balances]);
@@ -208,18 +241,24 @@ class ProfileController extends Controller
     protected function normalizeHeleket(array $raw)
     {
         $bal = data_get($raw,'result.0.balance',[]);
-        $all = array_merge($bal['merchant'] ?? [], $bal['user'] ?? []);
-        return collect($all)->map(fn($b)=>[
-            'code'   => strtoupper($b['currency_code']),
-            'amount' => (float)$b['balance'],
-            'icon'   => asset("images/coins/".strtoupper($b['currency_code']).".svg"),
-        ]);
+        return [
+            'merchant' => collect($bal['merchant'] ?? [])->map(fn($b)=>[
+                'code'   => strtoupper($b['currency_code']),
+                'amount' => (float)$b['balance'],
+                'icon'   => asset("images/coins/".strtoupper($b['currency_code']).".svg"),
+            ])->values(),
+            'user' => collect($bal['user'] ?? [])->map(fn($b)=>[
+                'code'   => strtoupper($b['currency_code']),
+                'amount' => (float)$b['balance'],
+                'icon'   => asset("images/coins/".strtoupper($b['currency_code']).".svg"),
+            ])->values(),
+        ];
     }
 
     protected function normalizeRapira(array $raw)
     {
-        // {data:[{unit,balance,...}], code:200}
-        $list = data_get($raw,'data',[]);
+        // Если массив приходит сразу, а не в data
+        $list = isset($raw['data']) ? $raw['data'] : $raw;
         return collect($list)->map(fn($b)=>[
             'code'   => strtoupper($b['unit']),
             'amount' => (float)$b['balance'],
