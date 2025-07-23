@@ -64,7 +64,7 @@ class PaymentController extends Controller
                 'currentPage' => $payments->currentPage(),
                 'lastPage' => $payments->lastPage(),
                 'hasMorePages' => $payments->hasMorePages(),
-            ]);
+        ]);
         } catch (\Exception $e) {
             Log::error('PaymentController::getPayments error', [
                 'error' => $e->getMessage(),

@@ -335,4 +335,324 @@ class AdminController extends Controller
         $exchangers = ['obama' => 'Obama', 'ural' => 'Ural'];
         return view('admin.exchanger-balances', compact('providers', 'exchangers'));
     }
+
+    public function dashboardPage()
+    {
+        return view('admin.dashboard');
+    }
+
+    public function dashboardStats(Request $request)
+    {
+        // Параметры фильтра
+        $interval = $request->query('interval', 'day'); // day|month|year
+        $start = $request->query('start_date') ? \Carbon\Carbon::parse($request->query('start_date')) : now()->subDays(30)->startOfDay();
+        $end = $request->query('end_date') ? \Carbon\Carbon::parse($request->query('end_date')) : now()->endOfDay();
+
+        // 1. Ключевые метрики
+        $users = \App\Models\User::count();
+        $apps = \App\Models\Application::count();
+        $ops = \App\Models\Payment::count() + \App\Models\SaleCrypt::count() + \App\Models\Purchase::count() + \App\Models\Transfer::count();
+
+        // 2. Оборот USDT (по History, currency_id = USDT)
+        $usdtCurrency = \App\Models\Currency::where('code', 'USDT')->first();
+        $usdt = 0;
+        if ($usdtCurrency) {
+            $usdt = \App\Models\History::where('currency_id', $usdtCurrency->id)->sum('amount');
+        }
+
+        // 3. График по выбранному периоду
+        $periods = collect();
+        if ($interval === 'day') {
+            $periods = collect(\Carbon\CarbonPeriod::create($start, '1 day', $end))->map(fn($d)=>$d->format('Y-m-d'));
+        } elseif ($interval === 'month') {
+            $periods = collect();
+            $cur = $start->copy()->startOfMonth();
+            while ($cur <= $end) {
+                $periods->push($cur->format('Y-m'));
+                $cur->addMonth();
+            }
+        } elseif ($interval === 'year') {
+            $periods = collect();
+            $cur = $start->copy()->startOfYear();
+            while ($cur <= $end) {
+                $periods->push($cur->format('Y'));
+                $cur->addYear();
+            }
+        }
+
+        // Заявки
+        $appsByPeriod = $periods->mapWithKeys(function($p) use ($interval) {
+            $q = \App\Models\Application::query();
+            if ($interval === 'day') {
+                $q->whereDate('app_created_at', $p);
+            } elseif ($interval === 'month') {
+                $q->whereYear('app_created_at', substr($p,0,4))->whereMonth('app_created_at', substr($p,5,2));
+            } elseif ($interval === 'year') {
+                $q->whereYear('app_created_at', $p);
+            }
+            return [$p => $q->count()];
+        });
+        // USDT оборот
+        $usdtByPeriod = $periods->mapWithKeys(function($p) use ($interval, $usdtCurrency) {
+            if (!$usdtCurrency) return [$p => 0];
+            $q = \App\Models\History::where('currency_id', $usdtCurrency->id);
+            if ($interval === 'day') {
+                $q->whereDate('created_at', $p);
+            } elseif ($interval === 'month') {
+                $q->whereYear('created_at', substr($p,0,4))->whereMonth('created_at', substr($p,5,2));
+            } elseif ($interval === 'year') {
+                $q->whereYear('created_at', $p);
+            }
+            return [$p => $q->sum('amount')];
+        });
+        // Операции по периодам
+        $paymentsByPeriod = $periods->mapWithKeys(function($p) use ($interval) {
+            $q = \App\Models\Payment::query();
+            if ($interval === 'day') {
+                $q->whereDate('created_at', $p);
+            } elseif ($interval === 'month') {
+                $q->whereYear('created_at', substr($p,0,4))->whereMonth('created_at', substr($p,5,2));
+            } elseif ($interval === 'year') {
+                $q->whereYear('created_at', $p);
+            }
+            return [$p => $q->count()];
+        });
+        $transfersByPeriod = $periods->mapWithKeys(function($p) use ($interval) {
+            $q = \App\Models\Transfer::query();
+            if ($interval === 'day') {
+                $q->whereDate('created_at', $p);
+            } elseif ($interval === 'month') {
+                $q->whereYear('created_at', substr($p,0,4))->whereMonth('created_at', substr($p,5,2));
+            } elseif ($interval === 'year') {
+                $q->whereYear('created_at', $p);
+            }
+            return [$p => $q->count()];
+        });
+        $purchasesByPeriod = $periods->mapWithKeys(function($p) use ($interval) {
+            $q = \App\Models\Purchase::query();
+            if ($interval === 'day') {
+                $q->whereDate('created_at', $p);
+            } elseif ($interval === 'month') {
+                $q->whereYear('created_at', substr($p,0,4))->whereMonth('created_at', substr($p,5,2));
+            } elseif ($interval === 'year') {
+                $q->whereYear('created_at', $p);
+            }
+            return [$p => $q->count()];
+        });
+        $salecryptsByPeriod = $periods->mapWithKeys(function($p) use ($interval) {
+            $q = \App\Models\SaleCrypt::query();
+            if ($interval === 'day') {
+                $q->whereDate('created_at', $p);
+            } elseif ($interval === 'month') {
+                $q->whereYear('created_at', substr($p,0,4))->whereMonth('created_at', substr($p,5,2));
+            } elseif ($interval === 'year') {
+                $q->whereYear('created_at', $p);
+            }
+            return [$p => $q->count()];
+        });
+
+        // 4. ТОП валют по обороту (History)
+        $topCurrencies = \App\Models\History::select('currency_id', \DB::raw('SUM(amount) as total'))
+            ->groupBy('currency_id')
+            ->orderByDesc('total')
+            ->with('currency')
+            ->take(5)
+            ->get()
+            ->map(function($row) {
+                return [
+                    'code' => $row->currency->code ?? '',
+                    'name' => $row->currency->name ?? '',
+                    'amount' => round($row->total, 2),
+                ];
+            });
+
+        // 5. ТОП обменников по обороту (History + Exchanger)
+        $topExchangers = \App\Models\History::select('sourceable_id', \DB::raw('SUM(amount) as total'))
+            ->where('sourceable_type', 'App\\Models\\Application')
+            ->groupBy('sourceable_id')
+            ->orderByDesc('total')
+            ->take(5)
+            ->get()
+            ->map(function($row) {
+                $app = \App\Models\Application::find($row->sourceable_id);
+                return [
+                    'name' => $app->exchanger ?? '',
+                    'amount' => round($row->total, 2),
+                ];
+            });
+
+        // 6. Детализация по операциям
+        $operations = [
+            'payments' => [
+                'count' => \App\Models\Payment::count(),
+                'sum' => \App\Models\Payment::sum('sell_amount'),
+            ],
+            'transfers' => [
+                'count' => \App\Models\Transfer::count(),
+                'sum' => \App\Models\Transfer::sum('amount'),
+            ],
+            'purchases' => [
+                'count' => \App\Models\Purchase::count(),
+                'sum' => \App\Models\Purchase::sum('sale_amount'),
+            ],
+            'salecrypts' => [
+                'count' => \App\Models\SaleCrypt::count(),
+                'sum' => \App\Models\SaleCrypt::sum('sale_amount'),
+            ],
+        ];
+
+        return response()->json([
+            'users' => $users,
+            'apps' => $apps,
+            'ops' => $ops,
+            'usdt' => round($usdt, 2),
+            'chart' => [
+                'labels' => $periods->map(function($p) use ($interval) {
+                    if ($interval === 'day') return date('d.m', strtotime($p));
+                    if ($interval === 'month') return date('M Y', strtotime($p.'-01'));
+                    if ($interval === 'year') return $p;
+                })->toArray(),
+                'apps' => $appsByPeriod->values()->toArray(),
+                'usdt' => $usdtByPeriod->values()->toArray(),
+            ],
+            'operations_chart' => [
+                'labels' => $periods->map(function($p) use ($interval) {
+                    if ($interval === 'day') return date('d.m', strtotime($p));
+                    if ($interval === 'month') return date('M Y', strtotime($p.'-01'));
+                    if ($interval === 'year') return $p;
+                })->toArray(),
+                'payments' => $paymentsByPeriod->values()->toArray(),
+                'transfers' => $transfersByPeriod->values()->toArray(),
+                'purchases' => $purchasesByPeriod->values()->toArray(),
+                'salecrypts' => $salecryptsByPeriod->values()->toArray(),
+            ],
+            'topCurrencies' => $topCurrencies,
+            'topExchangers' => $topExchangers,
+            'operations' => $operations,
+        ]);
+    }
+
+    public function bybitCandles(Request $request)
+    {
+        $category = $request->query('category', 'spot');
+        $symbol = $request->query('symbol', 'BTCUSDT');
+        $interval = $request->query('interval', '1h');
+        $limit = $request->query('limit', 100);
+        $params = [
+            'category' => $category,
+            'symbol' => $symbol,
+            'interval' => $interval,
+            'limit' => $limit,
+        ];
+        if ($request->has('start')) {
+            $params['start'] = $request->query('start');
+        }
+        if ($request->has('end')) {
+            $params['end'] = $request->query('end');
+        }
+        // Логируем все параметры и итоговый массив
+        \Log::info('bybitCandles: входящие параметры', [
+            'category' => $category,
+            'symbol' => $symbol,
+            'interval' => $interval,
+            'limit' => $limit,
+            'start' => $request->query('start'),
+            'end' => $request->query('end'),
+            'params' => $params
+        ]);
+        if ($category === 'spot') {
+            $url = 'https://api.bybit.com/v5/market/kline';
+            \Log::info('bybitCandles: URL Bybit', ['url' => $url, 'params' => $params]);
+            $resp = \Http::timeout(10)->get($url, $params);
+            $data = $resp->json();
+            \Log::info('bybitCandles: ответ Bybit', ['data' => $data]);
+            $list = data_get($data, 'result.list', []);
+            if (empty($list)) {
+                $binanceIntervals = [
+                    '1m'=>'1m','5m'=>'5m','15m'=>'15m','1h'=>'1h','4h'=>'4h','1d'=>'1d'
+                ];
+                $binanceInt = $binanceIntervals[$interval] ?? '1h';
+                $binanceUrl = 'https://api.binance.com/api/v3/klines';
+                $binanceParams = [
+                    'symbol' => $symbol,
+                    'interval' => $binanceInt,
+                    'limit' => $limit,
+                ];
+                if (isset($params['start'])) $binanceParams['startTime'] = $params['start'];
+                if (isset($params['end'])) $binanceParams['endTime'] = $params['end'];
+                \Log::info('bybitCandles: URL Binance', ['url' => $binanceUrl, 'params' => $binanceParams]);
+                $binanceResp = \Http::timeout(10)->get($binanceUrl, $binanceParams);
+                $binanceData = $binanceResp->json();
+                \Log::info('bybitCandles: ответ Binance', ['data' => $binanceData]);
+                $list = collect($binanceData)->map(function($row) {
+                    return [
+                        (string)$row[0],
+                        (string)$row[1],
+                        (string)$row[2],
+                        (string)$row[3],
+                        (string)$row[4],
+                        (string)$row[5],
+                        (string)$row[7],
+                    ];
+                })->toArray();
+                \Log::info('bybitCandles: BINANCE klines parsed for frontend', ['list' => $list]);
+                return response()->json(['list' => $list]);
+            }
+            return response()->json($data['result'] ?? $data);
+        } else {
+            $url = 'https://api-testnet.bybit.com/v5/market/kline';
+            \Log::info('bybitCandles: URL Bybit (inverse)', ['url' => $url, 'params' => $params]);
+            $resp = \Http::timeout(10)->get($url, $params);
+            $data = $resp->json();
+            \Log::info('bybitCandles: ответ Bybit (inverse)', ['data' => $data]);
+            return response()->json($data['result'] ?? $data);
+        }
+    }
+
+    public function cryptoTrades(Request $request)
+    {
+        $currencyCode = $request->query('currency');
+        $from = $request->query('from');
+        $to = $request->query('to');
+        if (!$currencyCode) {
+            return response()->json(['error' => 'currency required'], 400);
+        }
+        $currency = \App\Models\Currency::where('code', $currencyCode)->first();
+        $usdt = \App\Models\Currency::where('code', 'USDT')->first();
+        if (!$currency || !$usdt) {
+            return response()->json(['error' => 'currency not found'], 404);
+        }
+        $saleQuery = \App\Models\SaleCrypt::where('sale_currency_id', $currency->id)
+            ->where('fixed_currency_id', $usdt->id);
+        $purchaseQuery = \App\Models\Purchase::where('sale_currency_id', $currency->id)
+            ->where('received_currency_id', $usdt->id);
+        if ($from) {
+            $saleQuery->where('created_at', '>=', $from);
+            $purchaseQuery->where('created_at', '>=', $from);
+        }
+        if ($to) {
+            $toObj = \Carbon\Carbon::parse($to);
+            if ($toObj->format('H:i:s') === '00:00:00') {
+                $toObj = $toObj->endOfDay();
+            }
+            $saleQuery->where('created_at', '<=', $toObj);
+            $purchaseQuery->where('created_at', '<=', $toObj);
+        }
+        $sales = $saleQuery->get(['sale_amount as amount', 'created_at'])->map(function($row) {
+            return [
+                'type' => 'sale',
+                'amount' => (float)$row->amount,
+                'created_at' => $row->created_at,
+            ];
+        });
+        $purchases = $purchaseQuery->get(['sale_amount as amount', 'created_at'])->map(function($row) {
+            return [
+                'type' => 'purchase',
+                'amount' => (float)$row->amount,
+                'created_at' => $row->created_at,
+            ];
+        });
+        $all = $sales->concat($purchases)->sortBy('created_at')->values();
+        return response()->json($all);
+    }
 }
