@@ -262,6 +262,9 @@ class ApplicationController extends Controller
             $app->order_id = $request->order_id;
         }
 
+        // Сохраняем, кто редактировал заявку
+        $app->user_id = auth()->id();
+
         $app->save();
 
         Log::info("ApplicationController::update: заявка успешно обновлена", [
@@ -312,23 +315,11 @@ class ApplicationController extends Controller
         $hasErrors = false;
         foreach ($exchangers as $exchangerName => $cfg) {
             try {
-                $url = $cfg['url'];
-                $cookieHeader = $cfg['cookies'];
-                $headers = [
-                    'Cookie' => $cookieHeader,
+                $response = \Illuminate\Support\Facades\Http::withHeaders([
+                    'Cookie' => $cfg['cookies'],
                     'User-Agent' => 'Mozilla/5.0',
-                ];
-                Log::info("fetchAndSyncRemote: отправляем запрос к $exchangerName", [
-                    'url' => $url,
-                    'headers' => $headers
-                ]);
-                $response = \Illuminate\Support\Facades\Http::withHeaders($headers)->timeout(15)->get($url);
-                Log::info("fetchAndSyncRemote: получен ответ от $exchangerName", [
-                    'status' => $response->status(),
-                    'response_headers' => $response->headers(),
-                    'set_cookie' => $response->header('Set-Cookie'),
-                    'body_snippet' => mb_substr($response->body(), 0, 500)
-                ]);
+                ])->timeout(15)->get($cfg['url']); // Увеличили timeout до 15 секунд
+
                 $responses[$exchangerName] = $response;
             } catch (\Exception $e) {
                 Log::error("fetchAndSyncRemote: ошибка запроса к {$exchangerName}", [
