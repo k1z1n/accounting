@@ -16,49 +16,6 @@ use App\Http\Controllers\YandexWebmasterController;
 use Illuminate\Support\Facades\Route;
 
 // ========================================
-// ТЕСТОВЫЕ МАРШРУТЫ (ЗАКОММЕНТИРОВАНЫ)
-// ========================================
-
-/*
-// Тестовый маршрут для AG Grid
-Route::get('/test-ag-grid', function () {
-    return view('test-ag-grid');
-});
-
-// Простой тест AG-Grid
-Route::get('/test-ag-grid-simple', function () {
-    return view('test-ag-grid-simple');
-});
-
-// Тест AG-Grid для оплат
-Route::get('/test-payments', function () {
-    return view('test-payments');
-});
-
-// Тест основной страницы оплат без аутентификации
-Route::get('/test-payments-main', function () {
-    return view('pages.payments');
-});
-
-// Тестовый API для оплат без аутентификации
-Route::get('/test-payments/data', [\App\Http\Controllers\TestPaymentController::class, 'getPayments']);
-
-// Тестовый API для переводов без аутентификации
-Route::get('/test-transfers/data', [\App\Http\Controllers\TestTransferController::class, 'getTransfers']);
-
-// Тестовый API для продаж крипты без аутентификации
-Route::get('/test-sale-crypts/data', [\App\Http\Controllers\TestSaleCryptController::class, 'getSaleCrypts']);
-
-// Тестовый API для покупок без аутентификации
-Route::get('/test-purchases/data', [\App\Http\Controllers\TestPurchaseController::class, 'getPurchases']);
-
-// Отладочная страница AG-Grid
-Route::get('/test-ag-grid-debug', function () {
-    return view('test-ag-grid-debug');
-});
-*/
-
-// ========================================
 // АВТОРИЗАЦИЯ И РЕГИСТРАЦИЯ
 // ========================================
 
@@ -80,14 +37,6 @@ Route::middleware(['auth'])->group(function () {
 // ЗАЯВКИ (APPLICATIONS)
 // ========================================
 
-// Простой тест аутентификации
-Route::get('/api/test-auth-simple', function() {
-    return response()->json([
-        'authenticated' => auth()->check(),
-        'user' => auth()->check() ? auth()->user()->name : null
-    ]);
-})->middleware('auth');
-
 // Временный API endpoint без middleware auth
 Route::get('/api/applications/list-temp', [App\Http\Controllers\ApplicationController::class, 'listForSelectTemp'])->name('api.applications.list.temp');
 
@@ -98,17 +47,6 @@ Route::middleware(['auth', 'section.choice'])->group(function () {
     Route::get('/applications/sync', [ApplicationController::class, 'sync'])->name('applications.sync');
     Route::get('/applications/{id}/edit', [ApplicationController::class, 'edit'])->name('applications.edit');
     Route::put('/applications/{id}', [ApplicationController::class, 'update'])->name('applications.update');
-
-
-
-    // Тестовый endpoint для проверки аутентификации
-    Route::get('/api/test-auth', function() {
-        return response()->json([
-            'authenticated' => auth()->check(),
-            'user' => auth()->check() ? auth()->user()->name : null,
-            'session_id' => session()->getId()
-        ]);
-    });
 
     // Таблицы на странице applications (только для просмотра данных)
     Route::get('/payments', [PaymentController::class, 'index'])->name('payments.index');
@@ -202,12 +140,6 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('/transfer', [TransferController::class, 'index'])->name('transfer.index');
     Route::get('/transfer/data', [TransferController::class, 'getTransfers'])->name('transfer.data');
-
-    // Тестовый маршрут для проверки PUT запросов
-    Route::put('/test-put/{id}', function($id) {
-        Log::info("Тестовый PUT запрос", ['id' => $id, 'method' => request()->method()]);
-        return response()->json(['success' => true, 'id' => $id]);
-    });
 
     Route::get('/usdt-total', [MainController::class, 'usdtTotal'])->name('usdt.total');
     Route::get('/profile', [ProfileController::class, 'dashboard'])->name('view.profile');
