@@ -419,25 +419,6 @@ class SaleCryptPage {
         if (!select) return;
         select.innerHTML = '<option value="">Загрузка...</option>';
 
-        // Тест простого endpoint
-        try {
-            const testResp = await fetch('/api/test-auth-simple', {
-                headers: {
-                    'Accept': 'application/json'
-                },
-                credentials: 'same-origin'
-            });
-
-            if (testResp.ok) {
-                const testData = await testResp.json();
-                console.log('SaleCryptPage: тест аутентификации:', testData);
-            } else {
-                console.error('SaleCryptPage: тест аутентификации не прошел:', testResp.status);
-            }
-        } catch (e) {
-            console.error('SaleCryptPage: ошибка теста аутентификации:', e);
-        }
-
         try {
             const resp = await fetch('/api/applications/list-temp', {
                 headers: {
