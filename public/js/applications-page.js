@@ -1,6 +1,8 @@
 // Управление таблицей заявок через AG-Grid на отдельной странице
 console.log('ApplicationsPage: файл загружен');
 
+
+
 class ApplicationsPage {
     constructor() {
         console.log('ApplicationsPage: конструктор вызван');
@@ -26,7 +28,6 @@ class ApplicationsPage {
         this.setupEventListeners();
         this.setupModal();
         this.loadInitialData();
-        // this.updateStatistics();
     }
 
     // Компоненты для AG-Grid
@@ -410,8 +411,7 @@ class ApplicationsPage {
             console.log('ApplicationsPage: текущая страница:', this.currentPage);
             console.log('ApplicationsPage: есть еще страницы:', this.hasMorePages);
 
-                                    this.updateGrid();
-            // this.updateStatistics();
+            this.updateGrid();
             this.updateLoadMoreButton();
 
             // Показываем уведомление об успешной загрузке
@@ -549,9 +549,6 @@ class ApplicationsPage {
             // Обновляем грид
             this.updateGrid();
 
-            // Обновляем статистику
-            // this.updateStatistics();
-
             console.log('ApplicationsPage: данные успешно загружены и отображены');
 
         } catch (error) {
@@ -597,7 +594,6 @@ class ApplicationsPage {
                 console.log('ApplicationsPage: после синхронизации - текущая страница:', this.currentPage, 'записей на странице:', result.data.length, 'всего записей в БД:', this.totalRecords, 'есть еще страницы:', this.hasMorePages);
 
                 this.updateGrid();
-                // this.updateStatistics();
                 this.updateLoadMoreButton();
 
                 // Если есть еще страницы, показываем уведомление
@@ -678,7 +674,6 @@ class ApplicationsPage {
 
             // Обновляем грид
             this.updateGrid();
-            // this.updateStatistics();
             this.updateLoadMoreButton();
 
             // Показываем уведомление о загрузке дополнительных данных
@@ -714,28 +709,7 @@ class ApplicationsPage {
         }
     }
 
-    // updateStatistics() {
-    //     // Показываем общее количество из БД, если оно известно, иначе количество загруженных
-    //     const totalInDB = this.totalRecords || this.allData.length;
-    //     const loadedCount = this.allData.length;
 
-    //     const stats = {
-    //         total: totalInDB,
-    //         completed: this.allData.filter(item => item.status === 'выполненная заявка').length,
-    //         paid: this.allData.filter(item => item.status === 'оплаченная заявка').length,
-    //         returned: this.allData.filter(item => item.status === 'возврат').length
-    //     };
-
-    //     // Показываем общее количество с индикатором загруженных
-    //     const totalText = loadedCount < totalInDB ? `${loadedCount}/${totalInDB}` : totalInDB.toString();
-
-    //     document.getElementById('totalApplications').textContent = totalText;
-    //     document.getElementById('completedApplications').textContent = stats.completed;
-    //     document.getElementById('paidApplications').textContent = stats.paid;
-    //     document.getElementById('returnApplications').textContent = stats.returned;
-
-    //     console.log('ApplicationsPage: статистика обновлена - загружено:', loadedCount, 'всего в БД:', totalInDB);
-    // }
 
 
 
@@ -923,9 +897,6 @@ class ApplicationsPage {
                     rowNode.setData(updatedRowData);
 
                     console.log('ApplicationsPage: данные в таблице обновлены');
-
-                    // Обновляем статистику
-                    // this.updateStatistics();
                 } else {
                     console.log('ApplicationsPage: строка не найдена, обновляем всю таблицу');
                     await this.refreshData();
