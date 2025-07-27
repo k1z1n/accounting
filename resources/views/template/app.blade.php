@@ -24,7 +24,9 @@
 
 </head>
 <body class="bg-[#0a0a0a] min-h-screen flex flex-col" data-is-admin="{{ auth()->check() && auth()->user()->role === 'admin' ? 'true' : 'false' }}">
-@include('includes.header')
+@if (!request()->routeIs('choose.page'))
+    @include('includes.header')
+@endif
 
 <main class="flex-1 container mx-auto p-4">
     @yield('content')

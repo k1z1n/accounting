@@ -13,6 +13,7 @@
 
             <!-- Форма входа -->
             <div class="bg-[#191919] rounded-xl shadow-md border border-[#2d2d2d] p-8">
+
             <form method="POST" action="{{ route('login.perform') }}" class="space-y-6">
                 @csrf
 
@@ -29,7 +30,6 @@
                             placeholder="Введите ваш логин"
                             class="w-full px-4 py-3 bg-[#0f0f0f] border border-[#2d2d2d] rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 @error('login') border-red-500 @enderror"
                             autocomplete="username"
-                            required
                     >
                     @error('login')
                             <div class="text-red-400 text-sm mt-1">{{ $message }}</div>
@@ -48,7 +48,6 @@
                             placeholder="Введите ваш пароль"
                             class="w-full px-4 py-3 bg-[#0f0f0f] border border-[#2d2d2d] rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 @error('password') border-red-500 @enderror"
                             autocomplete="current-password"
-                            required
                     >
                     @error('password')
                             <div class="text-red-400 text-sm mt-1">{{ $message }}</div>
@@ -90,3 +89,4 @@
         </div>
     </div>
 @endsection
+

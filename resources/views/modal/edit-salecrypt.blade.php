@@ -13,9 +13,23 @@
                 <label class="block text-sm font-medium text-gray-700 mb-1">Платформа</label>
                 <select id="edit_salecrypt_exchanger" class="w-full border-gray-300 rounded px-3 py-2">
                     <option disabled>— Выберите платформу —</option>
-                    @foreach($exchangers as $e)
-                        <option value="{{ $e->id }}">{{ $e->title }}</option>
-                    @endforeach
+                    @if(isset($exchangers))
+                        @foreach($exchangers as $e)
+                            <option value="{{ $e->id }}">{{ $e->title }}</option>
+                        @endforeach
+                    @endif
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Заявка</label>
+                <select id="edit_salecrypt_application" class="w-full border-gray-300 rounded px-3 py-2">
+                    <option disabled>— Выберите заявку —</option>
+                    @if(isset($applications))
+                        @foreach($applications as $app)
+                            <option value="{{ $app->id }}">Заявка #{{ $app->id }}</option>
+                        @endforeach
+                    @endif
                 </select>
             </div>
 
@@ -33,9 +47,11 @@
                     <label class="block text-sm font-medium text-gray-700 mb-1">Валюта продажи</label>
                     <select id="edit_salecrypt_sale_currency" class="w-full border-gray-300 rounded px-3 py-2">
                         <option disabled>— Выберите —</option>
-                        @foreach($currenciesForEdit as $c)
-                            <option value="{{ $c->id }}">{{ $c->code }}</option>
-                        @endforeach
+                        @if(isset($currenciesForEdit))
+                            @foreach($currenciesForEdit as $c)
+                                <option value="{{ $c->id }}">{{ $c->code }}</option>
+                            @endforeach
+                        @endif
                     </select>
                 </div>
             </div>
@@ -54,9 +70,11 @@
                     <label class="block text-sm font-medium text-gray-700 mb-1">Валюта получения</label>
                     <select id="edit_salecrypt_fixed_currency" class="w-full border-gray-300 rounded px-3 py-2">
                         <option disabled>— Выберите —</option>
-                        @foreach($currenciesForEdit as $c)
-                            <option value="{{ $c->id }}">{{ $c->code }}</option>
-                        @endforeach
+                        @if(isset($currenciesForEdit))
+                            @foreach($currenciesForEdit as $c)
+                                <option value="{{ $c->id }}">{{ $c->code }}</option>
+                            @endforeach
+                        @endif
                     </select>
                 </div>
             </div>

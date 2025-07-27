@@ -114,5 +114,7 @@
     </div>
 </div>
 
+@include('modal.edit-salecrypt')
+
 <script src="{{ asset('js/sale-crypt-page.js') }}"></script>
 @endsection

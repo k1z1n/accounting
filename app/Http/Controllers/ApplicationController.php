@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Application;
 use App\Models\Currency;
+use App\Models\Exchanger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Symfony\Component\DomCrawler\Crawler;
@@ -18,7 +19,13 @@ class ApplicationController extends Controller
         // Все валюты (для селектов модалки редактирования)
         $currenciesForEdit = Currency::orderBy('code')->get();
 
-        return view('pages.applications', compact('currenciesForEdit'));
+        // Все заявки (для селектов в модальных окнах покупок и продаж)
+        $applications = Application::orderBy('id', 'desc')->get();
+
+        // Все обменники (для селектов в модальных окнах)
+        $exchangers = \App\Models\Exchanger::orderBy('title')->get();
+
+        return view('pages.applications', compact('currenciesForEdit', 'applications', 'exchangers'));
     }
 
         /**
@@ -287,6 +294,113 @@ class ApplicationController extends Controller
                 'success' => false,
                 'message' => 'Ошибка при обновлении заявки: ' . $e->getMessage()
             ], 500);
+        }
+    }
+
+    public function listForSelect()
+    {
+        \Log::info('ApplicationController::listForSelect вызван', [
+            'user' => auth()->check() ? auth()->user()->name : 'not authenticated',
+            'session_id' => session()->getId(),
+            'request_headers' => request()->headers->all()
+        ]);
+
+        $apps = Application::orderBy('id', 'desc')->get(['id', 'app_id', 'order_id', 'merchant']);
+        return response()->json($apps);
+    }
+
+    public function listForSelectTemp()
+    {
+        \Log::info('ApplicationController::listForSelectTemp вызван', [
+            'user' => auth()->check() ? auth()->user()->name : 'not authenticated',
+            'session_id' => session()->getId(),
+            'request_headers' => request()->headers->all()
+        ]);
+
+        // Проверяем аутентификацию внутри метода
+        if (!auth()->check()) {
+            \Log::warning('ApplicationController::listForSelectTemp - пользователь не аутентифицирован');
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+
+        \Log::info('ApplicationController::listForSelectTemp - пользователь аутентифицирован, загружаем данные');
+
+        $apps = Application::orderBy('id', 'desc')->get(['id', 'app_id']);
+
+        \Log::info('ApplicationController::listForSelectTemp - данные загружены', [
+            'count' => $apps->count(),
+            'first_app' => $apps->first(),
+            'last_app' => $apps->last()
+        ]);
+
+        return response()->json($apps);
+    }
+
+    /**
+     * Показать детали заявки
+     */
+    public function show($id)
+    {
+        try {
+            $application = Application::with([
+                'purchases.receivedCurrency',
+                'purchases.saleCurrency',
+                'saleCrypts.fixedCurrency',
+                'saleCrypts.saleCurrency'
+            ])->findOrFail($id);
+
+            // Подготавливаем данные для ответа
+            $data = [
+                'id' => $application->id,
+                'app_id' => $application->app_id,
+                'app_created_at' => $application->app_created_at,
+                'exchanger' => $application->exchanger,
+                'status' => $application->status,
+                'merchant' => $application->merchant,
+                'order_id' => $application->order_id,
+
+                // Основные суммы
+                'sell_amount' => $application->sell_amount,
+                'sell_currency_code' => $application->sellCurrency ? $application->sellCurrency->code : null,
+                'buy_amount' => $application->buy_amount,
+                'buy_currency_code' => $application->buyCurrency ? $application->buyCurrency->code : null,
+                'expense_amount' => $application->expense_amount,
+                'expense_currency_code' => $application->expenseCurrency ? $application->expenseCurrency->code : null,
+
+                // Связанные покупки
+                'related_purchases' => $application->purchases->map(function($purchase) {
+                    return [
+                        'id' => $purchase->id,
+                        'received_amount' => $purchase->received_amount,
+                        'received_currency_code' => $purchase->receivedCurrency ? $purchase->receivedCurrency->code : null,
+                        'sale_amount' => $purchase->sale_amount,
+                        'sale_currency_code' => $purchase->saleCurrency ? $purchase->saleCurrency->code : null,
+                    ];
+                }),
+
+                // Связанные продажи крипты
+                'related_sales' => $application->saleCrypts->map(function($sale) {
+                    return [
+                        'id' => $sale->id,
+                        'fixed_amount' => $sale->fixed_amount,
+                        'fixed_currency_code' => $sale->fixedCurrency ? $sale->fixedCurrency->code : null,
+                        'sale_amount' => $sale->sale_amount,
+                        'sale_currency_code' => $sale->saleCurrency ? $sale->saleCurrency->code : null,
+                    ];
+                }),
+            ];
+
+            return response()->json($data);
+        } catch (\Exception $e) {
+            Log::error('ApplicationController::show error', [
+                'id' => $id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'error' => 'Заявка не найдена'
+            ], 404);
         }
     }
 

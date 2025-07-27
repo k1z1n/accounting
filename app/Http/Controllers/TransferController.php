@@ -34,7 +34,7 @@ class TransferController extends Controller
             $statusFilter = $request->get('statusFilter', '');
             $exchangerFilter = $request->get('exchangerFilter', '');
 
-            $query = Transfer::with(['amountCurrency']);
+            $query = Transfer::with(['exchangerFrom', 'exchangerTo', 'commissionCurrency', 'amountCurrency']);
 
             // Применяем фильтры (отключены, так как полей status и exchanger нет в миграции)
             // if ($statusFilter) {
@@ -54,7 +54,12 @@ class TransferController extends Controller
                 'per_page' => $transfers->perPage(),
                 'last_page' => $transfers->lastPage(),
                 'has_more_pages' => $transfers->hasMorePages(),
-                'items_count' => count($transfers->items())
+                'items_count' => count($transfers->items()),
+                'debug_info' => [
+                    'current_page_vs_last_page' => $transfers->currentPage() . ' vs ' . $transfers->lastPage(),
+                    'should_have_more' => $transfers->currentPage() < $transfers->lastPage(),
+                    'total_vs_current_items' => $transfers->total() . ' vs ' . ($transfers->currentPage() * $transfers->perPage())
+                ]
             ]);
 
             return response()->json([
@@ -81,5 +86,26 @@ class TransferController extends Controller
                 'hasMorePages' => false,
             ], 500);
         }
+    }
+
+    public function destroy($id)
+    {
+        $transfer = Transfer::findOrFail($id);
+        $transfer->delete();
+        return response()->json(['success' => true]);
+    }
+
+    public function update(Request $request, $id)
+    {
+        $transfer = Transfer::findOrFail($id);
+        $transfer->user_id = auth()->id(); // Автоматически назначаем текущего пользователя
+        $transfer->exchanger_from_id = $request->input('exchanger_from_id');
+        $transfer->exchanger_to_id = $request->input('exchanger_to_id');
+        $transfer->commission = $request->input('commission');
+        $transfer->commission_id = $request->input('commission_id');
+        $transfer->amount = $request->input('amount');
+        $transfer->amount_id = $request->input('amount_id');
+        $transfer->save();
+        return response()->json(['success' => true]);
     }
 }

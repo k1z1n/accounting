@@ -1,6 +1,6 @@
 <header class="bg-[#0a0a0a]/80 backdrop-blur-md shadow-xl transition-all">
     <div class="container mx-auto flex items-center justify-between h-20 px-4 md:px-7">
-        <a href="{{ route('view.main') }}" class="text-3xl font-extrabold tracking-tight text-white drop-shadow-lg select-none">
+        <a href="{{ route('applications.index') }}" class="text-3xl font-extrabold tracking-tight text-white drop-shadow-lg select-none">
             Бухгалтерия
         </a>
         <nav>

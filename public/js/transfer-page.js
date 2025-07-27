@@ -1,16 +1,12 @@
 (function() {
 class TransferPage {
     constructor() {
-        console.log('TransferPage: конструктор вызван');
-        this.gridApi = null;
-        this.isAdmin = window.isAdmin || false;
-        this.currentPage = 1;
-        this.perPage = 50;
-        this.hasMorePages = true;
         this.allData = [];
+        this.currentPage = 1;
+        this.hasMorePages = false;
         this.isLoading = false;
+        this.gridApi = null;
         this.filters = {
-            status: '',
             exchanger: ''
         };
         this.init();
@@ -29,36 +25,12 @@ class TransferPage {
         if (!params.value) return '';
         const date = new Date(params.value);
         return date.toLocaleDateString('ru-RU', {
-            day: '2-digit',
-            month: '2-digit',
             year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
             hour: '2-digit',
             minute: '2-digit'
         });
-    }
-
-    statusRenderer(params) {
-        if (!params.value) return '';
-        const status = params.value;
-        let color = 'text-gray-400';
-        let icon = '';
-
-        switch (status) {
-            case 'выполненная заявка':
-                color = 'text-green-400';
-                icon = '✅';
-                break;
-            case 'оплаченная заявка':
-                color = 'text-blue-400';
-                icon = '💰';
-                break;
-            case 'возврат':
-                color = 'text-red-400';
-                icon = '↩️';
-                break;
-        }
-
-        return `<span class="${color}">${icon} ${status}</span>`;
     }
 
     actionRenderer(params) {
@@ -91,14 +63,20 @@ class TransferPage {
                 field: 'exchanger_from.title',
                 width: 150,
                 sortable: true,
-                filter: true
+                filter: true,
+                valueGetter: (params) => {
+                    return params.data.exchanger_from ? params.data.exchanger_from.title : '';
+                }
             },
             {
                 headerName: 'КУДА',
                 field: 'exchanger_to.title',
                 width: 150,
                 sortable: true,
-                filter: true
+                filter: true,
+                valueGetter: (params) => {
+                    return params.data.exchanger_to ? params.data.exchanger_to.title : '';
+                }
             },
             {
                 headerName: 'СУММА',
@@ -111,7 +89,7 @@ class TransferPage {
                     if (!data.amount || !data.amount_currency) return '—';
                     const amount = parseFloat(data.amount).toFixed(2);
                     const currency = data.amount_currency.code;
-                    return `<span>${amount} <img src="/images/coins/${currency}.svg" alt="${currency}" class="w-4 h-4 inline-block align-middle ml-1" onerror="this.style.display='none'"> <span class='font-mono text-cyan-300'>${currency}</span></span>`;
+                    return `<span>${amount} <img src="/images/coins/${currency}.svg" alt="${currency}" class="w-4 h-4 inline-block align-middle ml-1" onerror="this.style.display='none'"></span>`;
                 }
             },
             {
@@ -125,7 +103,7 @@ class TransferPage {
                     if (!data.commission || !data.commission_currency) return '—';
                     const amount = parseFloat(data.commission).toFixed(2);
                     const currency = data.commission_currency.code;
-                    return `<span>${amount} <img src="/images/coins/${currency}.svg" alt="${currency}" class="w-4 h-4 inline-block align-middle ml-1" onerror="this.style.display='none'"> <span class='font-mono text-pink-300'>${currency}</span></span>`;
+                    return `<span>${amount} <img src="/images/coins/${currency}.svg" alt="${currency}" class="w-4 h-4 inline-block align-middle ml-1" onerror="this.style.display='none'"></span>`;
                 }
             }
         ];
@@ -153,23 +131,18 @@ class TransferPage {
             onFirstDataRendered: (params) => {
                 console.log('TransferPage: данные отрендерены');
                 params.api.sizeColumnsToFit();
-            },
-            onCellClicked: (params) => {
-                if (params.colDef.field === 'actions') {
-                    const target = params.event.target.closest('button');
-                    if (target && target.classList.contains('edit-transfer-btn')) {
-                        alert('Редактировать перевод ID: ' + params.data.id);
-                    } else if (target && target.classList.contains('delete-transfer-btn')) {
-                        if (confirm('Удалить перевод ID: ' + params.data.id + '?')) {
-                            alert('Удаление перевода ID: ' + params.data.id);
-                        }
-                    }
-                }
             }
         };
     }
 
     createGrid() {
+        // Проверяем, что DOM полностью загружен
+        if (document.readyState !== 'complete') {
+            console.log('TransferPage: DOM еще не загружен, ждем...');
+            setTimeout(() => this.createGrid(), 100);
+            return;
+        }
+
         const gridDiv = document.getElementById('transferGrid');
         if (!gridDiv) {
             console.error('TransferPage: элемент transferGrid не найден');
@@ -182,16 +155,6 @@ class TransferPage {
 
     setupEventListeners() {
         console.log('TransferPage: setupEventListeners вызван');
-
-        // Фильтр по статусу
-        const statusFilter = document.getElementById('statusFilter');
-        if (statusFilter) {
-            statusFilter.addEventListener('change', (e) => {
-                console.log('TransferPage: изменен фильтр статуса:', e.target.value);
-                this.filters.status = e.target.value;
-                this.applyFilters();
-            });
-        }
 
         // Фильтр по обменнику
         const exchangerFilter = document.getElementById('exchangerFilter');
@@ -211,6 +174,34 @@ class TransferPage {
                 this.loadInitialData();
             });
         }
+
+        // Обработчики для кнопок редактирования и удаления
+        document.addEventListener('click', (e) => {
+            if (e.target.closest('.edit-transfer-btn')) {
+                const id = e.target.closest('.edit-transfer-btn').dataset.id;
+                this.openEditModal(id);
+            }
+            if (e.target.closest('.delete-transfer-btn')) {
+                const id = e.target.closest('.delete-transfer-btn').dataset.id;
+                this.openDeleteModal(id);
+            }
+        });
+
+        // Обработчики для модальных окон
+        const editForm = document.getElementById('editTransferForm');
+        if (editForm) {
+            editForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                this.saveEdit();
+            });
+        }
+
+        const confirmDeleteBtn = document.getElementById('confirmDeleteTransferBtn');
+        if (confirmDeleteBtn) {
+            confirmDeleteBtn.addEventListener('click', () => {
+                this.confirmDelete();
+            });
+        }
     }
 
     async loadInitialData() {
@@ -220,11 +211,10 @@ class TransferPage {
             const params = {
                 page: 1,
                 perPage: 50,
-                statusFilter: this.filters.status || '',
                 exchangerFilter: this.filters.exchanger || ''
             };
 
-            const url = '/test-transfers/data?' + new URLSearchParams(params);
+            const url = '/transfer/data?' + new URLSearchParams(params);
             console.log('TransferPage: URL запроса:', url);
 
             const response = await fetch(url);
@@ -237,14 +227,15 @@ class TransferPage {
 
             this.allData = result.data || [];
             this.currentPage = result.currentPage || 1;
-            this.hasMorePages = result.hasMorePages || false;
+            this.hasMorePages = Boolean(result.hasMorePages);
 
             this.updateGrid();
             this.updateStatistics();
             this.updateLoadMoreButton();
 
-            if (this.gridApi) {
-                this.gridApi.hideOverlay();
+            // Показываем уведомление об успешной загрузке
+            if (result.data && result.data.length > 0) {
+                window.notifications.success(`Загружено ${result.data.length} записей переводов`);
             }
         } catch (error) {
             console.error('TransferPage: ошибка загрузки данных:', error);
@@ -258,6 +249,16 @@ class TransferPage {
         this.hasMorePages = true;
         this.allData = [];
         await this.loadInitialData();
+
+        // Показываем уведомление о применении фильтров
+        const activeFilters = [];
+        if (this.filters.exchanger) activeFilters.push(`обменник: ${this.filters.exchanger}`);
+
+        if (activeFilters.length > 0) {
+            window.notifications.info(`Применены фильтры: ${activeFilters.join(', ')}`);
+        } else {
+            window.notifications.info('Фильтры сброшены');
+        }
     }
 
     async loadMore() {
@@ -269,10 +270,9 @@ class TransferPage {
 
         try {
             const nextPage = this.currentPage + 1;
-            const url = '/test-transfers/data?' + new URLSearchParams({
+            const url = '/transfer/data?' + new URLSearchParams({
                 page: nextPage,
                 perPage: this.perPage || 50,
-                statusFilter: this.filters.status || '',
                 exchangerFilter: this.filters.exchanger || ''
             });
 
@@ -282,19 +282,30 @@ class TransferPage {
             }
 
             const result = await response.json();
+            console.log('TransferPage: получен ответ от сервера:', result);
             this.allData = [...this.allData, ...result.data];
             this.currentPage = result.currentPage;
-            this.hasMorePages = result.hasMorePages;
+            this.hasMorePages = Boolean(result.hasMorePages);
+            console.log('TransferPage: обновлены данные - currentPage:', this.currentPage, 'hasMorePages:', this.hasMorePages, 'totalRecords:', this.allData.length);
 
             this.updateGrid();
             this.updateStatistics();
             this.updateLoadMoreButton();
+
+            // Показываем уведомление о загруженных записях
+            const loadedCount = result.data.length;
+            const totalCount = this.allData.length;
+            if (window.notifications) {
+                window.notifications.success(`Загружено ${loadedCount} записей. Всего: ${totalCount}`);
+            }
         } catch (error) {
             console.error('TransferPage: ошибка загрузки дополнительных данных:', error);
             this.showError('Ошибка загрузки данных: ' + error.message);
         } finally {
             this.isLoading = false;
             this.hideLoadMoreSpinner();
+            console.log('TransferPage: finally блок - обновляем кнопку после завершения загрузки');
+            this.updateLoadMoreButton();
         }
     }
 
@@ -322,28 +333,203 @@ class TransferPage {
     }
 
     showLoadMoreSpinner() {
-        const spinner = document.getElementById('loadMoreSpinner');
+        const spinner = document.getElementById('loadMoreTransferSpinner');
         if (spinner) spinner.classList.remove('hidden');
     }
 
     hideLoadMoreSpinner() {
-        const spinner = document.getElementById('loadMoreSpinner');
+        const spinner = document.getElementById('loadMoreTransferSpinner');
         if (spinner) spinner.classList.add('hidden');
     }
 
     updateLoadMoreButton() {
-        const button = document.getElementById('loadMoreBtn');
+        const button = document.getElementById('loadMoreTransferBtn');
+        console.log('TransferPage: updateLoadMoreButton - ищем кнопку с ID loadMoreTransferBtn');
         if (button) {
+            console.log('TransferPage: кнопка найдена, текущие классы:', button.className);
+            console.log('TransferPage: updateLoadMoreButton - hasMorePages:', this.hasMorePages, 'isLoading:', this.isLoading, 'currentPage:', this.currentPage);
             if (this.hasMorePages && !this.isLoading) {
                 button.classList.remove('hidden');
+                console.log('TransferPage: кнопка показана, новые классы:', button.className);
             } else {
                 button.classList.add('hidden');
+                console.log('TransferPage: кнопка скрыта, новые классы:', button.className);
             }
+        } else {
+            console.error('TransferPage: кнопка с ID loadMoreTransferBtn не найдена!');
         }
     }
 
     showError(message) {
         console.error('TransferPage: ошибка:', message);
+    }
+
+                async openEditModal(id) {
+        const transfer = this.allData.find(t => t.id == id);
+        if (!transfer) return;
+
+        document.getElementById('editTransferId').textContent = id;
+        document.getElementById('edit_transfer_id').value = id;
+        document.getElementById('edit_transfer_exchanger_from_id').value = transfer.exchanger_from_id || '';
+        document.getElementById('edit_transfer_exchanger_to_id').value = transfer.exchanger_to_id || '';
+        document.getElementById('edit_transfer_commission').value = transfer.commission;
+        document.getElementById('edit_transfer_commission_id').value = transfer.commission_id || '1';
+        document.getElementById('edit_transfer_amount').value = transfer.amount;
+        document.getElementById('edit_transfer_amount_id').value = transfer.amount_id || '1';
+        document.getElementById('editTransferModal').classList.remove('hidden');
+    }
+
+                async saveEdit() {
+        const id = document.getElementById('edit_transfer_id').value;
+        const exchangerFromId = document.getElementById('edit_transfer_exchanger_from_id').value;
+        const exchangerToId = document.getElementById('edit_transfer_exchanger_to_id').value;
+        const commission = document.getElementById('edit_transfer_commission').value;
+        const commissionId = document.getElementById('edit_transfer_commission_id').value;
+        const amount = document.getElementById('edit_transfer_amount').value;
+        const amountId = document.getElementById('edit_transfer_amount_id').value;
+
+        const url = `/transfer/${id}`;
+        console.log('[TransferPage] PUT', url, {
+            exchanger_from_id: exchangerFromId,
+            exchanger_to_id: exchangerToId,
+            commission: commission,
+            commission_id: commissionId,
+            amount: amount,
+            amount_id: amountId
+        });
+
+        try {
+            const resp = await fetch(url, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': window.csrfToken },
+                body: JSON.stringify({
+                    exchanger_from_id: exchangerFromId,
+                    exchanger_to_id: exchangerToId,
+                    commission: commission,
+                    commission_id: commissionId,
+                    amount: amount,
+                    amount_id: amountId
+                })
+            });
+
+            console.log('[TransferPage] PUT response status:', resp.status);
+            if (resp.ok) {
+                // Мгновенно обновляем строку
+                const idx = this.allData.findIndex(t => t.id == id);
+                if (idx !== -1) {
+                    // Обновляем основные поля
+                    this.allData[idx].exchanger_from_id = exchangerFromId;
+                    this.allData[idx].exchanger_to_id = exchangerToId;
+                    this.allData[idx].commission = commission;
+                    this.allData[idx].commission_id = commissionId;
+                    this.allData[idx].amount = amount;
+                    this.allData[idx].amount_id = amountId;
+
+                    // Обновляем связанные объекты для корректного отображения
+                    // Находим обменник "откуда" по ID
+                    const exchangerFromSelect = document.getElementById('edit_transfer_exchanger_from_id');
+                    if (exchangerFromSelect && exchangerFromSelect.options) {
+                        const selectedExchangerFromOption = exchangerFromSelect.options[exchangerFromSelect.selectedIndex];
+                        if (selectedExchangerFromOption) {
+                            this.allData[idx].exchanger_from = {
+                                id: exchangerFromId,
+                                title: selectedExchangerFromOption.text
+                            };
+                            console.log('[TransferPage] Обновлен exchanger_from:', this.allData[idx].exchanger_from);
+                        }
+                    }
+
+                    // Находим обменник "куда" по ID
+                    const exchangerToSelect = document.getElementById('edit_transfer_exchanger_to_id');
+                    if (exchangerToSelect && exchangerToSelect.options) {
+                        const selectedExchangerToOption = exchangerToSelect.options[exchangerToSelect.selectedIndex];
+                        if (selectedExchangerToOption) {
+                            this.allData[idx].exchanger_to = {
+                                id: exchangerToId,
+                                title: selectedExchangerToOption.text
+                            };
+                            console.log('[TransferPage] Обновлен exchanger_to:', this.allData[idx].exchanger_to);
+                        }
+                    }
+
+                    // Находим валюту комиссии по ID
+                    const commissionCurrencySelect = document.getElementById('edit_transfer_commission_id');
+                    if (commissionCurrencySelect && commissionCurrencySelect.options) {
+                        const selectedCommissionCurrencyOption = commissionCurrencySelect.options[commissionCurrencySelect.selectedIndex];
+                        if (selectedCommissionCurrencyOption) {
+                            this.allData[idx].commission_currency = {
+                                id: commissionId,
+                                code: selectedCommissionCurrencyOption.text.split(' — ')[0] // Берем код валюты из текста опции
+                            };
+                            console.log('[TransferPage] Обновлен commission_currency:', this.allData[idx].commission_currency);
+                        }
+                    }
+
+                    // Находим валюту суммы по ID
+                    const amountCurrencySelect = document.getElementById('edit_transfer_amount_id');
+                    if (amountCurrencySelect && amountCurrencySelect.options) {
+                        const selectedAmountCurrencyOption = amountCurrencySelect.options[amountCurrencySelect.selectedIndex];
+                        if (selectedAmountCurrencyOption) {
+                            this.allData[idx].amount_currency = {
+                                id: amountId,
+                                code: selectedAmountCurrencyOption.text.split(' — ')[0] // Берем код валюты из текста опции
+                            };
+                            console.log('[TransferPage] Обновлен amount_currency:', this.allData[idx].amount_currency);
+                        }
+                    }
+
+                    this.updateGrid();
+                }
+                document.getElementById('editTransferModal').classList.add('hidden');
+                window.notifications.success('Запись успешно обновлена');
+            } else {
+                const errText = await resp.text();
+                console.error('[TransferPage] PUT error:', resp.status, errText);
+                window.notifications.error('Ошибка при сохранении изменений: ' + errText);
+            }
+        } catch (error) {
+            console.error('[TransferPage] PUT error:', error);
+            window.notifications.error('Ошибка при сохранении изменений: ' + error.message);
+        }
+    }
+
+    async openDeleteModal(id) {
+        document.getElementById('deleteTransferId').textContent = id;
+        document.getElementById('deleteTransferModal').dataset.id = id;
+        document.getElementById('deleteTransferModal').classList.remove('hidden');
+    }
+
+    async confirmDelete() {
+        const id = document.getElementById('deleteTransferModal').dataset.id;
+        const url = `/transfer/${id}`;
+        console.log('[TransferPage] DELETE', url);
+
+        try {
+            const resp = await fetch(url, {
+                method: 'DELETE',
+                headers: {
+                    'X-CSRF-TOKEN': window.csrfToken,
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            console.log('[TransferPage] DELETE response status:', resp.status);
+            if (resp.ok) {
+                // Мгновенно удаляем строку
+                this.allData = this.allData.filter(t => t.id != id);
+                this.updateGrid();
+                document.getElementById('deleteTransferModal').classList.add('hidden');
+                window.notifications.success('Перевод успешно удален');
+            } else {
+                const errText = await resp.text();
+                console.error('[TransferPage] DELETE error:', resp.status, errText);
+                window.notifications.error('Ошибка при удалении перевода: ' + errText);
+            }
+        } catch (error) {
+            console.error('[TransferPage] DELETE error:', error);
+            window.notifications.error('Ошибка при удалении перевода: ' + error.message);
+        }
     }
 
     static stripZeros(value) {
@@ -352,19 +538,6 @@ class TransferPage {
     }
 }
 
-// Инициализация при загрузке страницы
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('TransferPage: DOM загружен, инициализируем страницу');
-    window.transferPage = new TransferPage();
-});
-// Проверка AG-Grid
-const checkAGGrid = () => {
-    if (typeof agGrid === 'undefined') {
-        console.error('TransferPage: AG-Grid не загружен!');
-        setTimeout(checkAGGrid, 100);
-    } else {
-        console.log('TransferPage: AG-Grid загружен');
-    }
-};
-checkAGGrid();
+// Экспортируем класс для использования на странице
+window.TransferPage = TransferPage;
 })();

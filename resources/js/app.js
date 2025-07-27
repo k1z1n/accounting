@@ -124,30 +124,66 @@ class ThemeManager {
 // ===== СИСТЕМА УВЕДОМЛЕНИЙ =====
 class NotificationManager {
     constructor() {
+        console.log('🔔 NotificationManager: инициализация');
         this.container = this.createContainer();
         this.notifications = [];
+        console.log('🔔 NotificationManager: контейнер создан:', this.container);
     }
 
     createContainer() {
+        console.log('🔔 NotificationManager: создаем контейнер');
         const container = document.createElement('div');
         container.className = 'fixed top-4 right-4 z-50 space-y-2';
         container.id = 'notification-container';
         document.body.appendChild(container);
+        console.log('🔔 NotificationManager: контейнер добавлен в DOM:', container);
         return container;
     }
 
     show(message, type = 'info', duration = 5000) {
+        console.log('🔔 NotificationManager: показываем уведомление:', { message, type, duration });
         const notification = this.createNotification(message, type);
+
+        // Вычисляем позицию для нового уведомления
+        const baseTop = 80; // базовая позиция сверху
+        const notificationHeight = 70; // уменьшенная высота уведомления
+        const spacing = 2; // минимальный отступ между уведомлениями
+        const currentTop = baseTop + (this.notifications.length * (notificationHeight + spacing));
+
+        console.log('🔔 NotificationManager: позиционирование:', {
+            baseTop,
+            notificationHeight,
+            spacing,
+            currentTop,
+            notificationsCount: this.notifications.length
+        });
+
+        // Устанавливаем позицию
+        notification.style.top = currentTop + 'px';
+        notification.style.marginBottom = '0px';
+        notification.style.marginTop = '0px';
+
+        console.log('🔔 NotificationManager: стили установлены:', {
+            top: notification.style.top,
+            marginBottom: notification.style.marginBottom,
+            marginTop: notification.style.marginTop
+        });
+
         this.container.appendChild(notification);
         this.notifications.push(notification);
 
+        console.log('🔔 NotificationManager: уведомление добавлено в DOM и массив. Всего уведомлений:', this.notifications.length);
+
         // Анимация появления
         requestAnimationFrame(() => {
-            notification.classList.add('animate-slideIn');
+            console.log('🔔 NotificationManager: запускаем анимацию появления');
+            notification.style.transform = 'translateX(0)';
+            notification.style.opacity = '1';
         });
 
         // Автоудаление
         if (duration > 0) {
+            console.log('🔔 NotificationManager: установлен таймер автоудаления на', duration, 'мс');
             setTimeout(() => this.remove(notification), duration);
         }
 
@@ -156,7 +192,15 @@ class NotificationManager {
 
     createNotification(message, type) {
         const notification = document.createElement('div');
-        notification.className = `max-w-sm w-full bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 p-4 transition-all duration-300 transform translate-x-full`;
+        notification.className = `max-w-sm w-full bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 p-4 transition-all duration-300 transform translate-y-[-100%]`;
+
+        // Принудительно устанавливаем позиционирование
+        notification.style.position = 'fixed';
+        notification.style.top = '80px';
+        notification.style.right = '20px';
+        notification.style.transform = 'translateX(100%)';
+        notification.style.zIndex = '99999';
+        notification.style.opacity = '0';
 
         const icons = {
             success: `<svg class="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>`,
@@ -187,30 +231,60 @@ class NotificationManager {
     }
 
     remove(notification) {
+        console.log('🔔 NotificationManager: удаляем уведомление:', notification);
         if (notification && notification.parentNode) {
-            notification.classList.add('opacity-0', 'translate-x-full');
+            console.log('🔔 NotificationManager: запускаем анимацию исчезновения');
+            notification.style.transform = 'translateX(100%)';
+            notification.style.opacity = '0';
             setTimeout(() => {
+                console.log('🔔 NotificationManager: удаляем уведомление из DOM');
                 if (notification.parentNode) {
                     notification.parentNode.removeChild(notification);
                 }
                 this.notifications = this.notifications.filter(n => n !== notification);
+                console.log('🔔 NotificationManager: уведомление удалено из массива. Осталось:', this.notifications.length);
+
+                // Пересчитываем позиции оставшихся уведомлений
+                this.repositionNotifications();
             }, 300);
+        } else {
+            console.warn('🔔 NotificationManager: попытка удалить несуществующее уведомление');
         }
     }
 
+    repositionNotifications() {
+        console.log('🔔 NotificationManager: пересчитываем позиции уведомлений. Количество:', this.notifications.length);
+        const baseTop = 80;
+        const notificationHeight = 70;
+        const spacing = 2;
+
+        this.notifications.forEach((notification, index) => {
+            const newTop = baseTop + (index * (notificationHeight + spacing));
+            console.log('🔔 NotificationManager: позиция для уведомления', index, ':', newTop + 'px');
+            notification.style.top = newTop + 'px';
+            notification.style.marginBottom = '0px';
+            notification.style.marginTop = '0px';
+        });
+        console.log('🔔 NotificationManager: позиции пересчитаны');
+    }
+
     success(message, duration = 5000) {
+        console.log('🔔 NotificationManager: success вызван:', message);
         return this.show(message, 'success', duration);
     }
 
     error(message, duration = 7000) {
+        console.log('🔔 NotificationManager: error вызван:', message);
         return this.show(message, 'error', duration);
     }
 
     warning(message, duration = 6000) {
+        console.log('🔔 NotificationManager: warning вызван:', message);
         return this.show(message, 'warning', duration);
     }
 
     info(message, duration = 5000) {
+        console.log('🔔 NotificationManager: info вызван:', message);
         return this.show(message, 'info', duration);
     }
 }
@@ -411,15 +485,18 @@ class TableManager {
 
 // ===== ИНИЦИАЛИЗАЦИЯ =====
 document.addEventListener('DOMContentLoaded', () => {
+    console.log('🔔 UI System: DOM загружен, начинаем инициализацию');
     // Создаем глобальные экземпляры
     window.themeManager = new ThemeManager();
     window.notifications = new NotificationManager();
     window.loading = new LoadingManager();
     window.modals = new ModalManager();
     window.tables = new TableManager();
+    console.log('🔔 UI System: все менеджеры созданы');
 
     // Улучшенная обработка форм
     document.querySelectorAll('form[data-ajax]').forEach(form => {
+        console.log('🔔 UI System: настраиваем AJAX форму:', form);
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
 
@@ -427,6 +504,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const originalText = submitBtn.textContent;
 
             try {
+                console.log('🔔 UI System: отправляем AJAX запрос');
                 submitBtn.disabled = true;
                 submitBtn.innerHTML = '<div class="loading-spinner mr-2"></div>Загрузка...';
 
@@ -441,16 +519,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
 
                 const result = await response.json();
+                console.log('🔔 UI System: получен ответ:', result);
 
                 if (response.ok) {
+                    console.log('🔔 UI System: запрос успешен, показываем уведомление');
                     notifications.success(result.message || 'Операция выполнена успешно');
                     if (result.redirect) {
                         window.location.href = result.redirect;
                     }
                 } else {
+                    console.log('🔔 UI System: запрос неуспешен, показываем ошибку');
                     notifications.error(result.message || 'Произошла ошибка');
                 }
             } catch (error) {
+                console.error('🔔 UI System: ошибка сети:', error);
                 notifications.error('Ошибка сети. Попробуйте еще раз.');
             } finally {
                 submitBtn.disabled = false;
@@ -493,5 +575,13 @@ document.addEventListener('DOMContentLoaded', () => {
     updateTimeElements();
     setInterval(updateTimeElements, 60000); // Обновляем каждую минуту
 
+    console.log('🔔 UI System: инициализация завершена успешно');
+    console.log('🔔 UI System: доступные глобальные объекты:', {
+        themeManager: !!window.themeManager,
+        notifications: !!window.notifications,
+        loading: !!window.loading,
+        modals: !!window.modals,
+        tables: !!window.tables
+    });
     console.log('🚀 UI System initialized successfully');
 });
