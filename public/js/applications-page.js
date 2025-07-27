@@ -925,7 +925,7 @@ class ApplicationsPage {
                     console.log('ApplicationsPage: данные в таблице обновлены');
 
                     // Обновляем статистику
-                    this.updateStatistics();
+                    // this.updateStatistics();
                 } else {
                     console.log('ApplicationsPage: строка не найдена, обновляем всю таблицу');
                     await this.refreshData();
