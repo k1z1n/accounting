@@ -302,7 +302,6 @@ class SaleCryptPage {
             }
 
             this.updateGrid();
-            this.updateStatistics();
             this.updateLoadMoreButton();
 
             // Показываем уведомление об успешной загрузке
@@ -359,7 +358,6 @@ class SaleCryptPage {
             this.hasMorePages = Boolean(result.hasMorePages);
 
             this.updateGrid();
-            this.updateStatistics();
             this.updateLoadMoreButton();
 
             // Показываем уведомление о загруженных записях
@@ -389,21 +387,7 @@ class SaleCryptPage {
         }
     }
 
-    updateStatistics() {
-        const total = this.allData.length;
-        // Статистика по статусам отключена, так как поля status нет в миграции
-        const completed = 0;
-        const paid = 0;
-        const returned = 0;
-        const elTotal = document.getElementById('totalSaleCrypts');
-        if (elTotal) elTotal.textContent = total;
-        const elCompleted = document.getElementById('completedSaleCrypts');
-        if (elCompleted) elCompleted.textContent = completed;
-        const elPaid = document.getElementById('paidSaleCrypts');
-        if (elPaid) elPaid.textContent = paid;
-        const elReturned = document.getElementById('returnSaleCrypts');
-        if (elReturned) elReturned.textContent = returned;
-    }
+
 
     showLoadMoreSpinner() {
         const spinner = document.getElementById('loadMoreSaleCryptSpinner');

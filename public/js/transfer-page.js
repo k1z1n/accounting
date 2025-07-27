@@ -230,7 +230,6 @@ class TransferPage {
             this.hasMorePages = Boolean(result.hasMorePages);
 
             this.updateGrid();
-            this.updateStatistics();
             this.updateLoadMoreButton();
 
             // Показываем уведомление об успешной загрузке
@@ -289,7 +288,6 @@ class TransferPage {
             console.log('TransferPage: обновлены данные - currentPage:', this.currentPage, 'hasMorePages:', this.hasMorePages, 'totalRecords:', this.allData.length);
 
             this.updateGrid();
-            this.updateStatistics();
             this.updateLoadMoreButton();
 
             // Показываем уведомление о загруженных записях
@@ -316,21 +314,7 @@ class TransferPage {
         }
     }
 
-    updateStatistics() {
-        const total = this.allData.length;
-        // Статистика по статусам отключена, так как поля status нет в миграции
-        const completed = 0;
-        const paid = 0;
-        const returned = 0;
-        const elTotal = document.getElementById('totalTransfers');
-        if (elTotal) elTotal.textContent = total;
-        const elCompleted = document.getElementById('completedTransfers');
-        if (elCompleted) elCompleted.textContent = completed;
-        const elPaid = document.getElementById('paidTransfers');
-        if (elPaid) elPaid.textContent = paid;
-        const elReturned = document.getElementById('returnTransfers');
-        if (elReturned) elReturned.textContent = returned;
-    }
+
 
     showLoadMoreSpinner() {
         const spinner = document.getElementById('loadMoreTransferSpinner');

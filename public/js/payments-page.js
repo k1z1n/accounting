@@ -370,7 +370,6 @@ class PaymentsPage {
             this.currentPage = result.currentPage || 1;
             this.hasMorePages = Boolean(result.hasMorePages);
             this.updateGrid();
-            this.updateStatistics();
             this.updateLoadMoreButton();
 
             // Показываем уведомление об успешной загрузке
@@ -460,7 +459,6 @@ class PaymentsPage {
             console.log('PaymentsPage: есть еще страницы:', this.hasMorePages);
 
             this.updateGrid();
-            this.updateStatistics();
             this.updateLoadMoreButton();
 
             // Показываем уведомление о загруженных записях
@@ -521,23 +519,7 @@ class PaymentsPage {
         }
     }
 
-    updateStatistics() {
-        console.log('PaymentsPage: обновляем статистику');
-        const total = this.allData.length;
-        // Статистика по статусам отключена, так как поля status нет в миграции
-        const completed = 0;
-        const paid = 0;
-        const returned = 0;
-        const elTotal = document.getElementById('totalPayments');
-        if (elTotal) elTotal.textContent = total;
-        const elCompleted = document.getElementById('completedPayments');
-        if (elCompleted) elCompleted.textContent = completed;
-        const elPaid = document.getElementById('paidPayments');
-        if (elPaid) elPaid.textContent = paid;
-        const elReturned = document.getElementById('returnPayments');
-        if (elReturned) elReturned.textContent = returned;
-        console.log('PaymentsPage: статистика обновлена:', { total, completed, paid, returned });
-    }
+
 
     showLoadMoreSpinner() {
         const spinner = document.getElementById('loadMorePaymentsSpinner');
