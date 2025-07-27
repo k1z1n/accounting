@@ -26,7 +26,7 @@ class ApplicationsPage {
         this.setupEventListeners();
         this.setupModal();
         this.loadInitialData();
-        this.updateStatistics();
+        // this.updateStatistics();
     }
 
     // Компоненты для AG-Grid
@@ -411,8 +411,13 @@ class ApplicationsPage {
             console.log('ApplicationsPage: есть еще страницы:', this.hasMorePages);
 
                                     this.updateGrid();
-            this.updateStatistics();
+            // this.updateStatistics();
             this.updateLoadMoreButton();
+
+            // Показываем уведомление об успешной загрузке
+            if (result.data && result.data.length > 0) {
+                window.notifications.success(`Загружено ${result.data.length} записей`);
+            }
 
             // Скрываем загрузку в AG-Grid
             if (this.gridApi) {
@@ -424,24 +429,27 @@ class ApplicationsPage {
             // Синхронизация уже выполнена в первой загрузке
         } catch (error) {
             console.error('ApplicationsPage: ошибка загрузки данных:', error);
-            // Показываем ошибку пользователю
-            this.showError('Ошибка загрузки данных: ' + error.message);
+            window.notifications.error('Ошибка загрузки данных: ' + error.message);
         }
     }
 
     async applyFilters() {
         console.log('ApplicationsPage: applyFilters вызван');
-        console.log('ApplicationsPage: текущие фильтры:', this.filters);
-        console.log('ApplicationsPage: сбрасываем страницу на 1');
-
         this.currentPage = 1;
         this.hasMorePages = true;
         this.allData = [];
-
-        console.log('ApplicationsPage: вызываем loadInitialData с фильтрами');
         await this.loadInitialData();
 
-        console.log('ApplicationsPage: applyFilters завершен');
+        // Показываем уведомление о применении фильтров
+        const activeFilters = [];
+        if (this.filters.status) activeFilters.push(`статус: ${this.filters.status}`);
+        if (this.filters.exchanger) activeFilters.push(`обменник: ${this.filters.exchanger}`);
+
+        if (activeFilters.length > 0) {
+            window.notifications.info(`Применены фильтры: ${activeFilters.join(', ')}`);
+        } else {
+            window.notifications.info('Фильтры сброшены');
+        }
     }
 
     async refreshData() {
@@ -456,6 +464,7 @@ class ApplicationsPage {
             console.log('ApplicationsPage: восстанавливаем страницу', currentPage);
             this.currentPage = currentPage;
         }
+        window.notifications.info('Данные обновлены');
     }
 
         async refreshCurrentPage() {
@@ -541,13 +550,13 @@ class ApplicationsPage {
             this.updateGrid();
 
             // Обновляем статистику
-            this.updateStatistics();
+            // this.updateStatistics();
 
             console.log('ApplicationsPage: данные успешно загружены и отображены');
 
         } catch (error) {
             console.error('ApplicationsPage: ошибка загрузки данных:', error);
-            this.showError('Ошибка загрузки данных: ' + error.message);
+            window.notifications.error('Ошибка загрузки данных: ' + error.message);
         }
     }
 
@@ -588,27 +597,21 @@ class ApplicationsPage {
                 console.log('ApplicationsPage: после синхронизации - текущая страница:', this.currentPage, 'записей на странице:', result.data.length, 'всего записей в БД:', this.totalRecords, 'есть еще страницы:', this.hasMorePages);
 
                 this.updateGrid();
-                this.updateStatistics();
+                // this.updateStatistics();
                 this.updateLoadMoreButton();
 
                 // Если есть еще страницы, показываем уведомление
                 if (this.hasMorePages) {
-                    if (window.notificationManager) {
-                        window.notificationManager.info(`Синхронизация завершена. Загружено ${result.data.length} из ${this.totalRecords} записей. Нажмите "Показать еще" для загрузки остальных.`);
-                    }
+                    window.notifications.info(`Синхронизация завершена. Загружено ${result.data.length} из ${this.totalRecords} записей. Нажмите "Показать еще" для загрузки остальных.`);
                 } else {
-                    if (window.notificationManager) {
-                        window.notificationManager.success('Синхронизация завершена успешно');
-                    }
+                    window.notifications.success('Синхронизация завершена успешно');
                 }
             } else {
                 throw new Error('Неверный формат ответа от сервера');
             }
         } catch (error) {
             console.error('ApplicationsPage: ошибка синхронизации:', error);
-            if (window.notificationManager) {
-                window.notificationManager.error('Ошибка синхронизации: ' + error.message);
-            }
+            window.notifications.error('Ошибка синхронизации: ' + error.message);
         } finally {
             // Восстанавливаем кнопку
             const syncBtn = document.getElementById('syncBtn');
@@ -675,9 +678,13 @@ class ApplicationsPage {
 
             // Обновляем грид
             this.updateGrid();
-            this.updateStatistics();
+            // this.updateStatistics();
+            this.updateLoadMoreButton();
 
-            console.log('ApplicationsPage: дополнительные данные с синхронизацией успешно загружены');
+            // Показываем уведомление о загрузке дополнительных данных
+            if (result.data && result.data.length > 0) {
+                window.notifications.success(`Загружено еще ${result.data.length} записей`);
+            }
         } catch (error) {
             console.error('ApplicationsPage: ошибка загрузки дополнительных данных:', error);
             // Показываем уведомление об ошибке
@@ -707,28 +714,28 @@ class ApplicationsPage {
         }
     }
 
-    updateStatistics() {
-        // Показываем общее количество из БД, если оно известно, иначе количество загруженных
-        const totalInDB = this.totalRecords || this.allData.length;
-        const loadedCount = this.allData.length;
+    // updateStatistics() {
+    //     // Показываем общее количество из БД, если оно известно, иначе количество загруженных
+    //     const totalInDB = this.totalRecords || this.allData.length;
+    //     const loadedCount = this.allData.length;
 
-        const stats = {
-            total: totalInDB,
-            completed: this.allData.filter(item => item.status === 'выполненная заявка').length,
-            paid: this.allData.filter(item => item.status === 'оплаченная заявка').length,
-            returned: this.allData.filter(item => item.status === 'возврат').length
-        };
+    //     const stats = {
+    //         total: totalInDB,
+    //         completed: this.allData.filter(item => item.status === 'выполненная заявка').length,
+    //         paid: this.allData.filter(item => item.status === 'оплаченная заявка').length,
+    //         returned: this.allData.filter(item => item.status === 'возврат').length
+    //     };
 
-        // Показываем общее количество с индикатором загруженных
-        const totalText = loadedCount < totalInDB ? `${loadedCount}/${totalInDB}` : totalInDB.toString();
+    //     // Показываем общее количество с индикатором загруженных
+    //     const totalText = loadedCount < totalInDB ? `${loadedCount}/${totalInDB}` : totalInDB.toString();
 
-        document.getElementById('totalApplications').textContent = totalText;
-        document.getElementById('completedApplications').textContent = stats.completed;
-        document.getElementById('paidApplications').textContent = stats.paid;
-        document.getElementById('returnApplications').textContent = stats.returned;
+    //     document.getElementById('totalApplications').textContent = totalText;
+    //     document.getElementById('completedApplications').textContent = stats.completed;
+    //     document.getElementById('paidApplications').textContent = stats.paid;
+    //     document.getElementById('returnApplications').textContent = stats.returned;
 
-        console.log('ApplicationsPage: статистика обновлена - загружено:', loadedCount, 'всего в БД:', totalInDB);
-    }
+    //     console.log('ApplicationsPage: статистика обновлена - загружено:', loadedCount, 'всего в БД:', totalInDB);
+    // }
 
 
 
@@ -871,9 +878,7 @@ class ApplicationsPage {
                 await this.updateApplicationInGrid(id, data);
 
                 // Показываем уведомление об успехе
-                if (window.notificationManager) {
-                    window.notificationManager.success('Заявка обновлена успешно');
-                }
+                window.notifications.success('Заявка обновлена успешно');
             } else {
                 // Показываем ошибки валидации
                 Object.keys(result.errors || {}).forEach(field => {
@@ -883,9 +888,7 @@ class ApplicationsPage {
             }
         } catch (error) {
             console.error('Ошибка сохранения:', error);
-            if (window.notificationManager) {
-                window.notificationManager.error('Ошибка при сохранении заявки');
-            }
+            window.notifications.error('Ошибка при сохранении заявки');
         }
     }
 
@@ -976,7 +979,7 @@ class ApplicationsPage {
                         </button>
                     </div>
                 </div>
-            `;
+            `
         }
     }
 
@@ -992,7 +995,7 @@ class ApplicationsPage {
         if (spinner) spinner.classList.add('hidden');
     }
 
-        updateLoadMoreButton() {
+    updateLoadMoreButton() {
         const button = document.getElementById('loadMoreBtn');
         if (button) {
             console.log('ApplicationsPage: обновляем кнопку "Показать еще" - hasMorePages:', this.hasMorePages, 'isLoading:', this.isLoading, 'всего записей:', this.allData.length, 'totalRecords:', this.totalRecords, 'currentPage:', this.currentPage);
@@ -1012,8 +1015,6 @@ class ApplicationsPage {
             console.log('ApplicationsPage: кнопка "Показать еще" не найдена в DOM');
         }
     }
-
-
 
     static stripZeros(value) {
         const s = String(value);

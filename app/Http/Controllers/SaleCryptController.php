@@ -13,7 +13,10 @@ class SaleCryptController extends Controller
      */
     public function index()
     {
-        return view('pages.sale-crypt');
+        $applications = \App\Models\Application::orderBy('id', 'desc')->get();
+        $exchangers = \App\Models\Exchanger::orderBy('title')->get();
+        $currenciesForEdit = \App\Models\Currency::orderBy('code')->get();
+        return view('pages.sale-crypt', compact('applications', 'exchangers', 'currenciesForEdit'));
     }
 
     /**
@@ -34,16 +37,16 @@ class SaleCryptController extends Controller
             $statusFilter = $request->get('statusFilter', '');
             $exchangerFilter = $request->get('exchangerFilter', '');
 
-            $query = SaleCrypt::with(['user', 'sellCurrency', 'buyCurrency']);
+            $query = SaleCrypt::with(['exchanger', 'saleCurrency', 'fixedCurrency', 'application']);
 
-            // Применяем фильтры
-            if ($statusFilter) {
-                $query->where('status', $statusFilter);
-            }
+            // Применяем фильтры (отключены, так как полей status и exchanger нет в миграции)
+            // if ($statusFilter) {
+            //     $query->where('status', $statusFilter);
+            // }
 
-            if ($exchangerFilter) {
-                $query->where('exchanger', $exchangerFilter);
-            }
+            // if ($exchangerFilter) {
+            //     $query->where('exchanger', $exchangerFilter);
+            // }
 
             $saleCrypts = $query->orderByDesc('created_at')
                 ->paginate($perPage, ['*'], 'page', $page);
@@ -81,5 +84,51 @@ class SaleCryptController extends Controller
                 'hasMorePages' => false,
             ], 500);
         }
+    }
+
+    public function destroy($id)
+    {
+        Log::info("SaleCryptController::destroy: начало обработки запроса", ['id' => $id]);
+        $saleCrypt = SaleCrypt::findOrFail($id);
+        $saleCrypt->delete();
+        Log::info("SaleCryptController::destroy: запись успешно удалена", ['id' => $id]);
+        return response()->json(['success' => true]);
+    }
+
+    public function update(Request $request, $id)
+    {
+        Log::info("SaleCryptController::update: начало обработки запроса", [
+            'id' => $id,
+            'request_data' => $request->all()
+        ]);
+
+        $saleCrypt = SaleCrypt::findOrFail($id);
+        $saleCrypt->user_id = auth()->id(); // Автоматически назначаем текущего пользователя
+        $saleCrypt->application_id = $request->input('application_id');
+        $saleCrypt->exchanger_id = $request->input('exchanger_id');
+        $saleCrypt->sale_amount = $request->input('sale_amount');
+        $saleCrypt->sale_currency_id = $request->input('sale_currency_id');
+        $saleCrypt->fixed_amount = $request->input('fixed_amount');
+        $saleCrypt->fixed_currency_id = $request->input('fixed_currency_id');
+        $saleCrypt->save();
+
+        Log::info("SaleCryptController::update: запись обновлена", [
+            'id' => $id,
+            'application_id' => $saleCrypt->application_id,
+            'exchanger_id' => $saleCrypt->exchanger_id
+        ]);
+
+        // Проверяем, что данные действительно сохранились
+        $updatedSaleCrypt = SaleCrypt::with('application')->find($id);
+        Log::info("SaleCryptController::update: проверка сохраненных данных", [
+            'id' => $updatedSaleCrypt->id,
+            'application_id' => $updatedSaleCrypt->application_id,
+            'application' => $updatedSaleCrypt->application ? [
+                'id' => $updatedSaleCrypt->application->id,
+                'app_id' => $updatedSaleCrypt->application->app_id
+            ] : null
+        ]);
+
+        return response()->json(['success' => true]);
     }
 }

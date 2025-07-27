@@ -114,5 +114,7 @@
     </div>
 </div>
 
+@include('modal.edit-purchase')
+
 <script src="{{ asset('js/purchase-page.js') }}"></script>
 @endsection

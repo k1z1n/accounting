@@ -10,6 +10,8 @@ class Purchase extends Model
     use HasFactory;
 
     protected $fillable = [
+        'user_id',
+        'application_id',
         'exchanger_id',
         'sale_amount',
         'sale_currency_id',
@@ -39,5 +41,13 @@ class Purchase extends Model
     public function receivedCurrency()
     {
         return $this->belongsTo(Currency::class, 'received_currency_id');
+    }
+
+    /**
+     * Связь с заявкой
+     */
+    public function application()
+    {
+        return $this->belongsTo(Application::class, 'application_id');
     }
 }

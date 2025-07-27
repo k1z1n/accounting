@@ -22,7 +22,7 @@ return Application::configure(basePath: dirname(__DIR__))
         );
 
         $middleware->redirectUsersTo(
-            fn (Request $r) => route('view.main')
+            fn (Request $r) => route('applications.index')
         );
 
 
@@ -31,7 +31,13 @@ return Application::configure(basePath: dirname(__DIR__))
             'platform' => CheckPlatform::class,
 //            'user' => IsUser::class,
 //            'guest_user' => IsGuest::class,
+            'section.lock' => \App\Http\Middleware\SectionLockMiddleware::class,
+            'section.choice' => \App\Http\Middleware\RequireSectionChoice::class,
         ]);
+        // Убираем глобальное применение section.lock
+        // $middleware->web([
+        //     'section.lock',
+        // ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //

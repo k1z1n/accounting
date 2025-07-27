@@ -27,11 +27,34 @@
                            hover:bg-gray-50 transition duration-150 ease-in-out"
                 >
                     <option value="" disabled>— Выберите платформу —</option>
-                    @foreach($exchangers as $e)
-                        <option value="{{ $e->id }}">{{ $e->title }}</option>
-                    @endforeach
+                    @if(isset($exchangers))
+                        @foreach($exchangers as $e)
+                            <option value="{{ $e->id }}">{{ $e->title }}</option>
+                        @endforeach
+                    @endif
                 </select>
                 <p class="text-red-600 text-sm mt-1" id="err_edit_purchase_exchanger"></p>
+            </div>
+
+            {{-- 2) Заявка --}}
+            <div>
+                <label for="edit_purchase_application" class="block text-sm font-medium text-gray-700 mb-1">
+                    Заявка
+                </label>
+                <select
+                    id="edit_purchase_application"
+                    class="block w-full bg-white border border-gray-300 rounded-md shadow-sm
+                           px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500
+                           hover:bg-gray-50 transition duration-150 ease-in-out"
+                >
+                    <option value="" disabled>— Выберите заявку —</option>
+                    @if(isset($applications))
+                        @foreach($applications as $app)
+                            <option value="{{ $app->id }}">Заявка #{{ $app->id }}</option>
+                        @endforeach
+                    @endif
+                </select>
+                <p class="text-red-600 text-sm mt-1" id="err_edit_purchase_application"></p>
             </div>
 
             {{-- 2) «Получено»: сумма + валюта --}}
@@ -61,9 +84,11 @@
                                hover:bg-gray-50 transition duration-150 ease-in-out"
                     >
                         <option value="" disabled>— Выберите валюту —</option>
-                        @foreach($currenciesForEdit as $c)
-                            <option value="{{ $c->id }}">{{ $c->code }} — {{ $c->name }}</option>
-                        @endforeach
+                        @if(isset($currenciesForEdit))
+                            @foreach($currenciesForEdit as $c)
+                                <option value="{{ $c->id }}">{{ $c->code }} — {{ $c->name }}</option>
+                            @endforeach
+                        @endif
                     </select>
                     <p class="text-red-600 text-sm mt-1" id="err_edit_received_currency"></p>
                 </div>
@@ -95,9 +120,11 @@
                                hover:bg-gray-50 transition duration-150 ease-in-out"
                     >
                         <option value="" disabled>— Выберите валюту —</option>
-                        @foreach($currenciesForEdit as $c)
-                            <option value="{{ $c->id }}">{{ $c->code }} — {{ $c->name }}</option>
-                        @endforeach
+                        @if(isset($currenciesForEdit))
+                            @foreach($currenciesForEdit as $c)
+                                <option value="{{ $c->id }}">{{ $c->code }} — {{ $c->name }}</option>
+                            @endforeach
+                        @endif
                     </select>
                     <p class="text-red-600 text-sm mt-1" id="err_edit_sale_currency"></p>
                 </div>

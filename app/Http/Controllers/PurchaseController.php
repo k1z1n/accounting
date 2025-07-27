@@ -13,7 +13,10 @@ class PurchaseController extends Controller
      */
     public function index()
     {
-        return view('pages.purchase');
+        $applications = \App\Models\Application::orderBy('id', 'desc')->get();
+        $exchangers = \App\Models\Exchanger::orderBy('title')->get();
+        $currenciesForEdit = \App\Models\Currency::orderBy('code')->get();
+        return view('pages.purchase', compact('applications', 'exchangers', 'currenciesForEdit'));
     }
 
     /**
@@ -34,16 +37,16 @@ class PurchaseController extends Controller
             $statusFilter = $request->get('statusFilter', '');
             $exchangerFilter = $request->get('exchangerFilter', '');
 
-            $query = Purchase::with(['user', 'sellCurrency', 'buyCurrency']);
+            $query = Purchase::with(['exchanger', 'saleCurrency', 'receivedCurrency', 'application']);
 
-            // Применяем фильтры
-            if ($statusFilter) {
-                $query->where('status', $statusFilter);
-            }
+            // Применяем фильтры (отключены, так как полей status и exchanger нет в миграции)
+            // if ($statusFilter) {
+            //     $query->where('status', $statusFilter);
+            // }
 
-            if ($exchangerFilter) {
-                $query->where('exchanger', $exchangerFilter);
-            }
+            // if ($exchangerFilter) {
+            //     $query->where('exchanger', $exchangerFilter);
+            // }
 
             $purchases = $query->orderByDesc('created_at')
                 ->paginate($perPage, ['*'], 'page', $page);
@@ -56,6 +59,19 @@ class PurchaseController extends Controller
                 'has_more_pages' => $purchases->hasMorePages(),
                 'items_count' => count($purchases->items())
             ]);
+
+            // Логируем первую запись для отладки
+            if (count($purchases->items()) > 0) {
+                $firstItem = $purchases->items()[0];
+                Log::info("PurchaseController::getPurchases: первая запись", [
+                    'id' => $firstItem->id,
+                    'application_id' => $firstItem->application_id,
+                    'application' => $firstItem->application ? [
+                        'id' => $firstItem->application->id,
+                        'app_id' => $firstItem->application->app_id
+                    ] : null
+                ]);
+            }
 
             return response()->json([
                 'data' => $purchases->items(),
@@ -81,5 +97,49 @@ class PurchaseController extends Controller
                 'hasMorePages' => false,
             ], 500);
         }
+    }
+
+    public function destroy($id)
+    {
+        $purchase = Purchase::findOrFail($id);
+        $purchase->delete();
+        return response()->json(['success' => true]);
+    }
+
+    public function update(Request $request, $id)
+    {
+        Log::info("PurchaseController::update: начало обработки запроса", [
+            'id' => $id,
+            'request_data' => $request->all()
+        ]);
+
+        $purchase = Purchase::findOrFail($id);
+        $purchase->user_id = auth()->id(); // Автоматически назначаем текущего пользователя
+        $purchase->application_id = $request->input('application_id');
+        $purchase->exchanger_id = $request->input('exchanger_id');
+        $purchase->sale_amount = $request->input('sale_amount');
+        $purchase->sale_currency_id = $request->input('sale_currency_id');
+        $purchase->received_amount = $request->input('received_amount');
+        $purchase->received_currency_id = $request->input('received_currency_id');
+        $purchase->save();
+
+        Log::info("PurchaseController::update: запись обновлена", [
+            'id' => $id,
+            'application_id' => $purchase->application_id,
+            'exchanger_id' => $purchase->exchanger_id
+        ]);
+
+        // Проверяем, что данные действительно сохранились
+        $updatedPurchase = Purchase::with('application')->find($id);
+        Log::info("PurchaseController::update: проверка сохраненных данных", [
+            'id' => $updatedPurchase->id,
+            'application_id' => $updatedPurchase->application_id,
+            'application' => $updatedPurchase->application ? [
+                'id' => $updatedPurchase->application->id,
+                'app_id' => $updatedPurchase->application->app_id
+            ] : null
+        ]);
+
+        return response()->json(['success' => true]);
     }
 }

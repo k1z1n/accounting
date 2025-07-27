@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class Transfer extends Model
 {
     protected $fillable = [
+        'user_id',
         'exchanger_from_id',
         'exchanger_to_id',
         'commission',
