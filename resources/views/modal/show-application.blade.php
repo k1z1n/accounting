@@ -18,21 +18,21 @@
                     <div>
                         <h3 class="text-2xl font-bold text-white">
                             Заявка <span id="detailsAppId" class="text-cyan-400 font-mono"></span>
-                        </h3>
+            </h3>
                         <p class="text-gray-400 text-sm">Детальная информация о заявке</p>
                     </div>
                 </div>
-                <button
-                    id="btnCloseAppDetails"
+            <button
+                id="btnCloseAppDetails"
                     class="text-gray-400 hover:text-white p-2 rounded-lg hover:bg-gray-700 transition-colors duration-200"
-                    aria-label="Закрыть"
-                >
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none"
-                         viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round"
-                              d="M6 18L18 6M6 6l12 12"/>
-                    </svg>
-                </button>
+                aria-label="Закрыть"
+            >
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none"
+                     viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                          d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
             </div>
         </header>
 
@@ -154,12 +154,12 @@
                                 </svg>
                             </div>
                         </div>
-                    </div>
+        </div>
 
                     <!-- Расход− -->
                     <div class="bg-orange-500/10 border border-orange-500/20 rounded-xl p-4">
                         <div class="flex items-center justify-between">
-                            <div>
+            <div>
                                 <p class="text-orange-400 text-xs font-medium uppercase tracking-wide">Расход −</p>
                                 <p id="detailsExpense" class="text-white font-semibold text-lg">—</p>
                             </div>
@@ -185,8 +185,8 @@
                     <div>
                         <p class="text-gray-400 text-sm mb-1">Мерчант</p>
                         <p id="detailsMerchant" class="text-gray-300 text-lg">—</p>
-                    </div>
-                    <div>
+            </div>
+            <div>
                         <p class="text-gray-400 text-sm mb-1">ID ордера</p>
                         <p id="detailsOrderId" class="text-gray-300 text-lg">—</p>
                     </div>

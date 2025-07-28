@@ -208,7 +208,17 @@
     <!-- Независимые таблицы операций на всю ширину -->
     <div class="mt-12 space-y-8">
         <div class="bg-[#191919] border border-[#2d2d2d] rounded-xl p-4">
-            <h2 class="text-lg font-semibold text-cyan-300 mb-2">Оплаты</h2>
+            <div class="flex justify-between items-center mb-2">
+                <h2 class="text-lg font-semibold text-cyan-300">Оплаты</h2>
+                <button onclick="openAddPaymentModal()" class="px-3 py-1 bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg transition-colors text-sm">
+                    <span class="flex items-center space-x-1">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                        </svg>
+                        <span>Добавить</span>
+                    </span>
+                </button>
+            </div>
             <div id="paymentsGrid" class="ag-theme-alpine-dark" style="height: 400px; width: 100%; min-width: 600px;"></div>
 
             <!-- Кнопка "Показать еще" для платежей -->
@@ -236,7 +246,17 @@
             </div>
         </div>
         <div class="bg-[#191919] border border-[#2d2d2d] rounded-xl p-4">
-            <h2 class="text-lg font-semibold text-emerald-300 mb-2">Покупки крипты</h2>
+            <div class="flex justify-between items-center mb-2">
+                <h2 class="text-lg font-semibold text-emerald-300">Покупки крипты</h2>
+                <button onclick="openAddPurchaseModal()" class="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors text-sm">
+                    <span class="flex items-center space-x-1">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                        </svg>
+                        <span>Добавить</span>
+                    </span>
+                </button>
+            </div>
             <div id="purchaseGrid" class="ag-theme-alpine-dark" style="height: 400px; width: 100%; min-width: 600px;"></div>
 
             <!-- Кнопка "Показать еще" для покупок -->
@@ -264,7 +284,17 @@
             </div>
         </div>
         <div class="bg-[#191919] border border-[#2d2d2d] rounded-xl p-4">
-            <h2 class="text-lg font-semibold text-pink-300 mb-2">Продажи крипты</h2>
+            <div class="flex justify-between items-center mb-2">
+                <h2 class="text-lg font-semibold text-pink-300">Продажи крипты</h2>
+                <button onclick="openAddSaleCryptModal()" class="px-3 py-1 bg-pink-600 hover:bg-pink-700 text-white rounded-lg transition-colors text-sm">
+                    <span class="flex items-center space-x-1">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                        </svg>
+                        <span>Добавить</span>
+                    </span>
+                </button>
+            </div>
             <div id="saleCryptGrid" class="ag-theme-alpine-dark" style="height: 400px; width: 100%; min-width: 600px;"></div>
 
             <!-- Кнопка "Показать еще" для продаж -->
@@ -292,7 +322,17 @@
             </div>
         </div>
         <div class="bg-[#191919] border border-[#2d2d2d] rounded-xl p-4">
-            <h2 class="text-lg font-semibold text-yellow-300 mb-2">Переводы</h2>
+            <div class="flex justify-between items-center mb-2">
+                <h2 class="text-lg font-semibold text-yellow-300">Переводы</h2>
+                <button onclick="openAddTransferModal()" class="px-3 py-1 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg transition-colors text-sm">
+                    <span class="flex items-center space-x-1">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                        </svg>
+                        <span>Добавить</span>
+                    </span>
+                </button>
+            </div>
             <div id="transferGrid" class="ag-theme-alpine-dark" style="height: 400px; width: 100%; min-width: 600px;"></div>
 
             <!-- Кнопка "Показать еще" для переводов -->
@@ -1169,9 +1209,580 @@ window.addEventListener('load', function() {
         }, 100);
     }
 });
+
+// Функции для работы с модальными окнами добавления
+function openAddPaymentModal() {
+    document.getElementById('addPaymentModal').classList.remove('hidden');
+    // Очищаем форму
+    document.getElementById('addPaymentForm').reset();
+}
+
+function openAddPurchaseModal() {
+    document.getElementById('addPurchaseModal').classList.remove('hidden');
+    // Очищаем форму
+    document.getElementById('addPurchaseForm').reset();
+    // Загружаем заявки
+    loadApplicationsForAddPurchase();
+}
+
+function openAddSaleCryptModal() {
+    document.getElementById('addSaleCryptModal').classList.remove('hidden');
+    // Очищаем форму
+    document.getElementById('addSaleCryptForm').reset();
+    // Загружаем заявки
+    loadApplicationsForAddSaleCrypt();
+}
+
+function openAddTransferModal() {
+    document.getElementById('addTransferModal').classList.remove('hidden');
+    // Очищаем форму
+    document.getElementById('addTransferForm').reset();
+}
+
+// Функции загрузки заявок для модальных окон добавления
+async function loadApplicationsForAddPurchase() {
+    const select = document.getElementById('add_purchase_application_id');
+    if (!select) return;
+
+    select.innerHTML = '<option value="">Загрузка...</option>';
+
+    try {
+        const resp = await fetch('/api/applications/list-temp', {
+            headers: {
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': window.csrfToken
+            },
+            credentials: 'same-origin'
+        });
+
+        if (!resp.ok) {
+            console.error('Ошибка загрузки заявок:', resp.status, resp.statusText);
+            select.innerHTML = '<option value="">Ошибка загрузки</option>';
+            return;
+        }
+
+        const apps = await resp.json();
+        select.innerHTML = '<option value="">Выберите заявку</option>';
+        apps.forEach(app => {
+            const text = `${app.app_id}` + (app.order_id ? ` (${app.order_id})` : '');
+            const option = document.createElement('option');
+            option.value = app.id;
+            option.textContent = text;
+            select.appendChild(option);
+        });
+    } catch (e) {
+        console.error('Ошибка загрузки заявок:', e);
+        select.innerHTML = '<option value="">Ошибка загрузки</option>';
+    }
+}
+
+async function loadApplicationsForAddSaleCrypt() {
+    const select = document.getElementById('add_salecrypt_application_id');
+    if (!select) return;
+
+    select.innerHTML = '<option value="">Загрузка...</option>';
+
+    try {
+        const resp = await fetch('/api/applications/list-temp', {
+            headers: {
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': window.csrfToken
+            },
+            credentials: 'same-origin'
+        });
+
+        if (!resp.ok) {
+            console.error('Ошибка загрузки заявок:', resp.status, resp.statusText);
+            select.innerHTML = '<option value="">Ошибка загрузки</option>';
+            return;
+        }
+
+        const apps = await resp.json();
+        select.innerHTML = '<option value="">Выберите заявку</option>';
+        apps.forEach(app => {
+            const text = `${app.app_id}` + (app.order_id ? ` (${app.order_id})` : '');
+            const option = document.createElement('option');
+            option.value = app.id;
+            option.textContent = text;
+            select.appendChild(option);
+        });
+    } catch (e) {
+        console.error('Ошибка загрузки заявок:', e);
+        select.innerHTML = '<option value="">Ошибка загрузки</option>';
+    }
+}
+
+// Обработчики форм добавления
+document.addEventListener('DOMContentLoaded', function() {
+    // Форма добавления оплаты
+    const addPaymentForm = document.getElementById('addPaymentForm');
+    if (addPaymentForm) {
+        addPaymentForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const formData = new FormData(this);
+
+            try {
+                const response = await fetch('/payments', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': window.csrfToken,
+                        'Accept': 'application/json'
+                    },
+                    body: formData
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    document.getElementById('addPaymentModal').classList.add('hidden');
+
+                    // Обновляем таблицу
+                    if (window.paymentsPage) {
+                        await window.paymentsPage.refreshData();
+                    }
+
+                    if (window.notifications) {
+                        window.notifications.success('Оплата успешно добавлена');
+                    }
+                } else {
+                    const error = await response.json();
+                    if (window.notifications) {
+                        window.notifications.error('Ошибка добавления оплаты: ' + (error.message || 'Неизвестная ошибка'));
+                    }
+                }
+            } catch (error) {
+                console.error('Ошибка добавления оплаты:', error);
+                if (window.notifications) {
+                    window.notifications.error('Ошибка добавления оплаты');
+                }
+            }
+        });
+    }
+
+    // Форма добавления покупки
+    const addPurchaseForm = document.getElementById('addPurchaseForm');
+    if (addPurchaseForm) {
+        addPurchaseForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const formData = new FormData(this);
+
+            try {
+                const response = await fetch('/purchase', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': window.csrfToken,
+                        'Accept': 'application/json'
+                    },
+                    body: formData
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    document.getElementById('addPurchaseModal').classList.add('hidden');
+
+                    // Обновляем таблицу
+                    if (window.purchasePage) {
+                        await window.purchasePage.refreshData();
+                    }
+
+                    if (window.notifications) {
+                        window.notifications.success('Покупка успешно добавлена');
+                    }
+                } else {
+                    const error = await response.json();
+                    if (window.notifications) {
+                        window.notifications.error('Ошибка добавления покупки: ' + (error.message || 'Неизвестная ошибка'));
+                    }
+                }
+            } catch (error) {
+                console.error('Ошибка добавления покупки:', error);
+                if (window.notifications) {
+                    window.notifications.error('Ошибка добавления покупки');
+                }
+            }
+        });
+    }
+
+    // Форма добавления продажи
+    const addSaleCryptForm = document.getElementById('addSaleCryptForm');
+    if (addSaleCryptForm) {
+        addSaleCryptForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const formData = new FormData(this);
+
+            try {
+                const response = await fetch('/sale-crypt', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': window.csrfToken,
+                        'Accept': 'application/json'
+                    },
+                    body: formData
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    document.getElementById('addSaleCryptModal').classList.add('hidden');
+
+                    // Обновляем таблицу
+                    if (window.saleCryptPage) {
+                        await window.saleCryptPage.refreshData();
+                    }
+
+                    if (window.notifications) {
+                        window.notifications.success('Продажа успешно добавлена');
+                    }
+                } else {
+                    const error = await response.json();
+                    if (window.notifications) {
+                        window.notifications.error('Ошибка добавления продажи: ' + (error.message || 'Неизвестная ошибка'));
+                    }
+                }
+            } catch (error) {
+                console.error('Ошибка добавления продажи:', error);
+                if (window.notifications) {
+                    window.notifications.error('Ошибка добавления продажи');
+                }
+            }
+        });
+    }
+
+    // Форма добавления перевода
+    const addTransferForm = document.getElementById('addTransferForm');
+    if (addTransferForm) {
+        addTransferForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const formData = new FormData(this);
+
+            try {
+                const response = await fetch('/transfer', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': window.csrfToken,
+                        'Accept': 'application/json'
+                    },
+                    body: formData
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    document.getElementById('addTransferModal').classList.add('hidden');
+
+                    // Обновляем таблицу
+                    if (window.transferPage) {
+                        await window.transferPage.refreshData();
+                    }
+
+                    if (window.notifications) {
+                        window.notifications.success('Перевод успешно добавлен');
+                    }
+                } else {
+                    const error = await response.json();
+                    if (window.notifications) {
+                        window.notifications.error('Ошибка добавления перевода: ' + (error.message || 'Неизвестная ошибка'));
+                    }
+                }
+            } catch (error) {
+                console.error('Ошибка добавления перевода:', error);
+                if (window.notifications) {
+                    window.notifications.error('Ошибка добавления перевода');
+                }
+            }
+        });
+    }
+});
 </script>
 
 <!-- Модальное окно для просмотра заявки -->
 @include('modal.show-application')
+
+<!-- Модальные окна для добавления новых записей -->
+
+<!-- Модальное окно добавления оплаты -->
+<div id="addPaymentModal" class="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 hidden">
+    <div class="absolute inset-0" onclick="document.getElementById('addPaymentModal').classList.add('hidden')"></div>
+    <div class="bg-[#1F1F1F] text-white rounded-xl shadow-2xl p-6 relative z-10 w-full max-w-lg">
+        <h3 class="text-xl font-semibold mb-4">Добавить оплату</h3>
+        <form id="addPaymentForm" class="space-y-4">
+            @csrf
+
+            <!-- Платформа -->
+            <div>
+                <label class="block text-sm mb-1 text-blue-300">Платформа</label>
+                <select name="exchanger_id" id="add_payment_exchanger_id" class="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2">
+                    <option value="">Выберите платформу</option>
+                    @if(isset($exchangers))
+                        @foreach($exchangers as $e)
+                            <option value="{{ $e->id }}">{{ $e->title }}</option>
+                        @endforeach
+                    @endif
+                </select>
+            </div>
+
+            <!-- Сумма продажи -->
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm mb-1 text-yellow-300">Сумма продажи</label>
+                    <input type="number" step="0.01" name="sell_amount" id="add_payment_sell_amount" class="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2">
+                </div>
+                <div>
+                    <label class="block text-sm mb-1 text-yellow-300">Валюта продажи</label>
+                    <select name="sell_currency_id" id="add_payment_sell_currency_id" class="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2">
+                        <option value="">Выберите валюту</option>
+                        @if(isset($currenciesForEdit))
+                            @foreach($currenciesForEdit as $c)
+                                <option value="{{ $c->id }}">{{ $c->code }}</option>
+                            @endforeach
+                        @endif
+                    </select>
+                </div>
+            </div>
+
+            <!-- Комментарий -->
+            <div>
+                <label class="block text-sm mb-1 text-gray-300">Комментарий</label>
+                <textarea name="comment" id="add_payment_comment" rows="3" class="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2"></textarea>
+            </div>
+
+            <div class="flex justify-end gap-2 mt-4">
+                <button type="button" onclick="document.getElementById('addPaymentModal').classList.add('hidden')" class="px-4 py-2 bg-gray-700 text-gray-300 rounded-lg hover:bg-gray-600">Отмена</button>
+                <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-500">Добавить</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Модальное окно добавления покупки -->
+<div id="addPurchaseModal" class="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 hidden">
+    <div class="absolute inset-0" onclick="document.getElementById('addPurchaseModal').classList.add('hidden')"></div>
+    <div class="bg-[#1F1F1F] text-white rounded-xl shadow-2xl p-6 relative z-10 w-full max-w-lg">
+        <h3 class="text-xl font-semibold mb-4">Добавить покупку</h3>
+        <form id="addPurchaseForm" class="space-y-4">
+            @csrf
+
+            <!-- Заявка -->
+            <div>
+                <label class="block text-sm mb-1 text-purple-300">Заявка</label>
+                <select name="application_id" id="add_purchase_application_id" class="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2">
+                    <option value="">Загрузка...</option>
+                </select>
+            </div>
+
+            <!-- Платформа -->
+            <div>
+                <label class="block text-sm mb-1 text-blue-300">Платформа</label>
+                <select name="exchanger_id" id="add_purchase_exchanger_id" class="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2">
+                    <option value="">Выберите платформу</option>
+                    @if(isset($exchangers))
+                        @foreach($exchangers as $e)
+                            <option value="{{ $e->id }}">{{ $e->title }}</option>
+                        @endforeach
+                    @endif
+                </select>
+            </div>
+
+            <!-- Продано -->
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm mb-1 text-green-300">Продано</label>
+                    <input type="number" step="0.01" name="sold_amount" id="add_purchase_sold_amount" class="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2">
+                </div>
+                <div>
+                    <label class="block text-sm mb-1 text-green-300">Валюта продажи</label>
+                    <select name="sold_currency_id" id="add_purchase_sold_currency_id" class="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2">
+                        <option value="">Выберите валюту</option>
+                        @if(isset($currenciesForEdit))
+                            @foreach($currenciesForEdit as $c)
+                                <option value="{{ $c->id }}">{{ $c->code }}</option>
+                            @endforeach
+                        @endif
+                    </select>
+                </div>
+            </div>
+
+            <!-- Куплено -->
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm mb-1 text-blue-300">Куплено</label>
+                    <input type="number" step="0.01" name="bought_amount" id="add_purchase_bought_amount" class="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2">
+                </div>
+                <div>
+                    <label class="block text-sm mb-1 text-blue-300">Валюта покупки</label>
+                    <select name="bought_currency_id" id="add_purchase_bought_currency_id" class="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2">
+                        <option value="">Выберите валюту</option>
+                        @if(isset($currenciesForEdit))
+                            @foreach($currenciesForEdit as $c)
+                                <option value="{{ $c->id }}">{{ $c->code }}</option>
+                            @endforeach
+                        @endif
+                    </select>
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-2 mt-4">
+                <button type="button" onclick="document.getElementById('addPurchaseModal').classList.add('hidden')" class="px-4 py-2 bg-gray-700 text-gray-300 rounded-lg hover:bg-gray-600">Отмена</button>
+                <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-500">Добавить</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Модальное окно добавления продажи -->
+<div id="addSaleCryptModal" class="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 hidden">
+    <div class="absolute inset-0" onclick="document.getElementById('addSaleCryptModal').classList.add('hidden')"></div>
+    <div class="bg-[#1F1F1F] text-white rounded-xl shadow-2xl p-6 relative z-10 w-full max-w-lg">
+        <h3 class="text-xl font-semibold mb-4">Добавить продажу</h3>
+        <form id="addSaleCryptForm" class="space-y-4">
+            @csrf
+
+            <!-- Заявка -->
+            <div>
+                <label class="block text-sm mb-1 text-purple-300">Заявка</label>
+                <select name="application_id" id="add_salecrypt_application_id" class="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2">
+                    <option value="">Загрузка...</option>
+                </select>
+            </div>
+
+            <!-- Платформа -->
+            <div>
+                <label class="block text-sm mb-1 text-blue-300">Платформа</label>
+                <select name="exchanger_id" id="add_salecrypt_exchanger_id" class="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2">
+                    <option value="">Выберите платформу</option>
+                    @if(isset($exchangers))
+                        @foreach($exchangers as $e)
+                            <option value="{{ $e->id }}">{{ $e->title }}</option>
+                        @endforeach
+                    @endif
+                </select>
+            </div>
+
+            <!-- Продано -->
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm mb-1 text-green-300">Продано</label>
+                    <input type="number" step="0.01" name="sale_amount" id="add_salecrypt_sale_amount" class="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2">
+                </div>
+                <div>
+                    <label class="block text-sm mb-1 text-green-300">Валюта продажи</label>
+                    <select name="sale_currency_id" id="add_salecrypt_sale_currency_id" class="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2">
+                        <option value="">Выберите валюту</option>
+                        @if(isset($currenciesForEdit))
+                            @foreach($currenciesForEdit as $c)
+                                <option value="{{ $c->id }}">{{ $c->code }}</option>
+                            @endforeach
+                        @endif
+                    </select>
+                </div>
+            </div>
+
+            <!-- Фиксированная сумма -->
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm mb-1 text-yellow-300">Фиксированная сумма</label>
+                    <input type="number" step="0.01" name="fixed_amount" id="add_salecrypt_fixed_amount" class="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2">
+                </div>
+                <div>
+                    <label class="block text-sm mb-1 text-yellow-300">Валюта фиксированной суммы</label>
+                    <select name="fixed_currency_id" id="add_salecrypt_fixed_currency_id" class="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2">
+                        <option value="">Выберите валюту</option>
+                        @if(isset($currenciesForEdit))
+                            @foreach($currenciesForEdit as $c)
+                                <option value="{{ $c->id }}">{{ $c->code }}</option>
+                            @endforeach
+                        @endif
+                    </select>
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-2 mt-4">
+                <button type="button" onclick="document.getElementById('addSaleCryptModal').classList.add('hidden')" class="px-4 py-2 bg-gray-700 text-gray-300 rounded-lg hover:bg-gray-600">Отмена</button>
+                <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-500">Добавить</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Модальное окно добавления перевода -->
+<div id="addTransferModal" class="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 hidden">
+    <div class="absolute inset-0" onclick="document.getElementById('addTransferModal').classList.add('hidden')"></div>
+    <div class="bg-[#1F1F1F] text-white rounded-xl shadow-2xl p-6 relative z-10 w-full max-w-lg">
+        <h3 class="text-xl font-semibold mb-4">Добавить перевод</h3>
+        <form id="addTransferForm" class="space-y-4">
+            @csrf
+
+            <!-- От кого -->
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm mb-1 text-red-300">От кого</label>
+                    <select name="exchanger_from_id" id="add_transfer_exchanger_from_id" class="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2">
+                        <option value="">Выберите платформу</option>
+                        @if(isset($exchangers))
+                            @foreach($exchangers as $e)
+                                <option value="{{ $e->id }}">{{ $e->title }}</option>
+                            @endforeach
+                        @endif
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm mb-1 text-green-300">Кому</label>
+                    <select name="exchanger_to_id" id="add_transfer_exchanger_to_id" class="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2">
+                        <option value="">Выберите платформу</option>
+                        @if(isset($exchangers))
+                            @foreach($exchangers as $e)
+                                <option value="{{ $e->id }}">{{ $e->title }}</option>
+                            @endforeach
+                        @endif
+                    </select>
+                </div>
+            </div>
+
+            <!-- Комиссия -->
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm mb-1 text-yellow-300">Сумма комиссии</label>
+                    <input type="number" step="0.01" name="commission" id="add_transfer_commission" class="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2" value="0">
+                </div>
+                <div>
+                    <label class="block text-sm mb-1 text-yellow-300">Валюта комиссии</label>
+                    <select name="commission_id" id="add_transfer_commission_id" class="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2">
+                        <option value="">Выберите валюту</option>
+                        @if(isset($currenciesForEdit))
+                            @foreach($currenciesForEdit as $c)
+                                <option value="{{ $c->id }}">{{ $c->code }}</option>
+                            @endforeach
+                        @endif
+                    </select>
+                </div>
+            </div>
+
+            <!-- Сумма перевода -->
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm mb-1 text-blue-300">Сумма перевода</label>
+                    <input type="number" step="0.01" name="amount" id="add_transfer_amount" class="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2">
+                </div>
+                <div>
+                    <label class="block text-sm mb-1 text-blue-300">Валюта суммы</label>
+                    <select name="amount_id" id="add_transfer_amount_id" class="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2">
+                        <option value="">Выберите валюту</option>
+                        @if(isset($currenciesForEdit))
+                            @foreach($currenciesForEdit as $c)
+                                <option value="{{ $c->id }}">{{ $c->code }}</option>
+                            @endforeach
+                        @endif
+                    </select>
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-2 mt-4">
+                <button type="button" onclick="document.getElementById('addTransferModal').classList.add('hidden')" class="px-4 py-2 bg-gray-700 text-gray-300 rounded-lg hover:bg-gray-600">Отмена</button>
+                <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-500">Добавить</button>
+            </div>
+        </form>
+    </div>
+</div>
 
 @endpush

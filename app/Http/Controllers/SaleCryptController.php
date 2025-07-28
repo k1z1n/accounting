@@ -86,6 +86,73 @@ class SaleCryptController extends Controller
         }
     }
 
+    /**
+     * Создание новой продажи
+     */
+    public function store(Request $request)
+    {
+        Log::info("SaleCryptController::store: начало создания продажи", [
+            'user_id' => auth()->id(),
+            'data' => $request->all()
+        ]);
+
+        try {
+            $validated = $request->validate([
+                'application_id' => 'nullable|exists:applications,id',
+                'exchanger_id' => 'required|exists:exchangers,id',
+                'sale_amount' => 'required|numeric|min:0',
+                'sale_currency_id' => 'required|exists:currencies,id',
+                'fixed_amount' => 'required|numeric|min:0',
+                'fixed_currency_id' => 'required|exists:currencies,id'
+            ]);
+
+            $saleCrypt = SaleCrypt::create([
+                'user_id' => auth()->id(),
+                'application_id' => $validated['application_id'] ?? null,
+                'exchanger_id' => $validated['exchanger_id'],
+                'sale_amount' => $validated['sale_amount'],
+                'sale_currency_id' => $validated['sale_currency_id'],
+                'fixed_amount' => $validated['fixed_amount'],
+                'fixed_currency_id' => $validated['fixed_currency_id']
+            ]);
+
+            Log::info("SaleCryptController::store: продажа успешно создана", [
+                'sale_crypt_id' => $saleCrypt->id,
+                'user_id' => auth()->id()
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Продажа успешно создана',
+                'saleCrypt' => $saleCrypt->load(['exchanger', 'saleCurrency', 'fixedCurrency', 'application'])
+            ]);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            Log::warning("SaleCryptController::store: ошибка валидации", [
+                'errors' => $e->errors(),
+                'user_id' => auth()->id()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Ошибка валидации данных',
+                'errors' => $e->errors()
+            ], 422);
+
+        } catch (\Exception $e) {
+            Log::error("SaleCryptController::store: ошибка создания продажи", [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'user_id' => auth()->id()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Ошибка создания продажи'
+            ], 500);
+        }
+    }
+
     public function destroy($id)
     {
         Log::info("SaleCryptController::destroy: начало обработки запроса", ['id' => $id]);

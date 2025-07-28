@@ -314,7 +314,19 @@ class TransferPage {
         }
     }
 
+    async refreshData() {
+        console.log('TransferPage: refreshData вызван');
 
+        // Сбрасываем состояние
+        this.currentPage = 1;
+        this.hasMorePages = true;
+        this.allData = [];
+
+        // Загружаем все данные заново
+        await this.loadInitialData();
+
+        console.log('TransferPage: refreshData завершен');
+    }
 
     showLoadMoreSpinner() {
         const spinner = document.getElementById('loadMoreTransferSpinner');

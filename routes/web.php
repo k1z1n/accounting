@@ -57,6 +57,12 @@ Route::middleware(['auth', 'section.choice'])->group(function () {
     Route::get('/sale-crypt/data', [SaleCryptController::class, 'getSaleCrypts'])->name('sale-crypt.data');
     Route::get('/transfer', [TransferController::class, 'index'])->name('transfer.index');
     Route::get('/transfer/data', [TransferController::class, 'getTransfers'])->name('transfer.data');
+
+    // Роуты для создания новых записей
+    Route::post('/payments', [PaymentController::class, 'store'])->name('payments.store');
+    Route::post('/purchase', [PurchaseController::class, 'store'])->name('purchase.store');
+    Route::post('/sale-crypt', [SaleCryptController::class, 'store'])->name('sale-crypt.store');
+    Route::post('/transfer', [TransferController::class, 'store'])->name('transfer.store');
 });
 
 // Роуты для обновления и удаления (не требуют выбора раздела)

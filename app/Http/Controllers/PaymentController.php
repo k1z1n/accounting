@@ -110,6 +110,69 @@ class PaymentController extends Controller
         }
     }
 
+    /**
+     * Создание новой оплаты
+     */
+    public function store(Request $request)
+    {
+        Log::info("PaymentController::store: начало создания оплаты", [
+            'user_id' => auth()->id(),
+            'data' => $request->all()
+        ]);
+
+        try {
+            $validated = $request->validate([
+                'exchanger_id' => 'required|exists:exchangers,id',
+                'sell_amount' => 'required|numeric|min:0',
+                'sell_currency_id' => 'required|exists:currencies,id',
+                'comment' => 'nullable|string|max:1000'
+            ]);
+
+            $payment = Payment::create([
+                'user_id' => auth()->id(),
+                'exchanger_id' => $validated['exchanger_id'],
+                'sell_amount' => $validated['sell_amount'],
+                'sell_currency_id' => $validated['sell_currency_id'],
+                'comment' => $validated['comment'] ?? null
+            ]);
+
+            Log::info("PaymentController::store: оплата успешно создана", [
+                'payment_id' => $payment->id,
+                'user_id' => auth()->id()
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Оплата успешно создана',
+                'payment' => $payment->load(['exchanger', 'sellCurrency'])
+            ]);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            Log::warning("PaymentController::store: ошибка валидации", [
+                'errors' => $e->errors(),
+                'user_id' => auth()->id()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Ошибка валидации данных',
+                'errors' => $e->errors()
+            ], 422);
+
+        } catch (\Exception $e) {
+            Log::error("PaymentController::store: ошибка создания оплаты", [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'user_id' => auth()->id()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Ошибка создания оплаты'
+            ], 500);
+        }
+    }
+
     public function update(Request $request, $id)
     {
         $payment = Payment::findOrFail($id);
