@@ -13,21 +13,17 @@
     align-items: center;
     gap: 0.5rem;
 }
-.balance-cards {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 1rem;
-}
 .balance-card {
     background: #232b3a;
     border-radius: 1rem;
     padding: 1.1rem 1.3rem 1.1rem 1.1rem;
-    min-width: 170px;
+    width: 100%;
     display: flex;
     align-items: center;
     gap: 1rem;
     box-shadow: 0 2px 8px #0002;
     transition: box-shadow .2s, transform .2s;
+    margin-bottom: 1rem;
 }
 .balance-card:hover {
     box-shadow: 0 4px 16px #0004;
@@ -70,10 +66,6 @@
 .balance-amount.negative {
     color: #f87171;
 }
-@media (max-width: 700px) {
-    .balance-cards { flex-direction: column; gap: 0.7rem; }
-    .balance-card { min-width: 0; width: 100%; }
-}
 </style>
 
 <div class="container mx-auto px-4 py-6 space-y-6">
@@ -115,7 +107,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function renderCard(b) {
         let amount = +b.amount;
         let amountClass = amount > 0 ? 'text-cyan-400' : (amount < 0 ? 'text-red-400' : 'text-gray-400');
-        return `<div class="flex items-center gap-4 bg-[#232b3a] rounded-2xl px-6 py-5 shadow hover:shadow-lg transition w-full sm:w-auto">
+        return `<div class="flex items-center gap-4 bg-[#232b3a] rounded-2xl px-6 py-5 shadow hover:shadow-lg transition w-full mb-4">
             <span class="flex-shrink-0 bg-[#191919] rounded-xl p-2 flex items-center justify-center"><img src="${b.icon}" alt="${b.code}" class="w-8 h-8"></span>
             <div class="flex-1 min-w-0">
                 <div class="font-mono text-lg font-bold text-cyan-100 flex items-center gap-2 leading-tight">${b.code}${b.name ? `<span class='text-xs text-gray-400 font-normal ml-2'>${b.name}</span>` : ''}</div>
@@ -128,7 +120,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!arr || !arr.length) return '';
         return `<div class="mb-10">
             <div class="flex items-center gap-2 mb-4 text-lg font-bold ${color} tracking-tight pl-1">${icon ? `<span class='text-2xl'>${icon}</span>` : ''}${title}</div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">${arr.map(renderCard).join('')}</div>
+            <div class="space-y-4">${arr.map(renderCard).join('')}</div>
         </div>`;
     }
 
@@ -148,7 +140,7 @@ document.addEventListener('DOMContentLoaded', function() {
             balancesBlock.innerHTML = '<div class="text-gray-500 py-8 text-center">Нет данных</div>';
             return;
         }
-        balancesBlock.innerHTML = `<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">${balances.map(renderCard).join('')}</div>`;
+        balancesBlock.innerHTML = `<div class="space-y-4">${balances.map(renderCard).join('')}</div>`;
     }
 
     async function loadBalances() {
