@@ -39,7 +39,7 @@ Route::middleware(['auth'])->group(function () {
 
 // Временный API endpoint без middleware auth
 Route::get('/api/applications/list-temp', [App\Http\Controllers\ApplicationController::class, 'listForSelectTemp'])->name('api.applications.list.temp');
-
+Route::get('/api/wallets/balances', [ProfileController::class, 'balances'])->name('api.wallets.balances');
 Route::middleware(['auth', 'section.choice'])->group(function () {
     // Основные страницы заявок
     Route::get('/', [ApplicationController::class, 'index'])->name('applications.index');
@@ -124,6 +124,8 @@ Route::middleware(['admin', 'section.choice'])->prefix('admin')->group(function 
     // Ресурсы для управления
     Route::resource('currencies', CurrencyController::class)->except(['show', 'index', 'create']);
     Route::resource('platforms', PlatformController::class)->except(['show', 'index', 'create', 'store']);
+    Route::get('/history/all', [MainController::class, 'allHistory'])->name('history.all');
+
 });
 
 // ========================================
