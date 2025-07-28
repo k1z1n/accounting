@@ -390,6 +390,20 @@ class PaymentsPage {
         }
     }
 
+    async refreshData() {
+        console.log('PaymentsPage: refreshData вызван');
+
+        // Сбрасываем состояние
+        this.currentPage = 1;
+        this.hasMorePages = true;
+        this.allData = [];
+
+        // Загружаем все данные заново
+        await this.loadInitialData();
+
+        console.log('PaymentsPage: refreshData завершен');
+    }
+
     async applyFilters() {
         console.log('PaymentsPage: applyFilters вызван');
         console.log('PaymentsPage: текущие фильтры:', this.filters);

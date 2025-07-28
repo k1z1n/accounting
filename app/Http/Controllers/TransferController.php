@@ -88,6 +88,73 @@ class TransferController extends Controller
         }
     }
 
+    /**
+     * Создание нового перевода
+     */
+    public function store(Request $request)
+    {
+        Log::info("TransferController::store: начало создания перевода", [
+            'user_id' => auth()->id(),
+            'data' => $request->all()
+        ]);
+
+        try {
+            $validated = $request->validate([
+                'exchanger_from_id' => 'required|exists:exchangers,id',
+                'exchanger_to_id' => 'required|exists:exchangers,id',
+                'commission' => 'required|numeric|min:0',
+                'commission_id' => 'required|exists:currencies,id',
+                'amount' => 'required|numeric|min:0',
+                'amount_id' => 'required|exists:currencies,id'
+            ]);
+
+            $transfer = Transfer::create([
+                'user_id' => auth()->id(),
+                'exchanger_from_id' => $validated['exchanger_from_id'],
+                'exchanger_to_id' => $validated['exchanger_to_id'],
+                'commission' => $validated['commission'],
+                'commission_id' => $validated['commission_id'],
+                'amount' => $validated['amount'],
+                'amount_id' => $validated['amount_id']
+            ]);
+
+            Log::info("TransferController::store: перевод успешно создан", [
+                'transfer_id' => $transfer->id,
+                'user_id' => auth()->id()
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Перевод успешно создан',
+                'transfer' => $transfer->load(['exchangerFrom', 'exchangerTo', 'amountCurrency', 'commissionCurrency'])
+            ]);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            Log::warning("TransferController::store: ошибка валидации", [
+                'errors' => $e->errors(),
+                'user_id' => auth()->id()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Ошибка валидации данных',
+                'errors' => $e->errors()
+            ], 422);
+
+        } catch (\Exception $e) {
+            Log::error("TransferController::store: ошибка создания перевода", [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'user_id' => auth()->id()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Ошибка создания перевода'
+            ], 500);
+        }
+    }
+
     public function destroy($id)
     {
         $transfer = Transfer::findOrFail($id);

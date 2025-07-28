@@ -99,6 +99,73 @@ class PurchaseController extends Controller
         }
     }
 
+    /**
+     * Создание новой покупки
+     */
+    public function store(Request $request)
+    {
+        Log::info("PurchaseController::store: начало создания покупки", [
+            'user_id' => auth()->id(),
+            'data' => $request->all()
+        ]);
+
+        try {
+            $validated = $request->validate([
+                'application_id' => 'nullable|exists:applications,id',
+                'exchanger_id' => 'required|exists:exchangers,id',
+                'sold_amount' => 'required|numeric|min:0',
+                'sold_currency_id' => 'required|exists:currencies,id',
+                'bought_amount' => 'required|numeric|min:0',
+                'bought_currency_id' => 'required|exists:currencies,id'
+            ]);
+
+            $purchase = Purchase::create([
+                'user_id' => auth()->id(),
+                'application_id' => $validated['application_id'] ?? null,
+                'exchanger_id' => $validated['exchanger_id'],
+                'sale_amount' => $validated['sold_amount'],
+                'sale_currency_id' => $validated['sold_currency_id'],
+                'received_amount' => $validated['bought_amount'],
+                'received_currency_id' => $validated['bought_currency_id']
+            ]);
+
+            Log::info("PurchaseController::store: покупка успешно создана", [
+                'purchase_id' => $purchase->id,
+                'user_id' => auth()->id()
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Покупка успешно создана',
+                'purchase' => $purchase->load(['exchanger', 'saleCurrency', 'receivedCurrency', 'application'])
+            ]);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            Log::warning("PurchaseController::store: ошибка валидации", [
+                'errors' => $e->errors(),
+                'user_id' => auth()->id()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Ошибка валидации данных',
+                'errors' => $e->errors()
+            ], 422);
+
+        } catch (\Exception $e) {
+            Log::error("PurchaseController::store: ошибка создания покупки", [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'user_id' => auth()->id()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Ошибка создания покупки'
+            ], 500);
+        }
+    }
+
     public function destroy($id)
     {
         $purchase = Purchase::findOrFail($id);

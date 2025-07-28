@@ -388,7 +388,19 @@ class PurchasePage {
         }
     }
 
+    async refreshData() {
+        console.log('PurchasePage: refreshData вызван');
 
+        // Сбрасываем состояние
+        this.currentPage = 1;
+        this.hasMorePages = true;
+        this.allData = [];
+
+        // Загружаем все данные заново
+        await this.loadInitialData();
+
+        console.log('PurchasePage: refreshData завершен');
+    }
 
     showLoadMoreSpinner() {
         const spinner = document.getElementById('loadMorePurchaseSpinner');

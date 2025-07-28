@@ -387,7 +387,19 @@ class SaleCryptPage {
         }
     }
 
+    async refreshData() {
+        console.log('SaleCryptPage: refreshData вызван');
 
+        // Сбрасываем состояние
+        this.currentPage = 1;
+        this.hasMorePages = true;
+        this.allData = [];
+
+        // Загружаем все данные заново
+        await this.loadInitialData();
+
+        console.log('SaleCryptPage: refreshData завершен');
+    }
 
     showLoadMoreSpinner() {
         const spinner = document.getElementById('loadMoreSaleCryptSpinner');
