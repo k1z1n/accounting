@@ -90,6 +90,11 @@
         <div>
             <button id="refreshBtn" class="mt-6 px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700">Обновить</button>
         </div>
+        <div>
+            <button id="sendAllSequentialBtn" class="mt-6 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 font-bold text-lg shadow-lg">
+                🚀 Отправить все сообщения
+            </button>
+        </div>
     </div>
     <div class="bg-[#191919] rounded-2xl shadow-md overflow-auto p-6 md:p-10">
         <div id="balancesBlock"></div>
@@ -103,6 +108,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const balancesBlock = document.getElementById('balancesBlock');
     const errorBlock = document.getElementById('errorBlock');
     const refreshBtn = document.getElementById('refreshBtn');
+    const sendAllSequentialBtn = document.getElementById('sendAllSequentialBtn');
 
     function renderCard(b) {
         let amount = +b.amount;
@@ -166,6 +172,36 @@ document.addEventListener('DOMContentLoaded', function() {
     provSel.addEventListener('change', loadBalances);
     exchSel.addEventListener('change', loadBalances);
     refreshBtn.addEventListener('click', loadBalances);
+
+    // Обработчик отправки всех сообщений последовательно
+    sendAllSequentialBtn.addEventListener('click', async function() {
+        sendAllSequentialBtn.disabled = true;
+        sendAllSequentialBtn.textContent = 'Отправляем все...';
+
+        try {
+            const response = await fetch(`/admin/exchangers/send-all-sequential`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                    'Content-Type': 'application/json',
+                }
+            });
+
+            const result = await response.json();
+
+            if (response.ok && result.success) {
+                alert('Все сообщения успешно отправлены!');
+            } else {
+                alert('Ошибка отправки: ' + (result.message || 'Неизвестная ошибка'));
+            }
+        } catch (error) {
+            alert('Ошибка отправки: ' + error.message);
+        } finally {
+            sendAllSequentialBtn.disabled = false;
+            sendAllSequentialBtn.textContent = '🚀 Отправить все сообщения';
+        }
+    });
+
     loadBalances();
 });
 </script>

@@ -19,15 +19,15 @@ class ProfileController extends Controller
 
     public function balances(Request $request)
     {
-        $prov    = $request->query('provider');    // heleket|rapira
-        $exch    = $request->query('exchanger');   // obama|ural
+        $prov    = $request->query('provider');    // heleket|rapira|bybit
+        $exch    = $request->query('exchanger');   // obama|ural|main
         $cfg     = config("services.{$prov}.{$exch}")
             ?? abort(400, 'Неверный провайдер/обменник');
-        $url     = $cfg['balance_url'];
 
         try {
             if ($prov === 'heleket') {
                 // Heleket: POST + merchant + sign
+                $url     = $cfg['balance_url'];
                 $body    = json_encode([]);
                 $sign    = md5(base64_encode($body) . $cfg['api_key']);
                 $resp    = Http::withHeaders([
@@ -38,8 +38,9 @@ class ProfileController extends Controller
                 $resp->throw();
                 $raw     = $resp->json();
                 $balances= $this->normalizeHeleket($raw);
-            } else {
+            } elseif ($prov === 'rapira') {
                 // Rapira: JWT + POST
+                $url = $cfg['balance_url'];
                 $privateKey = $cfg['private_key'];
                 Log::info('RAPIRA: Исходный ключ', [
                     'length' => strlen($privateKey),
@@ -133,6 +134,11 @@ class ProfileController extends Controller
                 Log::info('RAPIRA: Сырые данные баланса', ['raw' => $raw]);
                 $balances = $this->normalizeRapira($raw);
                 Log::info('RAPIRA: Нормализованные балансы', ['balances' => $balances]);
+            } elseif ($prov === 'bybit') {
+                // Bybit: API Key + Secret
+                $balances = $this->getBybitBalances($cfg);
+            } else {
+                return response()->json(['balances'=>[], 'error'=>'Неизвестный провайдер'], 400);
             }
 
             return response()->json(['balances'=>$balances]);
@@ -159,8 +165,8 @@ class ProfileController extends Controller
             'history' => $latest,
         ]);
     }
-    private array $providers  = ['heleket' => 'Heleket', 'rapira' => 'Rapira'];
-    private array $exchangers = ['obama'   => 'Obama'  , 'ural'   => 'Ural'  ];
+    private array $providers  = ['heleket' => 'Heleket', 'rapira' => 'Rapira', 'bybit' => 'Bybit'];
+    private array $exchangers = ['obama'   => 'Obama'  , 'ural'   => 'Ural'  , 'main'  => 'Main'  ];
 
     /* ───────────── 1. Страница / «каркас» ───────────── */
     public function index(Request $request)
@@ -284,6 +290,80 @@ class ProfileController extends Controller
 
     protected function urlsafeB64(string $input): string
     {
-        return str_replace('=','',strtr(base64_encode($input), '+/','-_'));
+        return str_replace(['+', '/', '='], ['-', '_', ''], base64_encode($input));
+    }
+
+    protected function getBybitBalances(array $cfg): array
+    {
+        $apiKey = $cfg['api_key'];
+        $secretKey = $cfg['secret_key'];
+        $testnet = $cfg['testnet'] ?? false;
+
+        $baseUrl = $testnet ? 'https://api-testnet.bybit.com' : 'https://api.bybit.com';
+        $timestamp = time() * 1000; // milliseconds
+
+        // Получаем балансы кошелька
+        $endpoint = '/v5/account/wallet-balance';
+        $params = [
+            'accountType' => 'UNIFIED'
+            // Убираем 'coin' => 'USDT' чтобы получить все валюты
+        ];
+
+        $queryString = http_build_query($params);
+        $signature = $this->generateBybitSignature($secretKey, $timestamp, $apiKey, 'GET', $endpoint, $queryString);
+
+        $response = Http::timeout(10)
+            ->withHeaders([
+                'X-BAPI-API-KEY' => $apiKey,
+                'X-BAPI-SIGN' => $signature,
+                'X-BAPI-SIGN-TYPE' => '2',
+                'X-BAPI-TIMESTAMP' => $timestamp,
+                'X-BAPI-RECV-WINDOW' => '5000',
+            ])
+            ->get($baseUrl . $endpoint . '?' . $queryString);
+
+        if (!$response->ok()) {
+            Log::error('Bybit balance error', [
+                'status' => $response->status(),
+                'body' => $response->body()
+            ]);
+            return [];
+        }
+
+        $data = $response->json();
+        Log::info('Bybit raw response', ['data' => $data]);
+
+        return $this->normalizeBybit($data);
+    }
+
+    protected function generateBybitSignature(string $secretKey, int $timestamp, string $apiKey, string $method, string $endpoint, string $queryString = ''): string
+    {
+        $paramStr = $timestamp . $apiKey . '5000' . $queryString;
+        return hash_hmac('sha256', $paramStr, $secretKey);
+    }
+
+    protected function normalizeBybit(array $raw): array
+    {
+        $balances = [];
+
+        if (isset($raw['result']['list']) && is_array($raw['result']['list'])) {
+            foreach ($raw['result']['list'] as $account) {
+                if (isset($account['coin']) && is_array($account['coin'])) {
+                    foreach ($account['coin'] as $coin) {
+                        if (isset($coin['coin']) && isset($coin['walletBalance'])) {
+                            $amount = (float)$coin['walletBalance'];
+                            if ($amount > 0) {
+                                $balances[] = [
+                                    'code' => strtoupper($coin['coin']),
+                                    'amount' => $amount
+                                ];
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return $balances;
     }
 }

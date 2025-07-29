@@ -92,6 +92,26 @@
     </div>
 @endif
 
+<!-- Блок кнопок добавления -->
+<div class="flex flex-wrap gap-3 mb-8 px-3">
+    <button onclick="openAddPaymentModal()" class="px-4 py-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg transition-colors flex items-center gap-2">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+        <span>Добавить оплату</span>
+    </button>
+    <button onclick="openAddPurchaseModal()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors flex items-center gap-2">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+        <span>Добавить покупку</span>
+    </button>
+    <button onclick="openAddSaleCryptModal()" class="px-4 py-2 bg-pink-600 hover:bg-pink-700 text-white rounded-lg transition-colors flex items-center gap-2">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+        <span>Добавить продажу</span>
+    </button>
+    <button onclick="openAddTransferModal()" class="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg transition-colors flex items-center gap-2">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+        <span>Добавить перевод</span>
+    </button>
+</div>
+
 @if(auth()->user()->role !== 'admin')
     <div class="fixed inset-0 bg-black bg-opacity-70 flex flex-col items-center justify-center z-50">
         <div class="bg-[#232b3a] p-8 rounded-2xl shadow-lg flex flex-col items-center">

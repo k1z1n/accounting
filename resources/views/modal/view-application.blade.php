@@ -9,3 +9,4 @@
         <button id="closeViewApplication" class="mt-6 px-4 py-2 bg-gray-700 rounded hover:bg-gray-600 w-full">Закрыть</button>
     </div>
 </div>
+
