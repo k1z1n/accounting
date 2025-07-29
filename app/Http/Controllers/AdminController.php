@@ -330,9 +330,8 @@ class AdminController extends Controller
      */
     public function exchangerBalancesPage()
     {
-        // Список провайдеров и обменников (как в ProfileController)
-        $providers = ['heleket' => 'Heleket', 'rapira' => 'Rapira']; // Убрал 'bybit' => 'Bybit'
-        $exchangers = ['obama' => 'Obama', 'ural' => 'Ural']; // Убрал 'main' => 'Main'
+        $providers = ['heleket' => 'Heleket', 'rapira' => 'Rapira', 'bybit' => 'Bybit'];
+        $exchangers = ['obama' => 'Obama', 'ural' => 'Ural', 'main' => 'Main'];
         return view('admin.exchanger-balances', compact('providers', 'exchangers'));
     }
 
@@ -506,16 +505,16 @@ class AdminController extends Controller
             $results['rapira'] = $rapiraExitCode === 0 ? 'success' : 'error';
             if ($rapiraExitCode !== 0) $success = false;
 
-            // 3. Отправляем Bybit (временно отключено)
-            // \Log::info('Отправляем Bybit...');
-            // $bybitExitCode = \Artisan::call('telegram:send-balances', ['--provider' => 'bybit']);
-            // $results['bybit'] = $bybitExitCode === 0 ? 'success' : 'error';
-            // if ($bybitExitCode !== 0) $success = false;
+            // 3. Отправляем Bybit
+            \Log::info('Отправляем Bybit...');
+            $bybitExitCode = \Artisan::call('telegram:send-balances', ['--provider' => 'bybit']);
+            $results['bybit'] = $bybitExitCode === 0 ? 'success' : 'error';
+            if ($bybitExitCode !== 0) $success = false;
 
             if ($success) {
                 return response()->json([
                     'success' => true,
-                    'message' => 'Сообщения Heleket и Rapira успешно отправлены в Telegram',
+                    'message' => 'Сообщения Heleket, Rapira и Bybit успешно отправлены в Telegram',
                     'results' => $results
                 ]);
             } else {

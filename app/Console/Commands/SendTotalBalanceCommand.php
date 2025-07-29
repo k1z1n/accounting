@@ -247,32 +247,41 @@ class SendTotalBalanceCommand extends Command
         }
 
         try {
-            $apiKey = $cfg['api_key'];
-            $secretKey = $cfg['secret_key'];
+            $apiKey = $cfg['api_key'] ?? null;
+            $secretKey = $cfg['secret_key'] ?? null;
+
+            if (!$apiKey || !$secretKey) {
+                \Log::warning("SendTotalBalanceCommand: Bybit API ключи не настроены");
+                return [];
+            }
+
             $testnet = $cfg['testnet'] ?? false;
-
             $baseUrl = $testnet ? 'https://api-testnet.bybit.com' : 'https://api.bybit.com';
-            $timestamp = time() * 1000; // milliseconds
 
-            // Получаем балансы кошелька
-            $endpoint = '/v5/account/wallet-balance';
+            $timestamp = round(microtime(true) * 1000);
+            $recvWindow = 5000;
+
+            $endpoint = '/v5/asset/transfer/query-account-coins-balance';
             $params = [
-                'accountType' => 'UNIFIED'
-                // Убираем 'coin' => 'USDT' чтобы получить все валюты
+                'accountType' => 'FUND'
             ];
 
             $queryString = http_build_query($params);
-            $signature = $this->generateBybitSignature($secretKey, $timestamp, $apiKey, 'GET', $endpoint, $queryString);
+            $url = $baseUrl . $endpoint . '?' . $queryString;
+
+            // Правильная строка для подписи для Bybit Trading API v5
+            $signaturePayload = $timestamp . $apiKey . $recvWindow . $queryString;
+            $signature = hash_hmac('sha256', $signaturePayload, $secretKey);
 
             $response = \Illuminate\Support\Facades\Http::timeout(10)
                 ->withHeaders([
                     'X-BAPI-API-KEY' => $apiKey,
                     'X-BAPI-SIGN' => $signature,
-                    'X-BAPI-SIGN-TYPE' => '2',
                     'X-BAPI-TIMESTAMP' => $timestamp,
-                    'X-BAPI-RECV-WINDOW' => '5000',
+                    'X-BAPI-RECV-WINDOW' => $recvWindow,
+                    'Content-Type' => 'application/json',
                 ])
-                ->get($baseUrl . $endpoint . '?' . $queryString);
+                ->get($url);
 
             if ($response->successful()) {
                 $data = $response->json();
@@ -409,24 +418,19 @@ class SendTotalBalanceCommand extends Command
     {
         $normalized = [];
 
-        if (isset($raw['result']['list']) && is_array($raw['result']['list'])) {
-            foreach ($raw['result']['list'] as $account) {
-                if (isset($account['coin']) && is_array($account['coin'])) {
-                    foreach ($account['coin'] as $coin) {
-                        if (isset($coin['coin']) && isset($coin['walletBalance'])) {
-                            $amount = (float)$coin['walletBalance'];
-                            if ($amount > 0) {
-                                $normalized[] = [
-                                    'code' => strtoupper($coin['coin']),
-                                    'amount' => $amount
-                                ];
-                            }
-                        }
+        if (isset($raw['result']['balance']) && is_array($raw['result']['balance'])) {
+            foreach ($raw['result']['balance'] as $coin) {
+                if (isset($coin['coin']) && isset($coin['walletBalance'])) {
+                    $amount = (float)$coin['walletBalance'];
+                    if ($amount > 0) {
+                        $normalized[] = [
+                            'code' => strtoupper($coin['coin']),
+                            'amount' => $amount
+                        ];
                     }
                 }
             }
         }
-
         return $normalized;
     }
 

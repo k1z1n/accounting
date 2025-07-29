@@ -169,7 +169,12 @@ class TelegramService
                 // Для обычных балансов (не Heleket)
                 if (!isset($balancesData[$provider][$exchanger]['merchant']) && !isset($balancesData[$provider][$exchanger]['user']) && is_array($balancesData[$provider][$exchanger]) && !empty($balancesData[$provider][$exchanger])) {
                     $exchangerTotal = $this->bybitService->calculateTotalUsd($balancesData[$provider][$exchanger]);
-                    $message .= "Общий баланс ({$this->formatUsd($exchangerTotal)})\n";
+
+                    // Показываем общий баланс только для Heleket и Rapira, но не для Bybit
+                    if ($provider !== 'Bybit') {
+                        $message .= "Общий баланс ({$this->formatUsd($exchangerTotal)})\n";
+                    }
+
                     foreach ($balancesData[$provider][$exchanger] as $balance) {
                         if ($balance['amount'] > 0) {
                             $amount = number_format($balance['amount'], 10);
