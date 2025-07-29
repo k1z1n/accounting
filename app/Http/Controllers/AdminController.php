@@ -331,9 +331,211 @@ class AdminController extends Controller
     public function exchangerBalancesPage()
     {
         // Список провайдеров и обменников (как в ProfileController)
-        $providers = ['heleket' => 'Heleket', 'rapira' => 'Rapira'];
-        $exchangers = ['obama' => 'Obama', 'ural' => 'Ural'];
+        $providers = ['heleket' => 'Heleket', 'rapira' => 'Rapira']; // Убрал 'bybit' => 'Bybit'
+        $exchangers = ['obama' => 'Obama', 'ural' => 'Ural']; // Убрал 'main' => 'Main'
         return view('admin.exchanger-balances', compact('providers', 'exchangers'));
+    }
+
+    /**
+     * Отправить балансы обменников в Telegram
+     */
+    public function sendBalancesToTelegram(Request $request)
+    {
+        try {
+            $provider = $request->query('provider');
+            $exchanger = $request->query('exchanger');
+
+            // Если параметры не указаны, отправляем все балансы
+            if (empty($provider) && empty($exchanger)) {
+                $command = "telegram:send-balances";
+            } else {
+                // Запускаем команду через Artisan
+                $command = "telegram:send-balances";
+                if ($provider && $provider !== 'all') {
+                    $command .= " --provider={$provider}";
+                }
+                if ($exchanger && $exchanger !== 'all') {
+                    $command .= " --exchanger={$exchanger}";
+                }
+            }
+
+            $exitCode = \Artisan::call($command);
+
+            if ($exitCode === 0) {
+                return response()->json([
+                    'success' => true,
+                    'message' => empty($provider) && empty($exchanger)
+                        ? 'Все балансы успешно отправлены в Telegram'
+                        : 'Балансы успешно отправлены в Telegram'
+                ]);
+            } else {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Ошибка отправки балансов'
+                ], 500);
+            }
+
+        } catch (\Exception $e) {
+            \Log::error('Ошибка отправки балансов в Telegram', [
+                'error' => $e->getMessage(),
+                'provider' => $provider ?? 'all',
+                'exchanger' => $exchanger ?? 'all'
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Ошибка: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Отправить балансы Heleket в Telegram
+     */
+    public function sendHeleketBalancesToTelegram()
+    {
+        try {
+            $exitCode = \Artisan::call('telegram:send-balances', ['--provider' => 'heleket']);
+
+            if ($exitCode === 0) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Балансы Heleket успешно отправлены в Telegram'
+                ]);
+            } else {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Ошибка отправки балансов Heleket'
+                ], 500);
+            }
+
+        } catch (\Exception $e) {
+            \Log::error('Ошибка отправки балансов Heleket в Telegram', [
+                'error' => $e->getMessage()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Ошибка: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Отправить балансы Rapira в Telegram
+     */
+    public function sendRapiraBalancesToTelegram()
+    {
+        try {
+            $exitCode = \Artisan::call('telegram:send-balances', ['--provider' => 'rapira']);
+
+            if ($exitCode === 0) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Балансы Rapira успешно отправлены в Telegram'
+                ]);
+            } else {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Ошибка отправки балансов Rapira'
+                ], 500);
+            }
+
+        } catch (\Exception $e) {
+            \Log::error('Ошибка отправки балансов Rapira в Telegram', [
+                'error' => $e->getMessage()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Ошибка: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Отправить общий итог в Telegram
+     */
+    public function sendTotalBalanceToTelegram()
+    {
+        try {
+            $exitCode = \Artisan::call('telegram:send-total');
+
+            if ($exitCode === 0) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Общий итог успешно отправлен в Telegram'
+                ]);
+            } else {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Ошибка отправки общего итога'
+                ], 500);
+            }
+
+        } catch (\Exception $e) {
+            \Log::error('Ошибка отправки общего итога в Telegram', [
+                'error' => $e->getMessage()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Ошибка: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Отправить все сообщения последовательно: Heleket -> Rapira
+     */
+    public function sendAllMessagesSequentially()
+    {
+        try {
+            $results = [];
+            $success = true;
+
+            // 1. Отправляем Heleket
+            \Log::info('Отправляем Heleket...');
+            $heleketExitCode = \Artisan::call('telegram:send-balances', ['--provider' => 'heleket']);
+            $results['heleket'] = $heleketExitCode === 0 ? 'success' : 'error';
+            if ($heleketExitCode !== 0) $success = false;
+
+            // 2. Отправляем Rapira
+            \Log::info('Отправляем Rapira...');
+            $rapiraExitCode = \Artisan::call('telegram:send-balances', ['--provider' => 'rapira']);
+            $results['rapira'] = $rapiraExitCode === 0 ? 'success' : 'error';
+            if ($rapiraExitCode !== 0) $success = false;
+
+            // 3. Отправляем Bybit (временно отключено)
+            // \Log::info('Отправляем Bybit...');
+            // $bybitExitCode = \Artisan::call('telegram:send-balances', ['--provider' => 'bybit']);
+            // $results['bybit'] = $bybitExitCode === 0 ? 'success' : 'error';
+            // if ($bybitExitCode !== 0) $success = false;
+
+            if ($success) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Сообщения Heleket и Rapira успешно отправлены в Telegram',
+                    'results' => $results
+                ]);
+            } else {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Ошибка отправки некоторых сообщений',
+                    'results' => $results
+                ], 500);
+            }
+
+        } catch (\Exception $e) {
+            \Log::error('Ошибка отправки сообщений в Telegram', [
+                'error' => $e->getMessage()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Ошибка: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     public function dashboardPage()

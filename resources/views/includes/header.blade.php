@@ -54,6 +54,15 @@
                             <a href="{{ route('admin.exchanger.balances') }}" class="hover:text-cyan-400 transition-colors">Балансы кошельков</a>
                         </li>
                     @endif
+                    <li>
+                        <a href="{{ route('history.all') }}" class="hover:text-cyan-400 transition-colors">Вся история</a>
+                    </li>
+                    <li>
+                        <button onclick="openChooseSectionModal()" class="hover:text-cyan-400 transition-colors flex items-center gap-1">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="4" stroke="currentColor" stroke-width="2" fill="none"/><path d="M8 12h8M8 16h8M8 8h8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                            <span>Раздел</span>
+                        </button>
+                    </li>
                     <li class="flex items-center gap-3">
                         <a href="{{ route('history.all') }}" class="hover:text-cyan-400 transition-colors">Балансы</a>
                         <div class="h-11 w-11 bg-cyan-600 rounded-full flex items-center justify-center text-xl font-bold uppercase shadow-md select-none">
@@ -71,3 +80,54 @@
         </nav>
     </div>
 </header>
+
+@push('scripts')
+    <script>
+    function openChooseSectionModal() {
+        const modal = document.getElementById('chooseSectionModal');
+        modal.classList.remove('hidden');
+        // Принудительно устанавливаем максимальный z-index
+        modal.style.zIndex = '999999999';
+        modal.style.position = 'fixed';
+        // Также устанавливаем для всех дочерних элементов
+        const modalContent = modal.querySelector('.bg-\\[\\#1F1F1F\\]');
+        if (modalContent) {
+            modalContent.style.zIndex = '999999999';
+            modalContent.style.position = 'relative';
+        }
+    }
+    </script>
+
+    <!-- Модальное окно выбора раздела (в конце body) -->
+    <div id="chooseSectionModal" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-[99999999] flex items-center justify-center min-h-screen hidden" style="position: fixed !important; z-index: 99999999 !important;">
+        <div class="absolute inset-0" onclick="document.getElementById('chooseSectionModal').classList.add('hidden')"></div>
+        <div class="bg-[#1F1F1F] text-white rounded-xl shadow-2xl p-6 relative z-10 w-full max-w-lg" style="position: relative !important; z-index: 99999999 !important;">
+            <button type="button" onclick="document.getElementById('chooseSectionModal').classList.add('hidden')" class="absolute top-3 right-3 text-gray-400 hover:text-white text-2xl">&times;</button>
+            <h3 class="text-xl font-semibold mb-6 text-center">Выберите раздел</h3>
+            <div class="flex flex-col gap-4 w-full">
+                <form method="POST" action="{{ route('choose.section') }}" class="w-full">
+                    @csrf
+                    <input type="hidden" name="section" value="applications">
+                    <button type="submit" class="w-full flex flex-col items-center justify-center gap-2 px-4 py-4 bg-[#232b3a] rounded-lg border border-gray-700 hover:bg-gray-800 transition disabled:opacity-60 disabled:cursor-not-allowed @if(auth()->check() && auth()->user()->role !== 'admin') opacity-60 cursor-not-allowed @endif" @if(auth()->check() && auth()->user()->role !== 'admin') disabled @endif>
+                        <svg class="w-8 h-8 text-cyan-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="4" stroke="currentColor" stroke-width="2" fill="none"/><path d="M8 12h8M8 16h8M8 8h8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                        <span class="font-semibold">Заявки</span>
+                        @if(auth()->check() && auth()->user()->role !== 'admin')
+                            <span class="text-xs text-gray-400 mt-1">Только для администраторов</span>
+                        @endif
+                    </button>
+                </form>
+                <form method="POST" action="{{ route('choose.section') }}" class="w-full">
+                    @csrf
+                    <input type="hidden" name="section" value="dashboard">
+                    <button type="submit" class="w-full flex flex-col items-center justify-center gap-2 px-4 py-4 bg-[#232b3a] rounded-lg border border-gray-700 hover:bg-gray-800 transition disabled:opacity-60 disabled:cursor-not-allowed @if(auth()->check() && auth()->user()->role !== 'admin') opacity-60 cursor-not-allowed @endif" @if(auth()->check() && auth()->user()->role !== 'admin') disabled @endif>
+                        <svg class="w-8 h-8 text-emerald-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 13h2v-2H3v2zm4 0h2v-2H7v2zm4 0h2v-2h-2v2zm4 0h2v-2h-2v2zm4 0h2v-2h-2v2z"/><rect x="3" y="5" width="18" height="14" rx="3" stroke="currentColor" stroke-width="2" fill="none"/></svg>
+                        <span class="font-semibold">Статистика</span>
+                        @if(auth()->check() && auth()->user()->role !== 'admin')
+                            <span class="text-xs text-gray-400 mt-1">Только для администраторов</span>
+                        @endif
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+@endpush

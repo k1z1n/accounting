@@ -69,4 +69,22 @@ return [
         ],
     ],
 
+    'bybit' => [
+        'main' => [
+            'api_key' => env('BYBIT_API_KEY'),
+            'secret_key' => env('BYBIT_SECRET_KEY'),
+            'testnet' => env('BYBIT_TESTNET', false),
+        ],
+        'funding' => [
+            'api_key' => env('BYBIT_FUNDING_API_KEY'),
+            'secret_key' => env('BYBIT_FUNDING_SECRET_KEY'),
+            'testnet' => env('BYBIT_TESTNET', false),
+        ],
+    ],
+
+    'telegram' => [
+        'bot_token' => env('TELEGRAM_BOT_TOKEN'),
+        'chat_id' => env('TELEGRAM_CHAT_ID'),
+    ],
+
 ];

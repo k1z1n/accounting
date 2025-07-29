@@ -95,6 +95,11 @@ Route::middleware(['admin', 'section.choice'])->prefix('admin')->group(function 
 
     // Балансы обменников
     Route::get('exchangers/balances', [AdminController::class, 'exchangerBalancesPage'])->name('admin.exchanger.balances');
+    Route::post('exchangers/send-balances-telegram', [AdminController::class, 'sendBalancesToTelegram'])->name('admin.exchanger.send.balances.telegram');
+    Route::post('exchangers/send-heleket-telegram', [AdminController::class, 'sendHeleketBalancesToTelegram'])->name('admin.exchanger.send.heleket.telegram');
+    Route::post('exchangers/send-rapira-telegram', [AdminController::class, 'sendRapiraBalancesToTelegram'])->name('admin.exchanger.send.rapira.telegram');
+    Route::post('exchangers/send-total-telegram', [AdminController::class, 'sendTotalBalanceToTelegram'])->name('admin.exchanger.send.total.telegram');
+    Route::post('exchangers/send-all-sequential', [AdminController::class, 'sendAllMessagesSequentially'])->name('admin.exchanger.send.all.sequential');
 
     // Списки (из шапки)
     Route::get('/list/exchangers', [AdminController::class, 'viewExchangers'])->name('view.exchangers');
