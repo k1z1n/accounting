@@ -13,8 +13,8 @@ Schedule::command('app:calculate-daily-usdt-summary')
     ->dailyAt('23:55')
     ->timezone('Europe/Moscow')->appendOutputTo(storage_path('logs/daily-summary.log'));;
 
-// Отправка балансов обменников в Telegram каждый час
+// Отправка балансов обменников в Telegram каждый день в 23:55
 Schedule::command('telegram:send-balances')
-    ->hourly()
+    ->dailyAt('23:55')
     ->timezone('Europe/Moscow')
     ->appendOutputTo(storage_path('logs/telegram-balances.log'));
