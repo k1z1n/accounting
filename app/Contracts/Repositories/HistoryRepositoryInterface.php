@@ -37,6 +37,21 @@ interface HistoryRepositoryInterface extends BaseRepositoryInterface
     public function createForOperation(string $operationType, int $operationId, array $data): void;
 
     /**
+     * Найти записи истории для конкретной операции
+     */
+    public function findByOperation(string $operationType, int $operationId): Collection;
+
+    /**
+     * Найти запись истории для конкретной операции и валюты
+     */
+    public function findByOperationAndCurrency(string $operationType, int $operationId, int $currencyId): ?\App\Models\History;
+
+    /**
+     * Обновить или создать запись истории для операции
+     */
+    public function updateOrCreateForOperation(string $operationType, int $operationId, array $data): void;
+
+    /**
      * Получить последние операции
      */
     public function getLatest(int $limit = 10): Collection;

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Application;
 use App\Models\Currency;
 use App\Models\Exchanger;
+use App\Models\SiteCookie;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Symfony\Component\DomCrawler\Crawler;
@@ -274,6 +275,21 @@ class ApplicationController extends Controller
 
         $app->save();
 
+        // Загружаем связи с валютами для корректной обработки истории
+        $app->load(['sellCurrency', 'buyCurrency', 'expenseCurrency']);
+
+        // Создаем/обновляем записи истории
+        $applicationService = app(\App\Services\ApplicationService::class);
+        $currencyData = [
+            'sell_amount' => $app->sell_amount,
+            'sell_currency' => $app->sellCurrency?->code,
+            'buy_amount' => $app->buy_amount,
+            'buy_currency' => $app->buyCurrency?->code,
+            'expense_amount' => $app->expense_amount,
+            'expense_currency' => $app->expenseCurrency?->code,
+        ];
+        $applicationService->processCurrencyData($app, $currencyData);
+
         Log::info("ApplicationController::update: заявка успешно обновлена", [
             'id' => $id,
             'app_id' => $app->app_id
@@ -405,22 +421,32 @@ class ApplicationController extends Controller
     }
 
     /**
-     * Загрузка и синхронизация заявок с обменников (оптимизированная версия)
+     * Получить и синхронизировать данные с внешних источников
      */
     private function fetchAndSyncRemote(int $pageNum): void
     {
         $allowedStatuses = ['выполненная заявка', 'оплаченная заявка', 'возврат'];
 
-        $exchangers = [
-            'obama' => [
-                'url' => 'https://obama.ru/wp-admin/admin.php?page=pn_bids&page_num=' . $pageNum,
-                'cookies' => config('exchanger.obama.cookie'),
-            ],
-            'ural' => [
-                'url' => 'https://ural-obmen.ru/wp-admin/admin.php?page=pn_bids&page_num=' . $pageNum,
-                'cookies' => config('exchanger.ural.cookie'),
-            ],
-        ];
+        // Получаем данные из БД вместо config
+        $siteCookies = SiteCookie::all()->keyBy('name');
+
+        $exchangers = [];
+
+        if ($siteCookies->has('OBAMA')) {
+            $obama = $siteCookies['OBAMA'];
+            $exchangers['obama'] = [
+                'url' => $obama->url . '&page_num=' . $pageNum,
+                'cookies' => $obama->getCookiesString(),
+            ];
+        }
+
+        if ($siteCookies->has('URAL')) {
+            $ural = $siteCookies['URAL'];
+            $exchangers['ural'] = [
+                'url' => $ural->url . '&page_num=' . $pageNum,
+                'cookies' => $ural->getCookiesString(),
+            ];
+        }
 
         $records = collect();
 

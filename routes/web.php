@@ -131,6 +131,21 @@ Route::middleware(['admin', 'section.choice'])->prefix('admin')->group(function 
     Route::resource('platforms', PlatformController::class)->except(['show', 'index', 'create', 'store']);
     Route::get('/history/all', [MainController::class, 'allHistory'])->name('history.all');
 
+    // Управление обменниками (SiteCookies)
+    Route::resource('site-cookies', \App\Http\Controllers\Admin\SiteCookiesController::class, [
+        'parameters' => ['site-cookies' => 'siteCookie']
+    ])->names([
+        'index' => 'admin.site-cookies.index',
+        'create' => 'admin.site-cookies.create',
+        'store' => 'admin.site-cookies.store',
+        'show' => 'admin.site-cookies.show',
+        'edit' => 'admin.site-cookies.edit',
+        'update' => 'admin.site-cookies.update',
+        'destroy' => 'admin.site-cookies.destroy',
+    ]);
+    Route::get('site-cookies/{siteCookie}/api', [\App\Http\Controllers\Admin\SiteCookiesController::class, 'apiShow'])->name('admin.site-cookies.api.show');
+    Route::post('site-cookies/{siteCookie}/test', [\App\Http\Controllers\Admin\SiteCookiesController::class, 'testConnection'])->name('admin.site-cookies.test');
+
 });
 
 // ========================================

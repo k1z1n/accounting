@@ -129,6 +129,13 @@ class PurchaseController extends Controller
                 'received_currency_id' => $validated['bought_currency_id']
             ]);
 
+            // Загружаем связи для корректной обработки истории
+            $purchase->load(['saleCurrency', 'receivedCurrency']);
+
+            // Создаем записи истории
+            $applicationService = app(\App\Services\ApplicationService::class);
+            $applicationService->processPurchaseData($purchase);
+
             Log::info("PurchaseController::store: покупка успешно создана", [
                 'purchase_id' => $purchase->id,
                 'user_id' => auth()->id()
@@ -189,6 +196,14 @@ class PurchaseController extends Controller
         $purchase->received_amount = $request->input('received_amount');
         $purchase->received_currency_id = $request->input('received_currency_id');
         $purchase->save();
+
+        // Обновляем объект в памяти и загружаем связи
+        $purchase->refresh();
+        $purchase->load(['saleCurrency', 'receivedCurrency']);
+
+        // Создаем записи истории
+        $applicationService = app(\App\Services\ApplicationService::class);
+        $applicationService->processPurchaseData($purchase);
 
         Log::info("PurchaseController::update: запись обновлена", [
             'id' => $id,

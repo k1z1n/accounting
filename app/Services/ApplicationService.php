@@ -8,6 +8,7 @@ use App\Contracts\Repositories\HistoryRepositoryInterface;
 use App\Contracts\Services\ApplicationServiceInterface;
 use App\DTOs\ApplicationDTO;
 use App\Models\Application;
+use App\Models\SiteCookie;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Http;
@@ -37,16 +38,26 @@ class ApplicationService implements ApplicationServiceInterface
     {
         $allowedStatuses = ['выполненная заявка', 'оплаченная заявка', 'возврат'];
 
-        $exchangers = [
-            'obama' => [
-                'url' => 'https://obama.ru/wp-admin/admin.php?page=pn_bids&page_num=' . $pageNum,
-                'cookies' => config('exchanger.obama.cookie'),
-            ],
-            'ural' => [
-                'url' => 'https://ural-obmen.ru/wp-admin/admin.php?page=pn_bids&page_num=' . $pageNum,
-                'cookies' => config('exchanger.ural.cookie'),
-            ],
-        ];
+        // Получаем данные из БД вместо config
+        $siteCookies = SiteCookie::all()->keyBy('name');
+
+        $exchangers = [];
+
+        if ($siteCookies->has('OBAMA')) {
+            $obama = $siteCookies['OBAMA'];
+            $exchangers['obama'] = [
+                'url' => $obama->url . '&page_num=' . $pageNum,
+                'cookies' => $obama->getCookiesString(),
+            ];
+        }
+
+        if ($siteCookies->has('URAL')) {
+            $ural = $siteCookies['URAL'];
+            $exchangers['ural'] = [
+                'url' => $ural->url . '&page_num=' . $pageNum,
+                'cookies' => $ural->getCookiesString(),
+            ];
+        }
 
         $records = collect();
 
@@ -183,9 +194,99 @@ class ApplicationService implements ApplicationServiceInterface
             $updateData['expense_currency_id'] = $currency->id;
         }
 
+        // Обновляем данные заявки если есть изменения
         if (!empty($updateData)) {
             $this->applicationRepository->update($application->id, $updateData);
-            $this->createHistoryRecords($application, $currencyData);
+            // Обновляем объект в памяти
+            $application->refresh();
+        }
+
+        // Всегда создаем/обновляем записи истории при наличии валютных данных
+        $this->createHistoryRecords($application, $currencyData);
+    }
+
+    /**
+     * Обработать данные продажи крипты
+     */
+    public function processSaleCryptData(\App\Models\SaleCrypt $saleCrypt): void
+    {
+        // Получаем существующие записи истории для этой продажи
+        $existingHistories = $this->historyRepository->findByOperation(\App\Models\SaleCrypt::class, $saleCrypt->id);
+        $existingByCurrency = $existingHistories->keyBy('currency_id');
+
+        // 1. Продаваемая валюта (отрицательная сумма)
+        if (!empty($saleCrypt->sale_amount) && !empty($saleCrypt->sale_currency_id)) {
+            $this->updateOrCreateHistoryRecord(
+                $saleCrypt->id,
+                $saleCrypt->sale_currency_id,
+                -$saleCrypt->sale_amount, // Отрицательная сумма для продажи
+                $existingByCurrency,
+                \App\Models\SaleCrypt::class
+            );
+        }
+
+        // 2. Получаемая валюта (положительная сумма)
+        if (!empty($saleCrypt->fixed_amount) && !empty($saleCrypt->fixed_currency_id)) {
+            $this->updateOrCreateHistoryRecord(
+                $saleCrypt->id,
+                $saleCrypt->fixed_currency_id,
+                $saleCrypt->fixed_amount, // Положительная сумма для получения
+                $existingByCurrency,
+                \App\Models\SaleCrypt::class
+            );
+        }
+    }
+
+    /**
+     * Обработать данные покупки
+     */
+    public function processPurchaseData(\App\Models\Purchase $purchase): void
+    {
+        // Получаем существующие записи истории для этой покупки
+        $existingHistories = $this->historyRepository->findByOperation(\App\Models\Purchase::class, $purchase->id);
+        $existingByCurrency = $existingHistories->keyBy('currency_id');
+
+        // 1. Продаваемая валюта (отрицательная сумма)
+        if (!empty($purchase->sale_amount) && !empty($purchase->sale_currency_id)) {
+            $this->updateOrCreateHistoryRecord(
+                $purchase->id,
+                $purchase->sale_currency_id,
+                -$purchase->sale_amount, // Отрицательная сумма для продажи
+                $existingByCurrency,
+                \App\Models\Purchase::class
+            );
+        }
+
+        // 2. Покупаемая валюта (положительная сумма)
+        if (!empty($purchase->received_amount) && !empty($purchase->received_currency_id)) {
+            $this->updateOrCreateHistoryRecord(
+                $purchase->id,
+                $purchase->received_currency_id,
+                $purchase->received_amount, // Положительная сумма для покупки
+                $existingByCurrency,
+                \App\Models\Purchase::class
+            );
+        }
+    }
+
+    /**
+     * Обработать данные перевода (только комиссия)
+     */
+    public function processTransferData(\App\Models\Transfer $transfer): void
+    {
+        // Получаем существующие записи истории для этого перевода
+        $existingHistories = $this->historyRepository->findByOperation(\App\Models\Transfer::class, $transfer->id);
+        $existingByCurrency = $existingHistories->keyBy('currency_id');
+
+        // Только комиссия (отрицательная сумма - расход)
+        if (!empty($transfer->commission) && !empty($transfer->commission_id)) {
+            $this->updateOrCreateHistoryRecord(
+                $transfer->id,
+                $transfer->commission_id,
+                -$transfer->commission, // Отрицательная сумма для комиссии (расход)
+                $existingByCurrency,
+                \App\Models\Transfer::class
+            );
         }
     }
 
@@ -241,30 +342,88 @@ class ApplicationService implements ApplicationServiceInterface
     }
 
     /**
-     * Создать записи истории для заявки
+     * Создать или обновить записи истории для заявки
      */
     private function createHistoryRecords(Application $application, array $currencyData): void
     {
-        // Запись прихода
+        // Получаем существующие записи истории для этой заявки
+        $existingHistories = $this->historyRepository->findByOperation(Application::class, $application->id);
+        $existingByCurrency = $existingHistories->keyBy('currency_id');
+
+        // 1. Приход (продаваемая валюта) - положительная сумма
         if (!empty($currencyData['sell_amount']) && !empty($application->sell_currency_id)) {
-            $this->historyRepository->createForOperation(
-                Application::class,
+            $this->updateOrCreateHistoryRecord(
                 $application->id,
-                [
-                    'amount' => $currencyData['sell_amount'],
-                    'currency_id' => $application->sell_currency_id,
-                ]
+                $application->sell_currency_id,
+                $currencyData['sell_amount'],
+                $existingByCurrency,
+                Application::class
             );
         }
 
-        // Запись расхода
-        if (!empty($currencyData['expense_amount']) && !empty($application->expense_currency_id)) {
-            $this->historyRepository->createForOperation(
-                Application::class,
+        // 2. Продажа (покупаемая валюта) - отрицательная сумма
+        if (!empty($currencyData['buy_amount']) && !empty($application->buy_currency_id)) {
+            $this->updateOrCreateHistoryRecord(
                 $application->id,
+                $application->buy_currency_id,
+                -$currencyData['buy_amount'], // Отрицательная сумма для продажи
+                $existingByCurrency,
+                Application::class
+            );
+        }
+
+        // 3. Купля (покупаемая валюта) - положительная сумма (если есть отдельное поле)
+        if (!empty($currencyData['buy_amount']) && !empty($application->buy_currency_id)) {
+            // Если есть отдельное поле для купли, используем его
+            $buyAmount = $currencyData['buy_amount'] ?? 0;
+            if ($buyAmount > 0) {
+                $this->updateOrCreateHistoryRecord(
+                    $application->id,
+                    $application->buy_currency_id,
+                    $buyAmount, // Положительная сумма для купли
+                    $existingByCurrency,
+                    Application::class
+                );
+            }
+        }
+
+        // 4. Расход (валюта расходов) - отрицательная сумма
+        if (!empty($currencyData['expense_amount']) && !empty($application->expense_currency_id)) {
+            $this->updateOrCreateHistoryRecord(
+                $application->id,
+                $application->expense_currency_id,
+                -$currencyData['expense_amount'], // Отрицательная сумма для расхода
+                $existingByCurrency,
+                Application::class
+            );
+        }
+    }
+
+    /**
+     * Обновить или создать запись истории
+     */
+    private function updateOrCreateHistoryRecord(int $operationId, int $currencyId, float $amount, $existingByCurrency, string $modelType = Application::class): void
+    {
+        $existingRecord = $existingByCurrency->get($currencyId);
+
+        if ($existingRecord) {
+            // Обновляем существующую запись через репозиторий
+            $this->historyRepository->updateOrCreateForOperation(
+                $modelType,
+                $operationId,
                 [
-                    'amount' => -$currencyData['expense_amount'],
-                    'currency_id' => $application->expense_currency_id,
+                    'amount' => $amount,
+                    'currency_id' => $currencyId,
+                ]
+            );
+        } else {
+            // Создаем новую запись
+            $this->historyRepository->createForOperation(
+                $modelType,
+                $operationId,
+                [
+                    'amount' => $amount,
+                    'currency_id' => $currencyId,
                 ]
             );
         }
