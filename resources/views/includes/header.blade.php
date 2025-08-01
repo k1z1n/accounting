@@ -15,6 +15,9 @@
                             <span class="cursor-pointer hover:text-cyan-400 transition-colors">Списки</span>
                             <ul class="hidden group-hover:block absolute left-1/2 top-[110%] -translate-x-1/2 w-52 bg-white/95 border border-gray-200 rounded-xl shadow-2xl z-10 mt-2 mt-[-10px] overflow-hidden">
                                 <li>
+                                    <a href="{{ route('admin.site-cookies.index') }}" class="block px-5 py-3 text-base text-gray-700 hover:bg-cyan-50 transition">Управление обменниками</a>
+                                </li>
+                                <li>
                                     <a href="{{ route('view.exchangers') }}" class="block px-5 py-3 text-base text-gray-700 hover:bg-cyan-50 transition">Список платформ</a>
                                 </li>
                                 <li>
@@ -47,9 +50,9 @@
                                 </li>
                             </ul>
                         </li>
-                        <li>
-                            <a href="{{ route('wallets.history') }}" class="hover:text-cyan-400 transition-colors">История кошельков</a>
-                        </li>
+{{--                        <li>--}}
+{{--                            <a href="{{ route('wallets.history') }}" class="hover:text-cyan-400 transition-colors">История кошельков</a>--}}
+{{--                        </li>--}}
                         <li>
                             <a href="{{ route('admin.exchanger.balances') }}" class="hover:text-cyan-400 transition-colors">Балансы кошельков</a>
                         </li>

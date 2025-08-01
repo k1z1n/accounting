@@ -101,6 +101,52 @@ class HistoryRepository extends BaseRepository implements HistoryRepositoryInter
     }
 
     /**
+     * Найти записи истории для конкретной операции
+     */
+    public function findByOperation(string $operationType, int $operationId): Collection
+    {
+        return $this->model
+            ->where('sourceable_type', $operationType)
+            ->where('sourceable_id', $operationId)
+            ->get();
+    }
+
+    /**
+     * Найти запись истории для конкретной операции и валюты
+     */
+    public function findByOperationAndCurrency(string $operationType, int $operationId, int $currencyId): ?History
+    {
+        return $this->model
+            ->where('sourceable_type', $operationType)
+            ->where('sourceable_id', $operationId)
+            ->where('currency_id', $currencyId)
+            ->first();
+    }
+
+    /**
+     * Обновить или создать запись истории для операции
+     */
+    public function updateOrCreateForOperation(string $operationType, int $operationId, array $data): void
+    {
+        $existingRecord = $this->findByOperationAndCurrency(
+            $operationType,
+            $operationId,
+            $data['currency_id']
+        );
+
+        if ($existingRecord) {
+            // Обновляем существующую запись
+            $existingRecord->update([
+                'amount' => $data['amount'],
+                'updated_at' => now(),
+            ]);
+        } else {
+            // Создаем новую запись
+            $this->createForOperation($operationType, $operationId, $data);
+        }
+    }
+
+    /**
      * Получить последние операции
      */
     public function getLatest(int $limit = 10): Collection

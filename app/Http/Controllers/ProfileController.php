@@ -251,12 +251,12 @@ class ProfileController extends Controller
             'merchant' => collect($bal['merchant'] ?? [])->map(fn($b)=>[
                 'code'   => strtoupper($b['currency_code']),
                 'amount' => (float)$b['balance'],
-                'icon'   => asset("images/coins/".strtoupper($b['currency_code']).".svg"),
+                'icon'   => "/images/coins/".strtoupper($b['currency_code']).".svg",
             ])->values(),
             'user' => collect($bal['user'] ?? [])->map(fn($b)=>[
                 'code'   => strtoupper($b['currency_code']),
                 'amount' => (float)$b['balance'],
-                'icon'   => asset("images/coins/".strtoupper($b['currency_code']).".svg"),
+                'icon'   => "/images/coins/".strtoupper($b['currency_code']).".svg",
             ])->values(),
         ];
     }
@@ -268,7 +268,7 @@ class ProfileController extends Controller
         return collect($list)->map(fn($b)=>[
             'code'   => strtoupper($b['unit']),
             'amount' => (float)$b['balance'],
-            'icon'   => asset("images/coins/".strtoupper($b['unit']).".svg"),
+            'icon'   => "/images/coins/".strtoupper($b['unit']).".svg",
         ]);
     }
 
@@ -357,7 +357,8 @@ class ProfileController extends Controller
                     if ($amount > 0) {
                         $balances[] = [
                             'code' => strtoupper($coin['coin']),
-                            'amount' => $amount
+                            'amount' => $amount,
+                            'icon' => "/images/coins/".strtoupper($coin['coin']).".svg"
                         ];
                     }
                 }

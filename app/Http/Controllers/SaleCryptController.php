@@ -116,6 +116,13 @@ class SaleCryptController extends Controller
                 'fixed_currency_id' => $validated['fixed_currency_id']
             ]);
 
+            // Загружаем связи для корректной обработки истории
+            $saleCrypt->load(['saleCurrency', 'fixedCurrency']);
+
+            // Создаем записи истории
+            $applicationService = app(\App\Services\ApplicationService::class);
+            $applicationService->processSaleCryptData($saleCrypt);
+
             Log::info("SaleCryptController::store: продажа успешно создана", [
                 'sale_crypt_id' => $saleCrypt->id,
                 'user_id' => auth()->id()
@@ -178,6 +185,14 @@ class SaleCryptController extends Controller
         $saleCrypt->fixed_amount = $request->input('fixed_amount');
         $saleCrypt->fixed_currency_id = $request->input('fixed_currency_id');
         $saleCrypt->save();
+
+        // Обновляем объект в памяти и загружаем связи
+        $saleCrypt->refresh();
+        $saleCrypt->load(['saleCurrency', 'fixedCurrency']);
+
+        // Создаем записи истории
+        $applicationService = app(\App\Services\ApplicationService::class);
+        $applicationService->processSaleCryptData($saleCrypt);
 
         Log::info("SaleCryptController::update: запись обновлена", [
             'id' => $id,

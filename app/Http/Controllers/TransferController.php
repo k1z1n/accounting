@@ -118,6 +118,13 @@ class TransferController extends Controller
                 'amount_id' => $validated['amount_id']
             ]);
 
+            // Загружаем связи для корректной обработки истории
+            $transfer->load(['commissionCurrency']);
+
+            // Создаем записи истории (только комиссия)
+            $applicationService = app(\App\Services\ApplicationService::class);
+            $applicationService->processTransferData($transfer);
+
             Log::info("TransferController::store: перевод успешно создан", [
                 'transfer_id' => $transfer->id,
                 'user_id' => auth()->id()
@@ -173,6 +180,15 @@ class TransferController extends Controller
         $transfer->amount = $request->input('amount');
         $transfer->amount_id = $request->input('amount_id');
         $transfer->save();
+
+        // Обновляем объект в памяти и загружаем связи
+        $transfer->refresh();
+        $transfer->load(['commissionCurrency']);
+
+        // Создаем/обновляем записи истории (только комиссия)
+        $applicationService = app(\App\Services\ApplicationService::class);
+        $applicationService->processTransferData($transfer);
+
         return response()->json(['success' => true]);
     }
 }

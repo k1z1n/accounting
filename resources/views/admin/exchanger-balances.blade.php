@@ -113,8 +113,11 @@ document.addEventListener('DOMContentLoaded', function() {
     function renderCard(b) {
         let amount = +b.amount;
         let amountClass = amount > 0 ? 'text-cyan-400' : (amount < 0 ? 'text-red-400' : 'text-gray-400');
+
         return `<div class="flex items-center gap-4 bg-[#232b3a] rounded-2xl px-6 py-5 shadow hover:shadow-lg transition w-full mb-4">
-            <span class="flex-shrink-0 bg-[#191919] rounded-xl p-2 flex items-center justify-center"><img src="${b.icon}" alt="${b.code}" class="w-8 h-8"></span>
+            <span class="flex-shrink-0 bg-[#191919] rounded-xl p-2 flex items-center justify-center">
+                <img src="${b.icon}" alt="${b.code}" class="w-8 h-8">
+            </span>
             <div class="flex-1 min-w-0">
                 <div class="font-mono text-lg font-bold text-cyan-100 flex items-center gap-2 leading-tight">${b.code}${b.name ? `<span class='text-xs text-gray-400 font-normal ml-2'>${b.name}</span>` : ''}</div>
                 <div class="${amountClass} font-extrabold text-2xl tabular-nums leading-snug mt-1">${amount.toLocaleString('ru-RU', {minimumFractionDigits: 2, maximumFractionDigits: 8})}</div>

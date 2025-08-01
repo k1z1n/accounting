@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\SiteCookie;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Cache;
@@ -29,13 +30,22 @@ class CookieManagerService
 
     public function __construct()
     {
-        // Получаем учетные данные из конфигурации
-        $this->exchangers['obama']['username'] = config('exchanger.obama.username');
-        $this->exchangers['obama']['password'] = config('exchanger.obama.password');
-        $this->exchangers['obama']['pin'] = config('exchanger.obama.pin');
-        $this->exchangers['ural']['username'] = config('exchanger.ural.username');
-        $this->exchangers['ural']['password'] = config('exchanger.ural.password');
-        $this->exchangers['ural']['pin'] = config('exchanger.ural.pin');
+        // Получаем учетные данные из БД вместо config
+        $siteCookies = SiteCookie::all()->keyBy('name');
+
+        if ($siteCookies->has('OBAMA')) {
+            $obama = $siteCookies['OBAMA'];
+            $this->exchangers['obama']['username'] = config('exchanger.obama.username'); // Пока оставляем из config
+            $this->exchangers['obama']['password'] = config('exchanger.obama.password'); // Пока оставляем из config
+            $this->exchangers['obama']['pin'] = config('exchanger.obama.pin'); // Пока оставляем из config
+        }
+
+        if ($siteCookies->has('URAL')) {
+            $ural = $siteCookies['URAL'];
+            $this->exchangers['ural']['username'] = config('exchanger.ural.username'); // Пока оставляем из config
+            $this->exchangers['ural']['password'] = config('exchanger.ural.password'); // Пока оставляем из config
+            $this->exchangers['ural']['pin'] = config('exchanger.ural.pin'); // Пока оставляем из config
+        }
     }
 
     /**

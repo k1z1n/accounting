@@ -12,6 +12,7 @@ use App\Models\Payment;
 use App\Models\Purchase;
 use App\Models\SaleCrypt;
 use App\Models\Transfer;
+use App\Models\SiteCookie;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -36,7 +37,7 @@ class MainController extends Controller
     }
 
     /**
-     * Загрузка и синхронизация заявок с обоих обменников
+     * Загрузка и синхронизация заявок с обменников (оптимизированная версия)
      *
      * @param int $pageNum — номер страницы для пагинации API
      */
@@ -44,16 +45,26 @@ class MainController extends Controller
     {
         $allowedStatuses = ['выполненная заявка', 'оплаченная заявка', 'возврат'];
 
-        $exchangers = [
-            'obama' => [
-                'url' => 'https://obama.ru/wp-admin/admin.php?page=pn_bids&page_num=' . $pageNum,
-                'cookies' => config('exchanger.obama.cookie'),
-            ],
-            'ural' => [
-                'url' => 'https://ural-obmen.ru/wp-admin/admin.php?page=pn_bids&page_num=' . $pageNum,
-                'cookies' => config('exchanger.ural.cookie'),
-            ],
-        ];
+        // Получаем данные из БД вместо config
+        $siteCookies = SiteCookie::all()->keyBy('name');
+
+        $exchangers = [];
+
+        if ($siteCookies->has('OBAMA')) {
+            $obama = $siteCookies['OBAMA'];
+            $exchangers['obama'] = [
+                'url' => $obama->url . '&page_num=' . $pageNum,
+                'cookies' => $obama->getCookiesString(),
+            ];
+        }
+
+        if ($siteCookies->has('URAL')) {
+            $ural = $siteCookies['URAL'];
+            $exchangers['ural'] = [
+                'url' => $ural->url . '&page_num=' . $pageNum,
+                'cookies' => $ural->getCookiesString(),
+            ];
+        }
 
         $records = collect();
 
@@ -731,18 +742,45 @@ class MainController extends Controller
      */
     public function allHistory(Request $request)
     {
-        // Группируем связи по типу sourceable
-        // MorphTo::morphWith([
-        //     \App\Models\Purchase::class => ['exchanger', 'saleCurrency', 'receivedCurrency'],
-        //     \App\Models\SaleCrypt::class => ['exchanger', 'saleCurrency', 'fixedCurrency'],
-        //     \App\Models\Payment::class => ['exchanger', 'sellCurrency'],
-        //     \App\Models\Transfer::class => ['exchangerFrom', 'exchangerTo', 'commissionCurrency', 'amountCurrency'],
-        //     \App\Models\Application::class => ['sellCurrency', 'buyCurrency', 'expenseCurrency', 'purchases', 'saleCrypts'],
-        // ]);
+        // Получаем параметры фильтрации
+        $typeFilter = $request->get('type', 'all');
+        $dateFrom = $request->get('date_from');
+        $dateTo = $request->get('date_to');
+        $amountMin = $request->get('amount_min');
+        $amountMax = $request->get('amount_max');
+        $currencyFilter = $request->get('currency', 'all');
 
-        $histories = History::with(['currency', 'sourceable'])
-            ->orderBy('created_at', 'desc')
-            ->paginate(30);
+        // Базовый запрос
+        $query = History::with(['currency', 'sourceable']);
+
+        // Применяем фильтры
+        if ($typeFilter !== 'all') {
+            $query->where('sourceable_type', 'App\\Models\\' . $typeFilter);
+        }
+
+        if ($dateFrom) {
+            $query->whereDate('created_at', '>=', $dateFrom);
+        }
+
+        if ($dateTo) {
+            $query->whereDate('created_at', '<=', $dateTo);
+        }
+
+        if ($amountMin !== null && $amountMin !== '') {
+            $query->where('amount', '>=', $amountMin);
+        }
+
+        if ($amountMax !== null && $amountMax !== '') {
+            $query->where('amount', '<=', $amountMax);
+        }
+
+        if ($currencyFilter !== 'all') {
+            $query->whereHas('currency', function ($q) use ($currencyFilter) {
+                $q->where('code', $currencyFilter);
+            });
+        }
+
+        $histories = $query->orderBy('created_at', 'desc')->paginate(50);
 
         // Подгружаем только реально существующие связи для каждого типа sourceable
         foreach ($histories as $history) {
@@ -759,18 +797,101 @@ class MainController extends Controller
             }
         }
 
+        // Группируем записи по конкретным записям (sourceable_type + sourceable_id)
+        $groupedHistories = $histories->groupBy(function ($history) {
+            $type = class_basename($history->sourceable_type);
+            $id = $history->sourceable_id;
+
+            // Создаем уникальный ключ для группировки
+            return $type . '_' . $id;
+        });
+
+        // Добавляем дополнительную информацию для каждой группы
+        $groupedHistoriesWithInfo = $groupedHistories->map(function ($groupHistories, $groupKey) {
+            $firstHistory = $groupHistories->first();
+            $type = class_basename($firstHistory->sourceable_type);
+            $id = $firstHistory->sourceable_id;
+            $source = $firstHistory->sourceable;
+
+                        // Добавляем дополнительную информацию для отображения
+            $displayName = '';
+            $color = '';
+
+            switch ($type) {
+                case 'Application':
+                    $displayName = $source && $source->merchant ? $source->merchant : "Заявка #{$id}";
+                    $color = 'blue';
+                    break;
+                case 'Purchase':
+                    $displayName = $source && $source->exchanger ? $source->exchanger->title : "Покупка #{$id}";
+                    $color = 'green';
+                    break;
+                case 'SaleCrypt':
+                    $displayName = $source && $source->exchanger ? $source->exchanger->title : "Продажа #{$id}";
+                    $color = 'orange';
+                    break;
+                case 'Transfer':
+                    $displayName = $source && $source->exchangerFrom ?
+                        $source->exchangerFrom->title . ' → ' . ($source->exchangerTo->title ?? '') :
+                        "Перевод #{$id}";
+                    $color = 'purple';
+                    break;
+                case 'Payment':
+                    $displayName = $source && $source->exchanger ? $source->exchanger->title : "Платеж #{$id}";
+                    $color = 'red';
+                    break;
+                default:
+                    $displayName = "{$type} #{$id}";
+                    $color = 'gray';
+            }
+
+            return [
+                'histories' => $groupHistories,
+                'info' => [
+                    'key' => $groupKey,
+                    'type' => $type,
+                    'id' => $id,
+                    'display_name' => $displayName,
+                    'color' => $color,
+                    'created_at' => $firstHistory->created_at
+                ]
+            ];
+        });
+
+        // Получаем данные для фильтров
+        $currencies = Currency::orderBy('code')->get();
+        $types = [
+            'all' => 'Все операции',
+            'Application' => 'Заявки',
+            'Purchase' => 'Покупки',
+            'SaleCrypt' => 'Продажи',
+            'Transfer' => 'Переводы',
+            'Payment' => 'Платежи'
+        ];
+
         // Итоги по всем валютам (оставим для возможного футера)
         $rawTotals = History::whereNotNull('currency_id')
             ->groupBy('currency_id')
             ->select('currency_id', DB::raw('SUM(amount) as total'))
             ->pluck('total', 'currency_id');
 
-        $currencies = Currency::whereIn('id', $rawTotals->keys())->get();
         $totals = [];
         foreach ($currencies as $c) {
             $totals[$c->id] = $rawTotals->get($c->id, 0);
         }
 
-        return view('pages.all-history', compact('histories', 'currencies', 'totals'));
+        return view('pages.all-history', compact(
+            'histories',
+            'groupedHistoriesWithInfo',
+            'currencies',
+            'totals',
+            'types',
+            'typeFilter',
+            'dateFrom',
+            'dateTo',
+            'amountMin',
+            'amountMax',
+            'currencyFilter'
+        ));
     }
 }
