@@ -747,6 +747,8 @@ class ApplicationsPage {
                 console.log('ApplicationsPage: получены данные для редактирования:', applicationData);
                 document.getElementById('edit_app_id').value = applicationData.id;
                 document.getElementById('modalAppId').textContent = applicationData.app_id;
+                document.getElementById('edit_sale_amount').value = applicationData.sale_amount || '';
+                document.getElementById('edit_sale_currency').value = applicationData.sale_currency || '';
                 document.getElementById('edit_sell_amount').value = applicationData.sell_amount || '';
                 document.getElementById('edit_sell_currency').value = applicationData.sell_currency || '';
                 document.getElementById('edit_buy_amount').value = applicationData.buy_amount || '';
@@ -769,7 +771,7 @@ class ApplicationsPage {
         document.body.style.overflow = '';
 
         // Очищаем ошибки
-        ['sell_amount', 'sell_currency', 'buy_amount', 'buy_currency', 'expense_amount', 'expense_currency', 'merchant', 'order_id']
+        ['sale_amount', 'sale_currency', 'sell_amount', 'sell_currency', 'buy_amount', 'buy_currency', 'expense_amount', 'expense_currency', 'merchant', 'order_id']
             .forEach(f => {
                 const errEl = document.getElementById('err_' + f);
                 if (errEl) errEl.textContent = '';
@@ -784,6 +786,8 @@ class ApplicationsPage {
 
         // Собираем данные в объект
         const data = {
+            sale_amount: formData.get('sale_amount') || null,
+            sale_currency: formData.get('sale_currency') || null,
             sell_amount: formData.get('sell_amount') || null,
             sell_currency: formData.get('sell_currency') || null,
             buy_amount: formData.get('buy_amount') || null,
@@ -883,6 +887,9 @@ class ApplicationsPage {
                     // Обновляем данные в строке
                     const updatedRowData = {
                         ...rowNode.data,
+                        sale_text: applicationData.sale_text,
+                        sale_amount: applicationData.sale_amount,
+                        sale_currency: applicationData.sale_currency,
                         sell_amount: applicationData.sell_amount,
                         sell_currency: applicationData.sell_currency ? { code: applicationData.sell_currency } : null,
                         buy_amount: applicationData.buy_amount,
