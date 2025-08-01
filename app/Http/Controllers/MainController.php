@@ -361,6 +361,26 @@ class MainController extends Controller
             ->orderByDesc('app_created_at')
             ->paginate($perPage, ['*'], 'page', $pageNum);
 
+        // Добавляем данные о sale_text для каждой заявки
+        $apps->getCollection()->transform(function ($app) {
+            // Разбираем sale_text на сумму и валюту
+            $saleAmount = null;
+            $saleCurrency = null;
+
+            if ($app->sale_text) {
+                $parts = explode(' ', trim($app->sale_text), 2);
+                if (count($parts) >= 2) {
+                    $saleAmount = is_numeric($parts[0]) ? floatval($parts[0]) : null;
+                    $saleCurrency = $parts[1];
+                }
+            }
+
+            $app->sale_amount = $saleAmount;
+            $app->sale_currency = $saleCurrency;
+
+            return $app;
+        });
+
         return response()->json([
             'data' => $apps->items(),
             'has_more' => $apps->hasMorePages(),
@@ -374,7 +394,8 @@ class MainController extends Controller
     public function update(Request $request, $id)
     {
         $request->validate([
-            'sale_text' => 'nullable|string|max:64',
+            'sale_amount' => 'nullable|numeric|min:0',
+            'sale_currency' => 'nullable|string|max:8',
             'sell_amount' => 'nullable|numeric|min:0',
             'sell_currency' => 'nullable|string|max:8',
             'buy_amount' => 'nullable|numeric|min:0',
@@ -387,47 +408,18 @@ class MainController extends Controller
 
         $app = Application::findOrFail($id);
 
-        //
-        // 1) Сохраняем sale_text (приход) — парсим «число + код валюты», если есть
-        //
-        $amount = null;
-        $saleCurrencyId = null;
+        // Обрабатываем sale_text (приход)
+        if ($request->has('sale_amount') || $request->has('sale_currency')) {
+            $saleAmount = $request->get('sale_amount');
+            $saleCurrency = $request->get('sale_currency');
 
-        if ($app->sale_text) {
-            $saleText = $app->sale_text;
-            Log::info("Update: received sale_text='{$saleText}' for app_id={$app->id}");
-
-            $parts = explode(' ', $saleText, 2);
-            $rawAmount = $parts[0] ?? null;
-            $rawCode = $parts[1] ?? null;
-
-            if (is_numeric($rawAmount)) {
-                $amount = floatval($rawAmount);
+            if ($saleAmount !== null && $saleCurrency) {
+                $app->sale_text = $saleAmount . ' ' . $saleCurrency;
+                Log::info("Update: обновлен sale_text", ['sale_text' => $app->sale_text]);
             } else {
-                Log::warning("Failed to parse amount from sale_text='{$saleText}'");
-                $amount = null;
+                $app->sale_text = null;
+                Log::info("Update: sale_text очищен");
             }
-
-            if ($rawCode) {
-                $currencyCode = mb_strtoupper($rawCode);
-            } else {
-                Log::warning("No currency code found in sale_text='{$saleText}'");
-                $currencyCode = null;
-            }
-
-            if ($amount !== null && $currencyCode) {
-                $cur = Currency::firstOrCreate(
-                    ['code' => $currencyCode],
-                    ['name' => $currencyCode]
-                );
-                $saleCurrencyId = $cur->id;
-                Log::info("Currency lookup/create for sale_text: code='{$currencyCode}', id={$saleCurrencyId}");
-            } else {
-                $saleCurrencyId = null;
-            }
-        } else {
-            $app->sale_text = null;
-            Log::info("No sale_text provided for app_id={$app->id}");
         }
 
         //
@@ -494,56 +486,23 @@ class MainController extends Controller
         Log::info("Application saved for id={$app->id}");
 
         //
-        // 6) Синхронизируем историю: удаляем все предыдущие записи (polymorphic) и создаём актуальные
+        // 6) Синхронизируем историю через ApplicationService
         //
-        History::where('sourceable_type', Application::class)
-            ->where('sourceable_id', $app->id)
-            ->delete();
-        Log::info("Cleared existing history entries for Application id={$app->id}");
+        // Загружаем связи с валютами для корректной обработки истории
+        $app->load(['sellCurrency', 'buyCurrency', 'expenseCurrency']);
 
-        // 6.1) «Приход» из sale_text
-        if ($amount !== null && $saleCurrencyId !== null && $amount > 0) {
-            History::create([
-                'sourceable_type' => Application::class,
-                'sourceable_id' => $app->id,
-                'amount' => +$amount,
-                'currency_id' => $saleCurrencyId,
-            ]);
-            Log::info("History created for sale_text (income) +{$amount}, currency_id={$saleCurrencyId}");
-        }
-
-        // 6.2) «Продажа» (sell_amount → расход)
-        if ($app->sell_amount !== null && $app->sell_currency_id !== null && $app->sell_amount > 0) {
-            History::create([
-                'sourceable_type' => Application::class,
-                'sourceable_id' => $app->id,
-                'amount' => -$app->sell_amount,
-                'currency_id' => $app->sell_currency_id,
-            ]);
-            Log::info("History created for sell_amount (expense) -{$app->sell_amount}, currency_id={$app->sell_currency_id}");
-        }
-
-        // 6.3) «Купля» (buy_amount → приход)
-        if ($app->buy_amount !== null && $app->buy_currency_id !== null && $app->buy_amount > 0) {
-            History::create([
-                'sourceable_type' => Application::class,
-                'sourceable_id' => $app->id,
-                'amount' => +$app->buy_amount,
-                'currency_id' => $app->buy_currency_id,
-            ]);
-            Log::info("History created for buy_amount (income) +{$app->buy_amount}, currency_id={$app->buy_currency_id}");
-        }
-
-        // 6.4) «Расход» (expense_amount → расход)
-        if ($app->expense_amount !== null && $app->expense_currency_id !== null && $app->expense_amount > 0) {
-            History::create([
-                'sourceable_type' => Application::class,
-                'sourceable_id' => $app->id,
-                'amount' => -$app->expense_amount,
-                'currency_id' => $app->expense_currency_id,
-            ]);
-            Log::info("History created for expense_amount (expense) -{$app->expense_amount}, currency_id={$app->expense_currency_id}");
-        }
+        // Создаем/обновляем записи истории через ApplicationService
+        $applicationService = app(\App\Services\ApplicationService::class);
+        $currencyData = [
+            'sell_amount' => $app->sell_amount,
+            'sell_currency' => $app->sellCurrency?->code,
+            'buy_amount' => $app->buy_amount,
+            'buy_currency' => $app->buyCurrency?->code,
+            'expense_amount' => $app->expense_amount,
+            'expense_currency' => $app->expenseCurrency?->code,
+        ];
+        $applicationService->processCurrencyData($app, $currencyData);
+        Log::info("History processed through ApplicationService for Application id={$app->id}");
 
         return response()->json(['success' => true]);
     }

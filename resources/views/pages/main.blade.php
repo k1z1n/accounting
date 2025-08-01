@@ -160,6 +160,46 @@
                         <input type="hidden" name="id" id="edit_app_id">
 
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <!-- Приход (sale_text) -->
+                            <div>
+                                <label for="edit_sale_amount" class="block text-sm font-medium text-gray-300 mb-1">
+                                    Приход (сумма)
+                                </label>
+                                <input
+                                    type="number"
+                                    step="0.00000001"
+                                    name="sale_amount"
+                                    id="edit_sale_amount"
+                                    class="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                                >
+                                <p id="err_sale_amount" class="mt-1 text-sm text-red-500"></p>
+                            </div>
+                            <div>
+                                <label for="edit_sale_currency" class="block text-sm font-medium text-gray-300 mb-1">
+                                    Приход (валюта)
+                                </label>
+                                <div class="relative">
+                                    <select
+                                        name="sale_currency"
+                                        id="edit_sale_currency"
+                                        class="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2 pr-8 focus:outline-none focus:ring-2 focus:ring-cyan-500 appearance-none"
+                                    >
+                                        <option value="" disabled selected>— Выберите валюту —</option>
+                                        @foreach($currenciesForEdit as $c)
+                                            <option value="{{ $c->code }}">{{ $c->code }} — {{ $c->name }}</option>
+                                        @endforeach
+                                    </select>
+                                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
+                                        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor"
+                                             viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                  d="M19 9l-7 7-7-7"/>
+                                        </svg>
+                                    </div>
+                                </div>
+                                <p id="err_sale_currency" class="mt-1 text-sm text-red-500"></p>
+                            </div>
+
                             <!-- Продажа -->
                             <div>
                                 <label for="edit_sell_amount" class="block text-sm font-medium text-gray-300 mb-1">
@@ -515,6 +555,8 @@
                             button.addEventListener('click', () => {
                                 const id = button.dataset.id;
                                 const appId = button.dataset.app_id;
+                                const saleAmount = button.dataset.sale_amount;
+                                const saleCurrency = button.dataset.sale_currency;
                                 const sellAmount = button.dataset.sell_amount;
                                 const sellCurrency = button.dataset.sell_currency;
                                 const buyAmount = button.dataset.buy_amount;
@@ -526,6 +568,8 @@
 
                                 document.getElementById('edit_app_id').value = id;
                                 modalAppIdLabel.textContent = `#${appId}`;
+                                                                document.getElementById('edit_sale_amount').value = saleAmount || '';
+                                document.getElementById('edit_sale_currency').value = saleCurrency || '';
                                 document.getElementById('edit_sell_amount').value = sellAmount || '';
                                 document.getElementById('edit_buy_amount').value = buyAmount || '';
                                 document.getElementById('edit_expense_amount').value = expenseAmount || '';
@@ -545,7 +589,7 @@
                     // Отправка формы редактирования
                     editForm.addEventListener('submit', function (e) {
                         e.preventDefault();
-                        ['sell_amount', 'sell_currency', 'buy_amount', 'buy_currency', 'expense_amount', 'expense_currency', 'merchant', 'order_id']
+                        ['sale_amount', 'sale_currency', 'sell_amount', 'sell_currency', 'buy_amount', 'buy_currency', 'expense_amount', 'expense_currency', 'merchant', 'order_id']
                             .forEach(f => {
                                 const errEl = document.getElementById('err_' + f);
                                 if (errEl) errEl.textContent = '';
@@ -553,6 +597,8 @@
 
                         const id = document.getElementById('edit_app_id').value;
                         const data = {
+                            sale_amount: document.getElementById('edit_sale_amount').value.trim(),
+                            sale_currency: document.getElementById('edit_sale_currency').value.trim(),
                             sell_amount: document.getElementById('edit_sell_amount').value.trim(),
                             sell_currency: document.getElementById('edit_sell_currency').value.trim(),
                             buy_amount: document.getElementById('edit_buy_amount').value.trim(),
@@ -627,6 +673,8 @@
                         class="editBtn px-3 py-1 bg-cyan-600 text-white rounded-md hover:bg-cyan-700 transition text-xs"
                         data-id="${d.id}"
                         data-app_id="${d.app_id}"
+                        data-sale_amount="${d.sale_amount ?? ''}"
+                        data-sale_currency="${d.sale_currency ?? ''}"
                         data-sell_amount="${d.sell_amount ?? ''}"
                         data-sell_currency="${d.sell_currency?.code ?? ''}"
                         data-buy_amount="${d.buy_amount ?? ''}"

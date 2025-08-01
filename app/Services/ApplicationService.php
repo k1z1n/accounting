@@ -214,6 +214,26 @@ class ApplicationService implements ApplicationServiceInterface
         $existingHistories = $this->historyRepository->findByOperation(\App\Models\SaleCrypt::class, $saleCrypt->id);
         $existingByCurrency = $existingHistories->keyBy('currency_id');
 
+        // Собираем валюты, которые должны быть в истории
+        $expectedCurrencies = [];
+        if (!empty($saleCrypt->sale_amount) && !empty($saleCrypt->sale_currency_id)) {
+            $expectedCurrencies[] = $saleCrypt->sale_currency_id;
+        }
+        if (!empty($saleCrypt->fixed_amount) && !empty($saleCrypt->fixed_currency_id)) {
+            $expectedCurrencies[] = $saleCrypt->fixed_currency_id;
+        }
+
+        // Удаляем записи для валют, которых больше нет
+        foreach ($existingHistories as $history) {
+            if (!in_array($history->currency_id, $expectedCurrencies)) {
+                $history->delete();
+            }
+        }
+
+        // Обновляем существующие записи
+        $existingHistories = $this->historyRepository->findByOperation(\App\Models\SaleCrypt::class, $saleCrypt->id);
+        $existingByCurrency = $existingHistories->keyBy('currency_id');
+
         // 1. Продаваемая валюта (отрицательная сумма)
         if (!empty($saleCrypt->sale_amount) && !empty($saleCrypt->sale_currency_id)) {
             $this->updateOrCreateHistoryRecord(
@@ -246,6 +266,26 @@ class ApplicationService implements ApplicationServiceInterface
         $existingHistories = $this->historyRepository->findByOperation(\App\Models\Purchase::class, $purchase->id);
         $existingByCurrency = $existingHistories->keyBy('currency_id');
 
+        // Собираем валюты, которые должны быть в истории
+        $expectedCurrencies = [];
+        if (!empty($purchase->sale_amount) && !empty($purchase->sale_currency_id)) {
+            $expectedCurrencies[] = $purchase->sale_currency_id;
+        }
+        if (!empty($purchase->received_amount) && !empty($purchase->received_currency_id)) {
+            $expectedCurrencies[] = $purchase->received_currency_id;
+        }
+
+        // Удаляем записи для валют, которых больше нет
+        foreach ($existingHistories as $history) {
+            if (!in_array($history->currency_id, $expectedCurrencies)) {
+                $history->delete();
+            }
+        }
+
+        // Обновляем существующие записи
+        $existingHistories = $this->historyRepository->findByOperation(\App\Models\Purchase::class, $purchase->id);
+        $existingByCurrency = $existingHistories->keyBy('currency_id');
+
         // 1. Продаваемая валюта (отрицательная сумма)
         if (!empty($purchase->sale_amount) && !empty($purchase->sale_currency_id)) {
             $this->updateOrCreateHistoryRecord(
@@ -275,6 +315,23 @@ class ApplicationService implements ApplicationServiceInterface
     public function processTransferData(\App\Models\Transfer $transfer): void
     {
         // Получаем существующие записи истории для этого перевода
+        $existingHistories = $this->historyRepository->findByOperation(\App\Models\Transfer::class, $transfer->id);
+        $existingByCurrency = $existingHistories->keyBy('currency_id');
+
+        // Собираем валюты, которые должны быть в истории
+        $expectedCurrencies = [];
+        if (!empty($transfer->commission) && !empty($transfer->commission_id)) {
+            $expectedCurrencies[] = $transfer->commission_id;
+        }
+
+        // Удаляем записи для валют, которых больше нет
+        foreach ($existingHistories as $history) {
+            if (!in_array($history->currency_id, $expectedCurrencies)) {
+                $history->delete();
+            }
+        }
+
+        // Обновляем существующие записи
         $existingHistories = $this->historyRepository->findByOperation(\App\Models\Transfer::class, $transfer->id);
         $existingByCurrency = $existingHistories->keyBy('currency_id');
 
@@ -350,6 +407,56 @@ class ApplicationService implements ApplicationServiceInterface
         $existingHistories = $this->historyRepository->findByOperation(Application::class, $application->id);
         $existingByCurrency = $existingHistories->keyBy('currency_id');
 
+        // Обрабатываем sale_text (приход)
+        $saleAmount = null;
+        $saleCurrencyId = null;
+
+        if ($application->sale_text) {
+            $parts = explode(' ', trim($application->sale_text), 2);
+            if (count($parts) >= 2 && is_numeric($parts[0])) {
+                $saleAmount = floatval($parts[0]);
+                $saleCurrency = $this->currencyRepository->firstOrCreate(strtoupper($parts[1]));
+                $saleCurrencyId = $saleCurrency->id;
+            }
+        }
+
+        // Собираем валюты, которые должны быть в истории
+        $expectedCurrencies = [];
+        if ($saleAmount !== null && $saleCurrencyId !== null) {
+            $expectedCurrencies[] = $saleCurrencyId;
+        }
+        if (!empty($currencyData['sell_amount']) && !empty($application->sell_currency_id)) {
+            $expectedCurrencies[] = $application->sell_currency_id;
+        }
+        if (!empty($currencyData['buy_amount']) && !empty($application->buy_currency_id)) {
+            $expectedCurrencies[] = $application->buy_currency_id;
+        }
+        if (!empty($currencyData['expense_amount']) && !empty($application->expense_currency_id)) {
+            $expectedCurrencies[] = $application->expense_currency_id;
+        }
+
+        // Удаляем записи для валют, которых больше нет
+        foreach ($existingHistories as $history) {
+            if (!in_array($history->currency_id, $expectedCurrencies)) {
+                $history->delete();
+            }
+        }
+
+        // Обновляем существующие записи
+        $existingHistories = $this->historyRepository->findByOperation(Application::class, $application->id);
+        $existingByCurrency = $existingHistories->keyBy('currency_id');
+
+        // 0. Приход из sale_text - положительная сумма
+        if ($saleAmount !== null && $saleCurrencyId !== null) {
+            $this->updateOrCreateHistoryRecord(
+                $application->id,
+                $saleCurrencyId,
+                $saleAmount, // Положительная сумма для прихода
+                $existingByCurrency,
+                Application::class
+            );
+        }
+
         // 1. Приход (продаваемая валюта) - положительная сумма
         if (!empty($currencyData['sell_amount']) && !empty($application->sell_currency_id)) {
             $this->updateOrCreateHistoryRecord(
@@ -372,22 +479,7 @@ class ApplicationService implements ApplicationServiceInterface
             );
         }
 
-        // 3. Купля (покупаемая валюта) - положительная сумма (если есть отдельное поле)
-        if (!empty($currencyData['buy_amount']) && !empty($application->buy_currency_id)) {
-            // Если есть отдельное поле для купли, используем его
-            $buyAmount = $currencyData['buy_amount'] ?? 0;
-            if ($buyAmount > 0) {
-                $this->updateOrCreateHistoryRecord(
-                    $application->id,
-                    $application->buy_currency_id,
-                    $buyAmount, // Положительная сумма для купли
-                    $existingByCurrency,
-                    Application::class
-                );
-            }
-        }
-
-        // 4. Расход (валюта расходов) - отрицательная сумма
+        // 3. Расход (валюта расходов) - отрицательная сумма
         if (!empty($currencyData['expense_amount']) && !empty($application->expense_currency_id)) {
             $this->updateOrCreateHistoryRecord(
                 $application->id,

@@ -176,9 +176,24 @@ class ApplicationController extends Controller
                 'app_id' => $application->app_id
             ]);
 
+            // Разбираем sale_text на сумму и валюту
+            $saleAmount = null;
+            $saleCurrency = null;
+
+            if ($application->sale_text) {
+                $parts = explode(' ', trim($application->sale_text), 2);
+                if (count($parts) >= 2) {
+                    $saleAmount = is_numeric($parts[0]) ? floatval($parts[0]) : null;
+                    $saleCurrency = $parts[1];
+                }
+            }
+
             return response()->json([
                 'id' => $application->id,
                 'app_id' => $application->app_id,
+                'sale_amount' => $saleAmount,
+                'sale_currency' => $saleCurrency,
+                'sale_text' => $application->sale_text,
                 'sell_amount' => $application->sell_amount,
                 'sell_currency' => $application->sellCurrency?->code,
                 'buy_amount' => $application->buy_amount,
@@ -216,6 +231,8 @@ class ApplicationController extends Controller
 
         try {
             $request->validate([
+                'sale_amount' => 'nullable|numeric|min:0',
+                'sale_currency' => 'nullable|string|max:8',
                 'sell_amount' => 'nullable|numeric|min:0',
                 'sell_currency' => 'nullable|string|max:8',
                 'buy_amount' => 'nullable|numeric|min:0',
@@ -232,6 +249,20 @@ class ApplicationController extends Controller
             Log::info("ApplicationController::update: заявка найдена", ['app_id' => $app->app_id]);
 
         // Обновляем поля
+        // Обрабатываем sale_text (приход)
+        if ($request->has('sale_amount') || $request->has('sale_currency')) {
+            $saleAmount = $request->get('sale_amount');
+            $saleCurrency = $request->get('sale_currency');
+
+            if ($saleAmount !== null && $saleCurrency) {
+                $app->sale_text = $saleAmount . ' ' . $saleCurrency;
+                Log::info("ApplicationController::update: обновлен sale_text", ['sale_text' => $app->sale_text]);
+            } else {
+                $app->sale_text = null;
+                Log::info("ApplicationController::update: sale_text очищен");
+            }
+        }
+
         if ($request->has('sell_amount')) {
             $app->sell_amount = $request->sell_amount;
             if ($request->sell_currency) {
